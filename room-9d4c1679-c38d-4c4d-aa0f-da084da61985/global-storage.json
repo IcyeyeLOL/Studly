@@ -1,0 +1,28 @@
+{
+  "user_scoped_storage": {
+    "user_38p3fn6iTbV25TyWCNcFJ0Dxrx5": {
+      "tiling-view-active": false,
+      "tiling-view-config": {
+        "layout": {
+          "type": "window",
+          "tileId": "tile-1769482861656-1",
+          "widgetId": null,
+          "screenId": 1
+        },
+        "focusedTileId": "tile-1769482861656-1",
+        "screens": {
+          "1": {
+            "type": "window",
+            "tileId": "tile-1769482861656-1",
+            "widgetId": null,
+            "screenId": 1
+          },
+          "2": null,
+          "3": null
+        },
+        "activeScreen": 1,
+        "spacing": 14
+      }
+    }
+  }
+}
