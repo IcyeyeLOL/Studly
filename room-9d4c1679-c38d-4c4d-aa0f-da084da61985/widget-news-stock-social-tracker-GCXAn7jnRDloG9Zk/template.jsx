@@ -8,19 +8,27 @@ function NewsStockSocialTracker() {
   
   // News state
   const [newsCategory, setNewsCategory] = useState('general');
+  const [newsSearchQuery, setNewsSearchQuery] = useState('');
   const [newsArticles, setNewsArticles] = useState([]);
   const [newsLoading, setNewsLoading] = useState(false);
+  const [selectedArticle, setSelectedArticle] = useState(null);
+  const [aiSummary, setAiSummary] = useState('');
+  const [summaryLoading, setSummaryLoading] = useState(false);
   
   // Stock state
   const [stockSearch, setStockSearch] = useState('');
   const [trackedSymbols, setTrackedSymbols] = useStorage('tracked-symbols', []);
   const [stockResults, setStockResults] = useState([]);
   const [stockLoading, setStockLoading] = useState(false);
+  const [stockNotes, setStockNotes] = useStorage('stock-notes', {});
+  const [editingNote, setEditingNote] = useState(null);
   
   // Social state
   const [socialPlatform, setSocialPlatform] = useState('linkedin');
   const [linkedinSearch, setLinkedinSearch] = useState('');
   const [linkedinProfiles, setLinkedinProfiles] = useState([]);
+  const [youtubeSearch, setYoutubeSearch] = useState('');
+  const [youtubeVideos, setYoutubeVideos] = useState([]);
   const [socialLoading, setSocialLoading] = useState(false);
 
   useEffect(() => {
@@ -46,19 +54,25 @@ function NewsStockSocialTracker() {
     };
   }, []);
 
-  // Fetch news on category change
+  // Fetch news on category change or search
   useEffect(() => {
     if (tailwindLoaded && activeTab === 'news') {
-      fetchNews();
+      if (newsSearchQuery.trim()) {
+        searchNews();
+      } else {
+        fetchNews();
+      }
     }
   }, [newsCategory, tailwindLoaded, activeTab]);
 
   const fetchNews = async () => {
     setNewsLoading(true);
+    setSelectedArticle(null);
+    setAiSummary('');
     try {
       const response = await miyagiAPI.post('/news-top-headlines', {
         category: newsCategory,
-        pageSize: 10
+        pageSize: 15
       });
       if (response.success) {
         setNewsArticles(response.data.articles || []);
@@ -67,6 +81,57 @@ function NewsStockSocialTracker() {
       console.error('Error fetching news:', error);
     } finally {
       setNewsLoading(false);
+    }
+  };
+
+  const searchNews = async () => {
+    if (!newsSearchQuery.trim()) {
+      fetchNews();
+      return;
+    }
+    
+    setNewsLoading(true);
+    setSelectedArticle(null);
+    setAiSummary('');
+    try {
+      const response = await miyagiAPI.post('/news-search', {
+        q: newsSearchQuery,
+        pageSize: 15,
+        sortBy: 'publishedAt'
+      });
+      if (response.success) {
+        setNewsArticles(response.data.articles || []);
+      }
+    } catch (error) {
+      console.error('Error searching news:', error);
+    } finally {
+      setNewsLoading(false);
+    }
+  };
+
+  const generateSummary = async (article) => {
+    setSelectedArticle(article);
+    setSummaryLoading(true);
+    setAiSummary('');
+    
+    try {
+      const prompt = `Summarize this news article in 3-4 bullet points, focusing on key facts and implications:\n\nTitle: ${article.title}\n\nContent: ${article.description || article.content || 'No content available'}`;
+      
+      const response = await miyagiAPI.post('/generate-text', {
+        prompt: prompt,
+        provider: 'openai',
+        model: 'gpt-4o-mini',
+        max_tokens: 200
+      });
+      
+      if (response.success) {
+        setAiSummary(response.data.text);
+      }
+    } catch (error) {
+      console.error('Error generating summary:', error);
+      setAiSummary('Failed to generate summary. Please try again.');
+    } finally {
+      setSummaryLoading(false);
     }
   };
 
@@ -114,6 +179,33 @@ function NewsStockSocialTracker() {
     } finally {
       setSocialLoading(false);
     }
+  };
+
+  const searchYouTube = async () => {
+    if (!youtubeSearch.trim()) return;
+    
+    setSocialLoading(true);
+    try {
+      const response = await miyagiAPI.post('/youtube-search', {
+        query: youtubeSearch,
+        maxResults: 10
+      });
+      if (response.success) {
+        setYoutubeVideos(response.data.videos || []);
+      }
+    } catch (error) {
+      console.error('Error searching YouTube:', error);
+    } finally {
+      setSocialLoading(false);
+    }
+  };
+
+  const saveStockNote = (symbol, note) => {
+    setStockNotes(prev => ({
+      ...prev,
+      [symbol]: note
+    }));
+    setEditingNote(null);
   };
 
   const formatDate = (dateString) => {
@@ -194,8 +286,8 @@ function NewsStockSocialTracker() {
         {/* News Tab */}
         {activeTab === 'news' && (
           <div>
-            {/* Category Filter */}
-            <div style={{ marginBottom: '32px' }}>
+            {/* Search Bar */}
+            <div style={{ marginBottom: '24px' }}>
               <label style={{ 
                 display: 'block',
                 fontSize: '13px',
@@ -205,31 +297,105 @@ function NewsStockSocialTracker() {
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px'
               }}>
-                Category
+                Search News
               </label>
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                {['general', 'business', 'technology', 'sports', 'entertainment', 'health', 'science'].map(cat => (
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <input
+                  type="text"
+                  value={newsSearchQuery}
+                  onChange={(e) => setNewsSearchQuery(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && searchNews()}
+                  placeholder="Search for specific topics, companies, or keywords..."
+                  style={{
+                    flex: 1,
+                    padding: '14px 20px',
+                    border: '1px solid #f0f0f0',
+                    borderRadius: '10px',
+                    fontSize: '14px',
+                    outline: 'none',
+                    transition: 'all 0.2s'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#6366f1'}
+                  onBlur={(e) => e.target.style.borderColor = '#f0f0f0'}
+                />
+                <button
+                  onClick={searchNews}
+                  style={{
+                    padding: '14px 24px',
+                    background: '#6366f1',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '10px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  Search
+                </button>
+                {newsSearchQuery && (
                   <button
-                    key={cat}
-                    onClick={() => setNewsCategory(cat)}
+                    onClick={() => {
+                      setNewsSearchQuery('');
+                      fetchNews();
+                    }}
                     style={{
-                      padding: '10px 20px',
-                      border: newsCategory === cat ? '1px solid #6366f1' : '1px solid #f0f0f0',
-                      background: newsCategory === cat ? '#6366f1' : '#ffffff',
-                      color: newsCategory === cat ? '#ffffff' : '#666666',
-                      borderRadius: '8px',
-                      fontSize: '13px',
-                      fontWeight: '500',
+                      padding: '14px 20px',
+                      background: '#f0f0f0',
+                      color: '#666666',
+                      border: 'none',
+                      borderRadius: '10px',
+                      fontSize: '14px',
+                      fontWeight: '600',
                       cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      textTransform: 'capitalize'
+                      transition: 'all 0.2s'
                     }}
                   >
-                    {cat}
+                    Clear
                   </button>
-                ))}
+                )}
               </div>
             </div>
+
+            {/* Category Filter */}
+            {!newsSearchQuery && (
+              <div style={{ marginBottom: '32px' }}>
+                <label style={{ 
+                  display: 'block',
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  color: '#000000',
+                  marginBottom: '12px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  Category
+                </label>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  {['general', 'business', 'technology', 'sports', 'entertainment', 'health', 'science'].map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setNewsCategory(cat)}
+                      style={{
+                        padding: '10px 20px',
+                        border: newsCategory === cat ? '1px solid #6366f1' : '1px solid #f0f0f0',
+                        background: newsCategory === cat ? '#6366f1' : '#ffffff',
+                        color: newsCategory === cat ? '#ffffff' : '#666666',
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        textTransform: 'capitalize'
+                      }}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* News Articles */}
             {newsLoading ? (
@@ -239,31 +405,18 @@ function NewsStockSocialTracker() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {newsArticles.map((article, idx) => (
-                  <a
+                  <div
                     key={idx}
-                    href={article.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     style={{
-                      display: 'block',
                       padding: '24px',
                       background: '#ffffff',
-                      border: '1px solid #f0f0f0',
+                      border: selectedArticle === article ? '1px solid #6366f1' : '1px solid #f0f0f0',
                       borderRadius: '12px',
-                      textDecoration: 'none',
-                      transition: 'all 0.2s',
-                      boxShadow: '0 4px 24px rgba(0, 0, 0, 0.04)'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.08)';
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.boxShadow = '0 4px 24px rgba(0, 0, 0, 0.04)';
-                      e.currentTarget.style.transform = 'translateY(0)';
+                      boxShadow: '0 4px 24px rgba(0, 0, 0, 0.04)',
+                      transition: 'all 0.2s'
                     }}
                   >
-                    <div style={{ display: 'flex', gap: '20px' }}>
+                    <div style={{ display: 'flex', gap: '20px', marginBottom: '16px' }}>
                       {article.urlToImage && (
                         <img 
                           src={article.urlToImage} 
@@ -278,15 +431,26 @@ function NewsStockSocialTracker() {
                         />
                       )}
                       <div style={{ flex: 1 }}>
-                        <h3 style={{
-                          margin: '0 0 8px 0',
-                          fontSize: '16px',
-                          fontWeight: '600',
-                          color: '#000000',
-                          lineHeight: '1.4'
-                        }}>
-                          {article.title}
-                        </h3>
+                        <a
+                          href={article.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: 'block',
+                            textDecoration: 'none',
+                            marginBottom: '8px'
+                          }}
+                        >
+                          <h3 style={{
+                            margin: '0 0 8px 0',
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            color: '#000000',
+                            lineHeight: '1.4'
+                          }}>
+                            {article.title}
+                          </h3>
+                        </a>
                         <p style={{
                           margin: '0 0 12px 0',
                           fontSize: '14px',
@@ -299,15 +463,71 @@ function NewsStockSocialTracker() {
                           display: 'flex',
                           gap: '16px',
                           fontSize: '12px',
-                          color: '#999999'
+                          color: '#999999',
+                          alignItems: 'center'
                         }}>
                           <span>{article.source.name}</span>
                           <span>•</span>
                           <span>{formatDate(article.publishedAt)}</span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              generateSummary(article);
+                            }}
+                            style={{
+                              marginLeft: 'auto',
+                              padding: '6px 14px',
+                              background: selectedArticle === article ? '#6366f1' : '#f0f0f0',
+                              color: selectedArticle === article ? '#ffffff' : '#666666',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            {selectedArticle === article ? '✓ AI Summary' : '✨ AI Summary'}
+                          </button>
                         </div>
                       </div>
                     </div>
-                  </a>
+                    
+                    {/* AI Summary Section */}
+                    {selectedArticle === article && (
+                      <div style={{
+                        padding: '20px',
+                        background: '#f8f9ff',
+                        borderRadius: '8px',
+                        border: '1px solid #e0e7ff'
+                      }}>
+                        <div style={{
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          color: '#6366f1',
+                          marginBottom: '12px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}>
+                          AI-Generated Summary
+                        </div>
+                        {summaryLoading ? (
+                          <div style={{ color: '#666666', fontSize: '14px' }}>
+                            Generating summary...
+                          </div>
+                        ) : aiSummary ? (
+                          <div style={{
+                            fontSize: '14px',
+                            color: '#333333',
+                            lineHeight: '1.6',
+                            whiteSpace: 'pre-wrap'
+                          }}>
+                            {aiSummary}
+                          </div>
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             )}
@@ -459,7 +679,7 @@ function NewsStockSocialTracker() {
                   No symbols tracked yet. Search and add stocks to track them.
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
                   {trackedSymbols.map((symbol, idx) => (
                     <div
                       key={idx}
@@ -497,7 +717,8 @@ function NewsStockSocialTracker() {
                         fontSize: '20px',
                         fontWeight: '700',
                         color: '#000000',
-                        marginBottom: '8px'
+                        marginBottom: '8px',
+                        paddingRight: '30px'
                       }}>
                         {symbol.symbol}
                       </div>
@@ -510,10 +731,117 @@ function NewsStockSocialTracker() {
                       </div>
                       <div style={{
                         fontSize: '11px',
-                        color: '#999999'
+                        color: '#999999',
+                        marginBottom: '16px'
                       }}>
                         {symbol.region} • {symbol.currency}
                       </div>
+                      
+                      {/* Notes Section */}
+                      {editingNote === symbol.symbol ? (
+                        <div>
+                          <textarea
+                            defaultValue={stockNotes[symbol.symbol] || ''}
+                            placeholder="Add notes about this stock..."
+                            style={{
+                              width: '100%',
+                              padding: '10px',
+                              border: '1px solid #e0e7ff',
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                              fontFamily: 'inherit',
+                              resize: 'vertical',
+                              minHeight: '60px',
+                              outline: 'none',
+                              marginBottom: '8px'
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && e.metaKey) {
+                                saveStockNote(symbol.symbol, e.target.value);
+                              }
+                              if (e.key === 'Escape') {
+                                setEditingNote(null);
+                              }
+                            }}
+                            autoFocus
+                          />
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              onClick={(e) => {
+                                const textarea = e.target.parentElement.previousElementSibling;
+                                saveStockNote(symbol.symbol, textarea.value);
+                              }}
+                              style={{
+                                padding: '6px 12px',
+                                background: '#6366f1',
+                                color: '#ffffff',
+                                border: 'none',
+                                borderRadius: '6px',
+                                fontSize: '11px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                flex: 1
+                              }}
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingNote(null)}
+                              style={{
+                                padding: '6px 12px',
+                                background: '#f0f0f0',
+                                color: '#666666',
+                                border: 'none',
+                                borderRadius: '6px',
+                                fontSize: '11px',
+                                fontWeight: '600',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          {stockNotes[symbol.symbol] ? (
+                            <div
+                              onClick={() => setEditingNote(symbol.symbol)}
+                              style={{
+                                padding: '10px',
+                                background: '#f8f9ff',
+                                borderRadius: '6px',
+                                fontSize: '12px',
+                                color: '#333333',
+                                lineHeight: '1.5',
+                                cursor: 'pointer',
+                                marginBottom: '8px',
+                                border: '1px solid #e0e7ff'
+                              }}
+                            >
+                              {stockNotes[symbol.symbol]}
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setEditingNote(symbol.symbol)}
+                              style={{
+                                width: '100%',
+                                padding: '8px',
+                                background: '#fafafa',
+                                color: '#999999',
+                                border: '1px dashed #e0e0e0',
+                                borderRadius: '6px',
+                                fontSize: '11px',
+                                fontWeight: '500',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              + Add Notes
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -685,8 +1013,149 @@ function NewsStockSocialTracker() {
               </div>
             )}
 
-            {/* TikTok & YouTube Placeholder */}
-            {(socialPlatform === 'tiktok' || socialPlatform === 'youtube') && (
+            {/* YouTube Search */}
+            {socialPlatform === 'youtube' && (
+              <div>
+                <div style={{ marginBottom: '32px' }}>
+                  <label style={{ 
+                    display: 'block',
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#000000',
+                    marginBottom: '12px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
+                    Search YouTube Videos
+                  </label>
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <input
+                      type="text"
+                      value={youtubeSearch}
+                      onChange={(e) => setYoutubeSearch(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && searchYouTube()}
+                      placeholder="Search for videos, channels, or topics..."
+                      style={{
+                        flex: 1,
+                        padding: '14px 20px',
+                        border: '1px solid #f0f0f0',
+                        borderRadius: '10px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        transition: 'all 0.2s'
+                      }}
+                      onFocus={(e) => e.target.style.borderColor = '#6366f1'}
+                      onBlur={(e) => e.target.style.borderColor = '#f0f0f0'}
+                    />
+                    <button
+                      onClick={searchYouTube}
+                      disabled={socialLoading}
+                      style={{
+                        padding: '14px 32px',
+                        background: '#6366f1',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '10px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        cursor: socialLoading ? 'default' : 'pointer',
+                        opacity: socialLoading ? 0.6 : 1,
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      {socialLoading ? 'Searching...' : 'Search'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* YouTube Results */}
+                {youtubeVideos.length > 0 && (
+                  <div>
+                    <h3 style={{
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      color: '#000000',
+                      marginBottom: '16px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }}>
+                      Search Results ({youtubeVideos.length})
+                    </h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+                      {youtubeVideos.map((video, idx) => (
+                        <a
+                          key={idx}
+                          href={`https://www.youtube.com/watch?v=${video.videoId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: 'block',
+                            background: '#ffffff',
+                            border: '1px solid #f0f0f0',
+                            borderRadius: '12px',
+                            overflow: 'hidden',
+                            textDecoration: 'none',
+                            boxShadow: '0 4px 24px rgba(0, 0, 0, 0.04)',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.08)';
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.boxShadow = '0 4px 24px rgba(0, 0, 0, 0.04)';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                          }}
+                        >
+                          {video.thumbnail && (
+                            <img
+                              src={video.thumbnail}
+                              alt={video.title}
+                              style={{
+                                width: '100%',
+                                height: '180px',
+                                objectFit: 'cover'
+                              }}
+                            />
+                          )}
+                          <div style={{ padding: '16px' }}>
+                            <h4 style={{
+                              margin: '0 0 8px 0',
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              color: '#000000',
+                              lineHeight: '1.4',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden'
+                            }}>
+                              {video.title}
+                            </h4>
+                            <div style={{
+                              fontSize: '12px',
+                              color: '#666666',
+                              marginBottom: '8px'
+                            }}>
+                              {video.channelTitle}
+                            </div>
+                            <div style={{
+                              fontSize: '11px',
+                              color: '#999999'
+                            }}>
+                              {video.publishedAt && new Date(video.publishedAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TikTok Placeholder */}
+            {socialPlatform === 'tiktok' && (
               <div style={{
                 padding: '60px 20px',
                 textAlign: 'center',
@@ -695,10 +1164,7 @@ function NewsStockSocialTracker() {
                 borderRadius: '12px',
                 background: '#fafafa'
               }}>
-                {socialPlatform === 'tiktok' 
-                  ? 'TikTok integration: View profile info and scheduled posts'
-                  : 'YouTube integration: Search and track videos'
-                }
+                TikTok integration: View profile info and scheduled posts
               </div>
             )}
           </div>

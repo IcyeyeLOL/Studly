@@ -1,0 +1,34 @@
+{
+  "shapeId": "shape:slide-deck-react-uGU5-z5W3KoUzBMWk0Pm-",
+  "widgetId": "shape:slide-deck-react-uGU5-z5W3KoUzBMWk0Pm-",
+  "templateHandle": "slide-deck-react-lime17451",
+  "templateName": "Slide Deck",
+  "icon": {
+    "type": "react-icon",
+    "value": "Fi:FiMonitor"
+  },
+  "position": {
+    "x": 287.27371864776444,
+    "y": 330
+  },
+  "size": {
+    "w": 900,
+    "h": 700
+  },
+  "rotation": 0,
+  "opacity": 1,
+  "isLocked": false,
+  "color": "black",
+  "zoomScale": 1,
+  "isFullscreen": false,
+  "savedJsxContentHash": "517zfn",
+  "meta": {
+    "justCreated": false,
+    "createdAt": 1769483252152,
+    "dockOrder": 0,
+    "showDefaultHandles": false
+  },
+  "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
+  "index": "a7gOzMfl",
+  "lastChangedClock": 44
+}

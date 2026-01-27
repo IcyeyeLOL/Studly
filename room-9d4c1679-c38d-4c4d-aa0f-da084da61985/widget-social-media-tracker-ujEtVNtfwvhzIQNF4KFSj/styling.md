@@ -1,8 +1,8 @@
 # Style ID
-clean-light
+none
 
 # Style Name
-Clean Light
+No Style
 
 # Style Prompt
 

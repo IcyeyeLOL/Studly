@@ -3,8 +3,8 @@
   "widgetId": "news-stock-social-tracker_1769483198604",
   "templateHandle": "news-stock-social-tracker",
   "position": {
-    "x": 1200,
-    "y": 400
+    "x": 668.8331515812432,
+    "y": 163.27153762268264
   },
   "size": {
     "w": 700,
@@ -17,9 +17,13 @@
   "zoomScale": 1,
   "savedJsxContentHash": "initial",
   "meta": {
-    "initializationState": "ready"
+    "initializationState": "ready",
+    "justCreated": false,
+    "createdAt": 1769483370005,
+    "showDefaultHandles": false,
+    "dockOrder": 2
   },
   "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
-  "index": "a0",
-  "lastChangedClock": 1676
+  "index": "a9INWYTV",
+  "lastChangedClock": 74
 }

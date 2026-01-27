@@ -24,5 +24,10 @@
         "spacing": 14
       }
     }
-  }
+  },
+  "__widget_io_configs": "{\"shape:slide-deck-react-uGU5-z5W3KoUzBMWk0Pm-\":{\"inputs\":[],\"outputs\":[]},\"shape:social-media-tracker-ujEtVNtfwvhzIQNF4KFSj\":{\"inputs\":[],\"outputs\":[]},\"shape:news-stock-social-tracker-GCXAn7jnRDloG9Zk\":{\"inputs\":[],\"outputs\":[]}}",
+  "files/slides/config.json": "\"{\\n  \\\"currentDeckId\\\": \\\"welcome-deck\\\",\\n  \\\"deckOrder\\\": [\\n    \\\"welcome-deck\\\"\\n  ]\\n}\"",
+  "files/slides/welcome-deck/deck.json": "\"{\\n  \\\"title\\\": \\\"Welcome Presentation\\\",\\n  \\\"themeId\\\": \\\"modern\\\",\\n  \\\"currentSlideIndex\\\": 1,\\n  \\\"slideOrder\\\": [\\n    \\\"slide-1\\\",\\n    \\\"slide-2\\\"\\n  ],\\n  \\\"createdAt\\\": 1769483252674,\\n  \\\"updatedAt\\\": 1769483252674\\n}\"",
+  "files/slides/welcome-deck/slide-1.html": "\"<div style=\\\"display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 60px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\\\">\\n  <h1 style=\\\"font-size: 56px; font-weight: 700; color: white; margin: 0 0 24px 0; text-shadow: 0 2px 4px rgba(0,0,0,0.2);\\\">Welcome to Slide Deck</h1>\\n  <p style=\\\"font-size: 24px; color: rgba(255,255,255,0.9); max-width: 600px; line-height: 1.6;\\\">Create beautiful presentations with HTML slides</p>\\n</div>\"",
+  "files/slides/welcome-deck/slide-2.html": "\"<div style=\\\"padding: 60px; height: 100%; background: #1e293b;\\\">\\n  <h2 style=\\\"font-size: 42px; font-weight: 700; color: white; margin: 0 0 32px 0;\\\">Getting Started</h2>\\n  <ul style=\\\"font-size: 24px; color: #94a3b8; line-height: 2; list-style: none; padding: 0; margin: 0;\\\">\\n    <li style=\\\"margin-bottom: 16px;\\\">✨ Edit slides using the HTML editor</li>\\n    <li style=\\\"margin-bottom: 16px;\\\">🎨 Create multiple presentations</li>\\n    <li style=\\\"margin-bottom: 16px;\\\">📺 Present in fullscreen mode</li>\\n    <li style=\\\"margin-bottom: 16px;\\\">📄 Export to PDF</li>\\n  </ul>\\n</div>\""
 }
