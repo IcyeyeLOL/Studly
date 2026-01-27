@@ -1,0 +1,25 @@
+{
+  "shapeId": "shape:financial-command-center-89b6ftsfQ0DlmdnM",
+  "widgetId": "financial-command-center_1769483843072",
+  "templateHandle": "financial-command-center",
+  "position": {
+    "x": 1364.0294438386043,
+    "y": 1074.154852780807
+  },
+  "size": {
+    "w": 700,
+    "h": 600
+  },
+  "rotation": 0,
+  "opacity": 1,
+  "isLocked": false,
+  "color": "black",
+  "zoomScale": 1,
+  "savedJsxContentHash": "initial",
+  "meta": {
+    "initializationState": "ready"
+  },
+  "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
+  "index": "aA",
+  "lastChangedClock": 1676
+}
