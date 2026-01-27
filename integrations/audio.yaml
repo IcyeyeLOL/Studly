@@ -1,0 +1,91 @@
+# audio integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: Call using miyagiAPI:
+#   miyagiAPI.post('/endpoint', { ...params })
+#   miyagiAPI.get('/endpoint', { ...params })
+
+tools:
+
+  text_to_speech:
+    method: POST
+    endpoint: /text-to-speech
+    description: "Convert text to speech audio"
+    input_schema:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+        model:
+          type: string
+        voice:
+          type: string
+        response_format:
+          type: string
+          enum:
+            - mp3
+            - opus
+            - aac
+            - flac
+        speed:
+          type: number
+          minimum: 0.25
+          maximum: 4
+      required:
+        - text
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            audioUrl:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  speech_to_text:
+    method: POST
+    endpoint: /speech-to-text
+    description: "Transcribe speech audio to text"
+    input_schema:
+      type: object
+      properties:
+        audio:
+          type: string
+          minLength: 1
+        model:
+          type: string
+        language:
+          type: string
+        prompt:
+          type: string
+        response_format:
+          type: string
+        temperature:
+          type: number
+          minimum: 0
+          maximum: 1
+      required:
+        - audio
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            text:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

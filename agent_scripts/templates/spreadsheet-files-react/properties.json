@@ -1,0 +1,15 @@
+{
+  "id": "spreadsheet-files-react",
+  "name": "Spreadsheet Files React",
+  "description": "CSV-based spreadsheet with JavaScript scripting support",
+  "icon": {
+    "type": "react-icon",
+    "value": "Fi:FiGrid"
+  },
+  "category": "productivity",
+  "defaultSize": {
+    "width": 900,
+    "height": 600
+  },
+  "screenshotUrl": "https://bucket-production-e0b5.up.railway.app/miyagi-images/widget-screenshots/system-pregenerated/spreadsheet-files-react-2025-12-28T18-20-52.png"
+}

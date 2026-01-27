@@ -1,0 +1,555 @@
+# search integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: Call using miyagiAPI:
+#   miyagiAPI.post('/endpoint', { ...params })
+#   miyagiAPI.get('/endpoint', { ...params })
+
+tools:
+
+  search_web:
+    method: POST
+    endpoint: /search-web
+    description: "Search web pages and get AI-summarized content with citations"
+    input_schema:
+      type: object
+      properties:
+        searchPrompt:
+          type: string
+          minLength: 1
+        queryHints:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          default: []
+        count:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 5
+        parseResultsPrompt:
+          type: string
+        constraints:
+          type: object
+          properties:
+            allowDomains:
+              type: array
+              items:
+                type: string
+                minLength: 1
+            denyDomains:
+              type: array
+              items:
+                type: string
+                minLength: 1
+            dateRange:
+              type: object
+              properties:
+                from:
+                  type: string
+                to:
+                  type: string
+              additionalProperties: false
+            safe:
+              type: boolean
+          additionalProperties: false
+      required:
+        - searchPrompt
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+        error:
+          type: string
+      required:
+        - success
+    output_description: "data contains: { summary, citations[], sources[] }"
+
+  search_web_raw:
+    method: POST
+    endpoint: /search-web-raw
+    description: "Search web pages and return raw results without AI summarization (includes extracted text)"
+    input_schema:
+      type: object
+      properties:
+        searchPrompt:
+          type: string
+          minLength: 1
+        queryHints:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          default: []
+        count:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 5
+        constraints:
+          type: object
+          properties:
+            allowDomains:
+              type: array
+              items:
+                type: string
+                minLength: 1
+            denyDomains:
+              type: array
+              items:
+                type: string
+                minLength: 1
+            dateRange:
+              type: object
+              properties:
+                from:
+                  type: string
+                to:
+                  type: string
+              additionalProperties: false
+            safe:
+              type: boolean
+          additionalProperties: false
+      required:
+        - searchPrompt
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+        error:
+          type: string
+      required:
+        - success
+    output_description: "data contains: { sources[{ url, title, snippet, extractedText }], query }"
+
+  search_web_ai:
+    method: POST
+    endpoint: /search-web-ai
+    description: "Search web pages and process results with ChatGPT using custom prompt"
+    input_schema:
+      type: object
+      properties:
+        searchPrompt:
+          type: string
+          minLength: 1
+        queryHints:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          default: []
+        count:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 5
+        constraints:
+          type: object
+          properties:
+            allowDomains:
+              type: array
+              items:
+                type: string
+                minLength: 1
+            denyDomains:
+              type: array
+              items:
+                type: string
+                minLength: 1
+            dateRange:
+              type: object
+              properties:
+                from:
+                  type: string
+                to:
+                  type: string
+              additionalProperties: false
+            safe:
+              type: boolean
+          additionalProperties: false
+        aiPrompt:
+          type: string
+          minLength: 1
+        provider:
+          type: string
+          enum:
+            - openai
+            - anthropic
+          default: openai
+        model:
+          type: string
+        max_tokens:
+          type: integer
+          exclusiveMinimum: 0
+          maximum: 200000
+          default: 16000
+        temperature:
+          type: number
+          minimum: 0
+          maximum: 2
+          default: 0.7
+      required:
+        - searchPrompt
+        - aiPrompt
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            aiResponse:
+              type: string
+            sources:
+              type: array
+              items:
+                type: object
+                properties:
+                  url:
+                    type: string
+                  title:
+                    type: string
+                  snippet:
+                    type: string
+                  extractedText:
+                    type: string
+                required:
+                  - url
+                additionalProperties: false
+            query:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  search_images:
+    method: POST
+    endpoint: /search-images
+    description: "Search for images and return URLs with metadata"
+    input_schema:
+      type: object
+      properties:
+        searchPrompt:
+          type: string
+          minLength: 1
+        queryHints:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          default: []
+        count:
+          type: integer
+          minimum: 1
+          maximum: 20
+          default: 10
+      required:
+        - searchPrompt
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            assets:
+              type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  url:
+                    type: string
+                  title:
+                    type: string
+                  width:
+                    type: number
+                  height:
+                    type: number
+                additionalProperties: true
+            images:
+              type: array
+            summary:
+              type: string
+            debug:
+              type: object
+              additionalProperties: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  search_videos:
+    method: POST
+    endpoint: /search-videos
+    description: "Search for videos and return URLs with metadata (duration, views, thumbnails)"
+    input_schema:
+      type: object
+      properties:
+        searchPrompt:
+          type: string
+          minLength: 1
+        queryHints:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          default: []
+        count:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 10
+      required:
+        - searchPrompt
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            assets:
+              type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  url:
+                    type: string
+                  title:
+                    type: string
+                  duration:
+                    type: string
+                  views:
+                    type: number
+                additionalProperties: true
+            videos:
+              type: array
+            summary:
+              type: string
+            debug:
+              type: object
+              additionalProperties: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  search_pdfs:
+    method: POST
+    endpoint: /search-pdfs
+    description: "Search for PDF documents and return URLs with metadata"
+    input_schema:
+      type: object
+      properties:
+        searchPrompt:
+          type: string
+          minLength: 1
+        queryHints:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          default: []
+        count:
+          type: integer
+          minimum: 1
+          maximum: 15
+          default: 10
+      required:
+        - searchPrompt
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+        error:
+          type: string
+      required:
+        - success
+    output_description: "data contains: { assets[], citations[], summary }"
+
+  search_academic:
+    method: POST
+    endpoint: /search-academic
+    description: "Search academic/educational content (.edu domains) with AI-summarized results and citations"
+    input_schema:
+      type: object
+      properties:
+        searchPrompt:
+          type: string
+          minLength: 1
+        queryHints:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          default: []
+        count:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 5
+        parseResultsPrompt:
+          type: string
+      required:
+        - searchPrompt
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            summary:
+              type: string
+            citations:
+              type: array
+              items:
+                type: object
+                properties:
+                  url:
+                    type: string
+                  title:
+                    type: string
+                  snippet:
+                    type: string
+                required:
+                  - url
+                additionalProperties: false
+            sources:
+              type: array
+            debug:
+              type: object
+              additionalProperties: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  advanced_web_search:
+    method: POST
+    endpoint: /advanced-web-search
+    description: "Advanced multi-modal web search with structured output for widgets"
+    input_schema:
+      type: object
+      properties:
+        searchPrompt:
+          type: string
+          minLength: 1
+        queryHints:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          default: []
+        searchType:
+          type: string
+          enum:
+            - web
+            - images
+            - videos
+            - pdfs
+            - academic
+            - all
+          default: all
+        count:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 5
+        constraints:
+          type: object
+          properties:
+            allowDomains:
+              type: array
+              items:
+                type: string
+                minLength: 1
+            denyDomains:
+              type: array
+              items:
+                type: string
+                minLength: 1
+            dateRange:
+              type: object
+              properties:
+                from:
+                  type: string
+                to:
+                  type: string
+              additionalProperties: false
+            safe:
+              type: boolean
+          additionalProperties: false
+        schemaId:
+          type: string
+          minLength: 1
+        schema: {}
+        parseResultsPrompt:
+          type: string
+      required:
+        - searchPrompt
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            dataset: {}
+            citations:
+              type: array
+              items:
+                type: object
+                properties:
+                  url:
+                    type: string
+                  title:
+                    type: string
+                required:
+                  - url
+                additionalProperties: false
+            assets:
+              type: array
+              items:
+                type: object
+                properties:
+                  url:
+                    type: string
+                  title:
+                    type: string
+                  type:
+                    type: string
+                required:
+                  - url
+                additionalProperties: false
+            summary:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

@@ -1,0 +1,304 @@
+# scholar integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: Call using miyagiAPI:
+#   miyagiAPI.post('/endpoint', { ...params })
+#   miyagiAPI.get('/endpoint', { ...params })
+
+tools:
+
+  scholar_search_authors:
+    method: POST
+    endpoint: /scholar-search-authors
+    description: "Search Google Scholar authors"
+    input_schema:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        page:
+          type: integer
+      required:
+        - name
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            authors:
+              type: array
+              items:
+                type: object
+                properties:
+                  author_id:
+                    type: string
+                  name:
+                    type: string
+                  affiliations:
+                    type: string
+                  cited_by:
+                    type: number
+                  thumbnail:
+                    type: string
+                required:
+                  - name
+                additionalProperties: false
+          required:
+            - authors
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  scholar_search_papers:
+    method: POST
+    endpoint: /scholar-search-papers
+    description: "Search Google Scholar papers"
+    input_schema:
+      type: object
+      properties:
+        query:
+          type: string
+          minLength: 1
+        page:
+          type: integer
+      required:
+        - query
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            papers:
+              type: array
+              items:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  link:
+                    type: string
+                  snippet:
+                    type: string
+                  publication_info:
+                    type: string
+                  cited_by:
+                    type: number
+                required:
+                  - title
+                additionalProperties: true
+          required:
+            - papers
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  scholar_get_author_papers:
+    method: POST
+    endpoint: /scholar-get-author-papers
+    description: "Get papers by Google Scholar author"
+    input_schema:
+      type: object
+      properties:
+        authorId:
+          type: string
+          minLength: 1
+        page:
+          type: integer
+        sort:
+          type: string
+      required:
+        - authorId
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            papers:
+              type: array
+              items:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  link:
+                    type: string
+                  cited_by:
+                    type: number
+                  year:
+                    type: string
+                required:
+                  - title
+                additionalProperties: true
+          required:
+            - papers
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  scholar_get_citation_details:
+    method: POST
+    endpoint: /scholar-get-citation-details
+    description: "Get detailed citation information"
+    input_schema:
+      type: object
+      properties:
+        citationId:
+          type: string
+          minLength: 1
+      required:
+        - citationId
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            citation:
+              type: object
+              properties: {}
+              additionalProperties: true
+          required:
+            - citation
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  scholar_summarize_papers:
+    method: POST
+    endpoint: /scholar-summarize-papers
+    description: "Summarize selected papers using LLM"
+    input_schema:
+      type: object
+      properties:
+        authorName:
+          type: string
+          minLength: 1
+        papers:
+          type: array
+        citationDetails:
+          type: array
+      required:
+        - authorName
+        - papers
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            summary:
+              type: string
+          required:
+            - summary
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  scholar_draft_email:
+    method: POST
+    endpoint: /scholar-draft-email
+    description: "Draft outreach email using LLM"
+    input_schema:
+      type: object
+      properties:
+        authorName:
+          type: string
+          minLength: 1
+        papers:
+          type: array
+        citationDetails:
+          type: array
+      required:
+        - authorName
+        - papers
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            email:
+              type: object
+              properties:
+                subject:
+                  type: string
+                body:
+                  type: string
+              additionalProperties: true
+          required:
+            - email
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  scholar_get_author_details:
+    method: POST
+    endpoint: /scholar-get-author-details
+    description: "Get detailed author information"
+    input_schema:
+      type: object
+      properties:
+        authorId:
+          type: string
+          minLength: 1
+      required:
+        - authorId
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            author:
+              type: object
+              properties:
+                name:
+                  type: string
+                affiliations:
+                  type: string
+                email:
+                  type: string
+                interests:
+                  type: array
+                  items:
+                    type: string
+              required:
+                - name
+              additionalProperties: true
+          required:
+            - author
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

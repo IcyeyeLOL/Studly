@@ -1,0 +1,70 @@
+# text-generation integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: Call using miyagiAPI:
+#   miyagiAPI.post('/endpoint', { ...params })
+#   miyagiAPI.get('/endpoint', { ...params })
+
+tools:
+
+  generate_text:
+    method: POST
+    endpoint: /generate-text
+    description: "Generate text with LLM"
+    input_schema:
+      type: object
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+        provider:
+          type: string
+          enum:
+            - openai
+            - anthropic
+          default: openai
+        model:
+          type: string
+          enum:
+            - gpt-4o
+            - gpt-4o-mini
+            - gpt-5-nano
+            - gpt-5-mini
+            - gpt-5
+            - claude-3-5-haiku-20241022
+            - claude-sonnet-4-20250514
+            - claude-opus-4-20250514
+          default: "gpt-4o-mini"
+        max_tokens:
+          type: integer
+          exclusiveMinimum: 0
+          maximum: 200000
+          default: 8192
+        temperature:
+          type: number
+          minimum: 0
+          maximum: 2
+          default: 1
+        system_prompt:
+          type: string
+      required:
+        - prompt
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            text:
+              type: string
+            provider:
+              type: string
+            model:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

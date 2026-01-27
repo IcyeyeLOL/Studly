@@ -1,0 +1,140 @@
+# document integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: Call using miyagiAPI:
+#   miyagiAPI.post('/endpoint', { ...params })
+#   miyagiAPI.get('/endpoint', { ...params })
+
+tools:
+
+  convert_file:
+    method: POST
+    endpoint: /convert-file
+    description: "Convert a file by URL or base64"
+    input_schema:
+      type: object
+      properties:
+        input_format:
+          type: string
+          minLength: 1
+        output_format:
+          type: string
+          minLength: 1
+        file:
+          type: string
+        url:
+          type: string
+          format: uri
+      required:
+        - input_format
+        - output_format
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            url:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  extract_document_text:
+    method: POST
+    endpoint: /extract-document-text
+    description: "Extract text from a PDF or Word document (base64 input)"
+    input_schema:
+      type: object
+      properties:
+        file:
+          type: string
+          minLength: 1
+        filename:
+          type: string
+      required:
+        - file
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            text:
+              type: string
+            fileType:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  generate_tasks_from_document:
+    method: POST
+    endpoint: /generate-tasks-from-document
+    description: "Generate structured travel tasks from extracted document text"
+    input_schema:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+        availableCategories:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                minLength: 1
+              name:
+                type: string
+                minLength: 1
+            required:
+              - id
+              - name
+            additionalProperties: false
+      required:
+        - text
+        - availableCategories
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            tasks:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  description:
+                    type: string
+                  categoryId:
+                    type: string
+                  dueDate:
+                    type: string
+                required:
+                  - id
+                  - name
+                  - description
+                  - categoryId
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

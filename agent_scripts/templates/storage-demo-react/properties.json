@@ -1,0 +1,16 @@
+{
+  "id": "storage-demo",
+  "name": "Storage Scope Demo",
+  "description": "Demonstrates the useStorage hook with global and user scopes",
+  "icon": {
+    "type": "react-icon",
+    "value": "Fi:FiDatabase"
+  },
+  "showByDefault": true,
+  "category": "development",
+  "defaultSize": {
+    "width": 400,
+    "height": 600
+  }
+}
+

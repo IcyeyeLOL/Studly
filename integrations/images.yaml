@@ -1,0 +1,1504 @@
+# images integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: Call using miyagiAPI:
+#   miyagiAPI.post('/endpoint', { ...params })
+#   miyagiAPI.get('/endpoint', { ...params })
+
+tools:
+
+  generate_image:
+    method: POST
+    endpoint: /generate-image
+    description: "Generate image from prompt (async)"
+    input_schema:
+      type: object
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+        reference_images:
+          type: array
+          items:
+            type: string
+      required:
+        - prompt
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            imageUrls:
+              type: array
+              items:
+                type: string
+            taskId:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  generate_image_classic:
+    method: POST
+    endpoint: /generate-image-classic
+    description: "Generate image from text with full parameter control (classic fast model)"
+    input_schema:
+      type: object
+      properties:
+        prompt:
+          type: string
+          minLength: 3
+        negative_prompt:
+          type: string
+          minLength: 3
+        styling:
+          type: object
+          properties:
+            style:
+              type: string
+              enum:
+                - photo
+                - digital-art
+                - 3d
+                - painting
+                - low-poly
+                - pixel-art
+                - anime
+                - cyberpunk
+                - comic
+                - vintage
+                - cartoon
+                - vector
+                - studio-shot
+                - dark
+                - sketch
+                - mockup
+                - 2000s-pone
+                - 70s-vibe
+                - watercolor
+                - art-nouveau
+                - origami
+                - surreal
+                - fantasy
+                - traditional-japan
+            colors:
+              type: array
+              items:
+                type: object
+                properties:
+                  color:
+                    type: string
+                    pattern: "^#[0-9A-Fa-f]{6}$"
+                  weight:
+                    type: number
+                    minimum: 0.05
+                    maximum: 1
+                required:
+                  - color
+                  - weight
+                additionalProperties: false
+              minItems: 1
+              maxItems: 5
+            effects:
+              type: object
+              properties:
+                color:
+                  type: string
+                  enum:
+                    - b&w
+                    - pastel
+                    - sepia
+                    - dramatic
+                    - vibrant
+                    - orange&teal
+                    - film-filter
+                    - split
+                    - electric
+                    - pastel-pink
+                    - gold-glow
+                    - autumn
+                    - muted-green
+                    - deep-teal
+                    - duotone
+                    - terracotta&teal
+                    - red&blue
+                    - cold-neon
+                    - burgundy&blue
+                lightning:
+                  type: string
+                  enum:
+                    - studio
+                    - warm
+                    - cinematic
+                    - volumetric
+                    - golden-hour
+                    - long-exposure
+                    - cold
+                    - iridescent
+                    - dramatic
+                    - hardlight
+                    - redscale
+                    - indoor-light
+                framing:
+                  type: string
+                  enum:
+                    - portrait
+                    - macro
+                    - panoramic
+                    - aerial-view
+                    - close-up
+                    - cinematic
+                    - high-angle
+                    - low-angle
+                    - symmetry
+                    - fish-eye
+                    - first-person
+              additionalProperties: false
+          additionalProperties: false
+        guidance_scale:
+          type: number
+          minimum: 0
+          maximum: 2
+        image:
+          type: object
+          properties:
+            size:
+              type: string
+              enum:
+                - square_1_1
+                - classic_4_3
+                - traditional_3_4
+                - widescreen_16_9
+                - social_story_9_16
+                - smartphone_horizontal_20_9
+                - smartphone_vertical_9_20
+                - standard_3_2
+                - portrait_2_3
+                - horizontal_2_1
+                - vertical_1_2
+                - social_5_4
+                - social_post_4_5
+          additionalProperties: false
+        num_images:
+          type: integer
+          minimum: 1
+          maximum: 4
+        seed:
+          type: integer
+          minimum: 0
+          maximum: 1000000
+        filter_nsfw:
+          type: boolean
+      required:
+        - prompt
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            images:
+              type: array
+              items:
+                type: object
+                properties:
+                  base64:
+                    type: string
+                  has_nsfw:
+                    type: boolean
+                required:
+                  - base64
+                  - has_nsfw
+                additionalProperties: false
+            meta: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  generate_image_mystic:
+    method: POST
+    endpoint: /generate-image-mystic
+    description: "Generate ultra-realistic, high-resolution images using Freepik Mystic model"
+    input_schema:
+      type: object
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+        webhook_url:
+          type: string
+          format: uri
+        structure_reference:
+          type: string
+        structure_strength:
+          type: integer
+          minimum: 0
+          maximum: 100
+        style_reference:
+          type: string
+        adherence:
+          type: integer
+          minimum: 0
+          maximum: 100
+        hdr:
+          type: integer
+          minimum: 0
+          maximum: 100
+        resolution:
+          type: string
+          enum:
+            - 1k
+            - 2k
+            - 4k
+        aspect_ratio:
+          type: string
+          enum:
+            - square_1_1
+            - classic_4_3
+            - traditional_3_4
+            - widescreen_16_9
+            - social_story_9_16
+            - smartphone_horizontal_20_9
+            - smartphone_vertical_9_20
+            - standard_3_2
+            - portrait_2_3
+            - horizontal_2_1
+            - vertical_1_2
+            - social_5_4
+            - social_post_4_5
+        model:
+          type: string
+          enum:
+            - realism
+            - fluid
+            - zen
+            - flexible
+            - super_real
+            - editorial_portraits
+        creative_detailing:
+          type: integer
+          minimum: 0
+          maximum: 100
+        engine:
+          type: string
+          enum:
+            - automatic
+            - magnific_illusio
+            - magnific_sharpy
+            - magnific_sparkle
+        fixed_generation:
+          type: boolean
+        filter_nsfw:
+          type: boolean
+        styling:
+          type: object
+          properties:
+            styles:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  strength:
+                    type: integer
+                    minimum: 0
+                    maximum: 100
+                required:
+                  - name
+                  - strength
+                additionalProperties: false
+              maxItems: 1
+            characters:
+              type: array
+              items:
+                type: object
+                properties:
+                  strength:
+                    type: integer
+                    minimum: 0
+                    maximum: 100
+                  id:
+                    type: string
+                required:
+                  - strength
+                  - id
+                additionalProperties: false
+              maxItems: 1
+            colors:
+              type: array
+              items:
+                type: object
+                properties:
+                  color:
+                    type: string
+                    pattern: "^#[0-9A-Fa-f]{6}$"
+                  weight:
+                    type: number
+                    minimum: 0
+                    maximum: 1
+                required:
+                  - color
+                  - weight
+                additionalProperties: false
+              minItems: 1
+              maxItems: 5
+          additionalProperties: false
+      required:
+        - prompt
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            imageUrls:
+              type: array
+              items:
+                type: string
+            taskId:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  generate_image_flux_dev:
+    method: POST
+    endpoint: /generate-image-flux-dev
+    description: "Generate images using Freepik Flux Dev model"
+    input_schema:
+      type: object
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+        webhook_url:
+          type: string
+          format: uri
+        aspect_ratio:
+          type: string
+          enum:
+            - square_1_1
+            - classic_4_3
+            - traditional_3_4
+            - widescreen_16_9
+            - social_story_9_16
+            - standard_3_2
+            - portrait_2_3
+            - horizontal_2_1
+            - vertical_1_2
+            - social_post_4_5
+        styling:
+          type: object
+          properties:
+            effects:
+              type: object
+              properties:
+                color:
+                  type: string
+                framing:
+                  type: string
+                lightning:
+                  type: string
+              additionalProperties: false
+            colors:
+              type: array
+              items:
+                type: object
+                properties:
+                  color:
+                    type: string
+                    pattern: "^#[0-9A-Fa-f]{6}$"
+                  weight:
+                    type: number
+                    minimum: 0
+                    maximum: 1
+                required:
+                  - color
+                  - weight
+                additionalProperties: false
+              minItems: 1
+              maxItems: 5
+          additionalProperties: false
+        seed:
+          type: integer
+          minimum: 1
+          maximum: 4294967295
+      required:
+        - prompt
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            imageUrls:
+              type: array
+              items:
+                type: string
+            base64Images:
+              type: array
+              items:
+                type: string
+            taskId:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  generate_image_flux_pro:
+    method: POST
+    endpoint: /generate-image-flux-pro
+    description: "Generate images using Freepik Flux Pro v1.1 model"
+    input_schema:
+      type: object
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+        prompt_upsampling:
+          type: boolean
+        seed:
+          anyOf:
+            - 
+              type: integer
+            - 
+              type: null
+        aspect_ratio:
+          type: string
+          enum:
+            - square_1_1
+            - classic_4_3
+            - traditional_3_4
+            - widescreen_16_9
+            - social_story_9_16
+            - standard_3_2
+            - portrait_2_3
+            - horizontal_2_1
+            - vertical_1_2
+            - social_post_4_5
+        safety_tolerance:
+          type: integer
+          minimum: 0
+          maximum: 6
+        output_format:
+          anyOf:
+            - 
+              type: string
+              enum:
+                - jpeg
+                - png
+            - 
+              type: null
+        webhook_url:
+          type: string
+          format: uri
+      required:
+        - prompt
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            imageUrls:
+              type: array
+              items:
+                type: string
+            base64Images:
+              type: array
+              items:
+                type: string
+            taskId:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  generate_image_hyperflux:
+    method: POST
+    endpoint: /generate-image-hyperflux
+    description: "Generate images using Freepik Hyperflux model"
+    input_schema:
+      type: object
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+        webhook_url:
+          type: string
+          format: uri
+        aspect_ratio:
+          type: string
+          enum:
+            - square_1_1
+            - classic_4_3
+            - traditional_3_4
+            - widescreen_16_9
+            - social_story_9_16
+            - standard_3_2
+            - portrait_2_3
+            - horizontal_2_1
+            - vertical_1_2
+            - social_post_4_5
+        styling:
+          type: object
+          properties:
+            effects:
+              type: object
+              properties:
+                color:
+                  type: string
+                framing:
+                  type: string
+                lightning:
+                  type: string
+              additionalProperties: false
+            colors:
+              type: array
+              items:
+                type: object
+                properties:
+                  color:
+                    type: string
+                    pattern: "^#[0-9A-Fa-f]{6}$"
+                  weight:
+                    type: number
+                    minimum: 0
+                    maximum: 1
+                required:
+                  - color
+                  - weight
+                additionalProperties: false
+              minItems: 1
+              maxItems: 5
+          additionalProperties: false
+        seed:
+          type: integer
+          minimum: 1
+          maximum: 4294967295
+      required:
+        - prompt
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            imageUrls:
+              type: array
+              items:
+                type: string
+            base64Images:
+              type: array
+              items:
+                type: string
+            taskId:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  generate_image_seedream:
+    method: POST
+    endpoint: /generate-image-seedream
+    description: "Generate images using Freepik Seedream v3 model"
+    input_schema:
+      type: object
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+        webhook_url:
+          type: string
+          format: uri
+        aspect_ratio:
+          type: string
+          enum:
+            - square_1_1
+            - widescreen_16_9
+            - social_story_9_16
+            - portrait_2_3
+            - traditional_3_4
+            - standard_3_2
+            - classic_4_3
+        guidance_scale:
+          type: number
+          minimum: 0
+          maximum: 20
+        seed:
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+      required:
+        - prompt
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            imageUrls:
+              type: array
+              items:
+                type: string
+            base64Images:
+              type: array
+              items:
+                type: string
+            taskId:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  generate_image_seedream_v4:
+    method: POST
+    endpoint: /generate-image-seedream-v4
+    description: "Generate images using Freepik Seedream v4 model"
+    input_schema:
+      type: object
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+        webhook_url:
+          type: string
+          format: uri
+        aspect_ratio:
+          type: string
+          enum:
+            - square_1_1
+            - widescreen_16_9
+            - social_story_9_16
+            - portrait_2_3
+            - traditional_3_4
+            - standard_3_2
+            - classic_4_3
+        guidance_scale:
+          type: number
+          minimum: 0
+          maximum: 20
+        seed:
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+      required:
+        - prompt
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            imageUrls:
+              type: array
+              items:
+                type: string
+            base64Images:
+              type: array
+              items:
+                type: string
+            taskId:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  generate_image_gpt:
+    method: POST
+    endpoint: /generate-image-gpt
+    description: "Generate images using OpenAI GPT Image models (gpt-image-1.5, gpt-image-1, gpt-image-1-mini)"
+    input_schema:
+      type: object
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+        model:
+          type: string
+          enum:
+            - gpt-image-1.5
+            - gpt-image-1
+            - gpt-image-1-mini
+          default: "gpt-image-1"
+        n:
+          type: integer
+          minimum: 1
+          maximum: 4
+          default: 1
+        size:
+          type: string
+          enum:
+            - 1024x1024
+            - 1536x1024
+            - 1024x1536
+            - auto
+          default: 1024x1024
+        quality:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+            - auto
+          default: auto
+      required:
+        - prompt
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            base64Images:
+              type: array
+              items:
+                type: string
+            usage:
+              type: object
+              properties:
+                inputTokens:
+                  type: number
+                outputTokens:
+                  type: number
+                totalTokens:
+                  type: number
+              required:
+                - inputTokens
+                - outputTokens
+                - totalTokens
+              additionalProperties: false
+            cost:
+              type: object
+              properties:
+                billingUnits:
+                  type: number
+                unitCost:
+                  type: number
+                totalCost:
+                  type: number
+                breakdown:
+                  type: object
+                  additionalProperties: {}
+              required:
+                - billingUnits
+                - unitCost
+                - totalCost
+                - breakdown
+              additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  remove_background:
+    method: POST
+    endpoint: /remove-background
+    description: "Remove background from image"
+    input_schema:
+      type: object
+      properties:
+        image_url:
+          type: string
+          format: uri
+      required:
+        - image_url
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            originalUrl:
+              type: string
+            processedUrl:
+              type: string
+            previewUrl:
+              type: string
+            highResUrl:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  upscale_image:
+    method: POST
+    endpoint: /upscale-image
+    description: "Precision upscale an image"
+    input_schema:
+      type: object
+      properties:
+        image:
+          type: string
+          minLength: 1
+        webhook_url:
+          type: string
+          format: uri
+        sharpen:
+          type: integer
+          minimum: 0
+          maximum: 100
+        smart_grain:
+          type: integer
+          minimum: 0
+          maximum: 100
+        ultra_detail:
+          type: integer
+          minimum: 0
+          maximum: 100
+        target_resolution:
+          type: string
+          enum:
+            - 1k-2k
+            - 2k-4k
+            - 4k-8k
+            - 5k-10k
+      required:
+        - image
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            taskId:
+              type: string
+            status:
+              type: string
+            generatedUrls:
+              type: array
+              items:
+                type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  upscale_status_taskId:
+    method: POST
+    endpoint: /upscale-status/{taskId}
+    description: "Get upscaling task status"
+    input_schema:
+      type: object
+      properties:
+        taskId:
+          type: string
+          minLength: 1
+      required:
+        - taskId
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            status:
+              type: string
+            generatedUrls:
+              type: array
+              items:
+                type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  upscale_tasks:
+    method: GET
+    endpoint: /upscale-tasks
+    description: "List upscaling tasks"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            tasks:
+              type: array
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  relight_image:
+    method: POST
+    endpoint: /relight-image
+    description: "Relight an image"
+    input_schema:
+      type: object
+      properties:
+        image:
+          type: string
+          minLength: 1
+        webhook_url:
+          type: string
+          format: uri
+        prompt:
+          type: string
+        transfer_light_from_reference_image:
+          type: string
+        transfer_light_from_lightmap:
+          type: string
+        light_transfer_strength:
+          type: integer
+          minimum: 0
+          maximum: 100
+        interpolate_from_original:
+          type: boolean
+        change_background:
+          type: boolean
+        style:
+          type: string
+          enum:
+            - standard
+            - darker_but_realistic
+            - clean
+            - smooth
+            - brighter
+            - contrasted_n_hdr
+            - just_composition
+        preserve_details:
+          type: boolean
+        advanced_settings: {}
+      required:
+        - image
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            taskId:
+              type: string
+            status:
+              type: string
+            generatedUrls:
+              type: array
+              items:
+                type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  relight_status_taskId:
+    method: POST
+    endpoint: /relight-status/{taskId}
+    description: "Get relighting task status"
+    input_schema:
+      type: object
+      properties:
+        taskId:
+          type: string
+          minLength: 1
+      required:
+        - taskId
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            status:
+              type: string
+            generatedUrls:
+              type: array
+              items:
+                type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  relight_tasks:
+    method: GET
+    endpoint: /relight-tasks
+    description: "List relighting tasks"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            tasks:
+              type: array
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  style_transfer_image:
+    method: POST
+    endpoint: /style-transfer-image
+    description: "Style transfer from a reference image"
+    input_schema:
+      type: object
+      properties:
+        image:
+          type: string
+          minLength: 1
+        reference_image:
+          type: string
+          minLength: 1
+        webhook_url:
+          type: string
+          format: uri
+        prompt:
+          type: string
+        style_strength:
+          type: integer
+          minimum: 0
+          maximum: 100
+        structure_strength:
+          type: integer
+          minimum: 0
+          maximum: 100
+        is_portrait:
+          type: boolean
+        portrait_style:
+          type: string
+          enum:
+            - standard
+            - pop
+            - super_pop
+        portrait_beautifier:
+          type: string
+          enum:
+            - beautify_face
+            - beautify_face_max
+        flavor:
+          type: string
+          enum:
+            - faithful
+            - gen_z
+            - psychedelia
+            - detaily
+            - clear
+            - donotstyle
+            - donotstyle_sharp
+        engine:
+          type: string
+          enum:
+            - balanced
+            - definio
+            - illusio
+            - 3d_cartoon
+            - colorful_anime
+            - caricature
+            - real
+            - super_real
+            - softy
+        fixed_generation:
+          type: boolean
+      required:
+        - image
+        - reference_image
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            taskId:
+              type: string
+            status:
+              type: string
+            generatedUrls:
+              type: array
+              items:
+                type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  expand_image:
+    method: POST
+    endpoint: /expand-image
+    description: "Outpaint/expand an image"
+    input_schema:
+      type: object
+      properties:
+        image:
+          type: string
+          minLength: 1
+        webhook_url:
+          type: string
+          format: uri
+        prompt:
+          type: string
+        left:
+          type: integer
+          minimum: 0
+          maximum: 2048
+        right:
+          type: integer
+          minimum: 0
+          maximum: 2048
+        top:
+          type: integer
+          minimum: 0
+          maximum: 2048
+        bottom:
+          type: integer
+          minimum: 0
+          maximum: 2048
+      required:
+        - image
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            taskId:
+              type: string
+            status:
+              type: string
+            generatedUrls:
+              type: array
+              items:
+                type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  search_icons:
+    method: POST
+    endpoint: /search-icons
+    description: "Search Freepik icons"
+    input_schema:
+      type: object
+      properties:
+        term:
+          type: string
+          minLength: 1
+        page:
+          type: integer
+          minimum: 1
+        per_page:
+          type: integer
+          minimum: 1
+          maximum: 100
+        family_id:
+          type: integer
+        order:
+          type: string
+          enum:
+            - relevance
+            - recent
+        thumbnail_size:
+          type: string
+      required:
+        - term
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            icons:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  name:
+                    type: string
+                  style:
+                    type: string
+                  thumbnail:
+                    type: string
+                  free_svg:
+                    type: boolean
+                required:
+                  - id
+                  - name
+                additionalProperties: false
+            total:
+              type: number
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  download_icon:
+    method: POST
+    endpoint: /download-icon
+    description: "Download a Freepik icon"
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: integer
+        format:
+          type: string
+          enum:
+            - svg
+            - png
+      required:
+        - id
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            downloadUrl:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  search_stock_images:
+    method: POST
+    endpoint: /search-stock-images
+    description: "Search stock images"
+    input_schema:
+      type: object
+      properties:
+        term:
+          type: string
+          minLength: 1
+        page:
+          type: integer
+          minimum: 1
+        per_page:
+          type: integer
+          minimum: 1
+          maximum: 100
+        order:
+          type: string
+          enum:
+            - relevance
+            - recent
+            - popular
+        orientation:
+          type: string
+          enum:
+            - horizontal
+            - vertical
+            - square
+        category:
+          type: string
+        color:
+          type: string
+        min_width:
+          type: integer
+        min_height:
+          type: integer
+        premium:
+          type: boolean
+      required:
+        - term
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            images:
+              type: array
+            pagination: {}
+            total:
+              type: number
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  search_stock_videos:
+    method: POST
+    endpoint: /search-stock-videos
+    description: "Search stock videos"
+    input_schema:
+      type: object
+      properties:
+        term:
+          type: string
+          minLength: 1
+        page:
+          type: integer
+          minimum: 1
+        order:
+          type: string
+          enum:
+            - relevance
+            - recent
+            - popular
+        orientation:
+          type: string
+          enum:
+            - horizontal
+            - vertical
+            - square
+        category:
+          type: string
+        duration:
+          type: string
+          enum:
+            - short
+            - medium
+            - long
+        fps:
+          type: integer
+        premium:
+          type: boolean
+      required:
+        - term
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            videos:
+              type: array
+            pagination: {}
+            total:
+              type: number
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  download_stock_image:
+    method: POST
+    endpoint: /download-stock-image
+    description: "Download a stock image"
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: integer
+        size:
+          type: string
+          enum:
+            - small
+            - medium
+            - large
+            - xl
+      required:
+        - id
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            downloadUrl:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  download_stock_video:
+    method: POST
+    endpoint: /download-stock-video
+    description: "Download a stock video"
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: integer
+      required:
+        - id
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            downloadUrl:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

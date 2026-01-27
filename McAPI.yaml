@@ -1,0 +1,684 @@
+# miyagi-integrations
+# Auto-generated summary - see integrations/*.yaml for full specs
+
+# USAGE: Call using miyagiAPI:
+#   miyagiAPI.post('/endpoint', { ...params })
+#   miyagiAPI.get('/endpoint', { ...params })
+
+# Full endpoint specifications are in integrations/*.yaml
+# This file contains names and descriptions for quick reference
+# To use an endpoint, look up its full spec in the category file
+
+categories:
+  amazon:
+    file: integrations/amazon.yaml
+    endpoint_count: 1
+    endpoints:
+      - name: amazon_search
+        method: POST
+        endpoint: /amazon-search
+        description: "Search Amazon products"
+  audio:
+    file: integrations/audio.yaml
+    endpoint_count: 2
+    endpoints:
+      - name: text_to_speech
+        method: POST
+        endpoint: /text-to-speech
+        description: "Convert text to speech audio"
+      - name: speech_to_text
+        method: POST
+        endpoint: /speech-to-text
+        description: "Transcribe speech audio to text"
+  calendar:
+    file: integrations/calendar.yaml
+    endpoint_count: 2
+    endpoints:
+      - name: google_calendar_events
+        method: GET
+        endpoint: /google-calendar-events
+        description: "List Google Calendar events within a time range"
+      - name: google_calendar_create_events
+        method: POST
+        endpoint: /google-calendar-create-events
+        description: "Create events on the user's Google Calendar"
+  document:
+    file: integrations/document.yaml
+    endpoint_count: 3
+    endpoints:
+      - name: convert_file
+        method: POST
+        endpoint: /convert-file
+        description: "Convert a file by URL or base64"
+      - name: extract_document_text
+        method: POST
+        endpoint: /extract-document-text
+        description: "Extract text from a PDF or Word document (base64 input)"
+      - name: generate_tasks_from_document
+        method: POST
+        endpoint: /generate-tasks-from-document
+        description: "Generate structured travel tasks from extracted document text"
+  formula1:
+    file: integrations/formula1.yaml
+    endpoint_count: 13
+    endpoints:
+      - name: f1_season_schedule
+        method: POST
+        endpoint: /f1-season-schedule
+        description: "Get complete F1 season schedule with all race dates, circuits, and session times for a given year"
+      - name: f1_race_weekend
+        method: POST
+        endpoint: /f1-race-weekend
+        description: "Get complete race weekend data including qualifying, sprint (if applicable), and race results for a specific Grand Prix"
+      - name: f1_latest_race
+        method: POST
+        endpoint: /f1-latest-race
+        description: "Get the most recent completed F1 race with full results and race information"
+      - name: f1_lap_times
+        method: POST
+        endpoint: /f1-lap-times
+        description: "Get all lap-by-lap timing data for a race. Returns lap times organized by driver with position tracking throughout the race."
+      - name: f1_pit_stops
+        method: POST
+        endpoint: /f1-pit-stops
+        description: "Get all pit stop data for a race including stop number, lap, duration, and timestamp for each driver"
+      - name: f1_driver_standings
+        method: POST
+        endpoint: /f1-driver-standings
+        description: "Get current driver championship standings with points, wins, and positions"
+      - name: f1_constructor_standings
+        method: POST
+        endpoint: /f1-constructor-standings
+        description: "Get current constructor (team) championship standings with points and wins"
+      - name: f1_qualifying
+        method: POST
+        endpoint: /f1-qualifying
+        description: "Get qualifying session results showing Q1, Q2, and Q3 times for all drivers"
+      - name: f1_sprint
+        method: POST
+        endpoint: /f1-sprint
+        description: "Get sprint race results. Returns empty array if the race weekend did not include a sprint race."
+      - name: f1_race_results
+        method: POST
+        endpoint: /f1-race-results
+        description: "Get final race classification with finishing positions, points, fastest laps, and status"
+      - name: f1_all_drivers
+        method: POST
+        endpoint: /f1-all-drivers
+        description: "Get complete list of all drivers who competed in a specific F1 season"
+      - name: f1_all_constructors
+        method: POST
+        endpoint: /f1-all-constructors
+        description: "Get complete list of all constructor teams that competed in a specific F1 season"
+      - name: f1_circuit_info
+        method: POST
+        endpoint: /f1-circuit-info
+        description: "Get detailed information about a specific F1 circuit including location, coordinates, and full name"
+  github:
+    file: integrations/github.yaml
+    endpoint_count: 18
+    endpoints:
+      - name: github_get_user
+        method: POST
+        endpoint: /github-get-user
+        description: "Get authenticated GitHub user"
+      - name: github_get_user_repos
+        method: POST
+        endpoint: /github-get-user-repos
+        description: "Get authenticated user repositories"
+      - name: github_get_public_user
+        method: POST
+        endpoint: /github-get-public-user
+        description: "Get public GitHub user"
+      - name: github_get_user_public_repos
+        method: POST
+        endpoint: /github-get-user-public-repos
+        description: "Get public repos for a GitHub user"
+      - name: github_get_repository
+        method: POST
+        endpoint: /github-get-repository
+        description: "Get repository information"
+      - name: github_get_repository_commits
+        method: POST
+        endpoint: /github-get-repository-commits
+        description: "Get repository commits"
+      - name: github_get_repository_issues
+        method: POST
+        endpoint: /github-get-repository-issues
+        description: "Get repository issues"
+      - name: github_search_repositories
+        method: POST
+        endpoint: /github-search-repositories
+        description: "Search GitHub repositories"
+      - name: github_get_repository_tree
+        method: POST
+        endpoint: /github-get-repository-tree
+        description: "Get repository file tree structure (recursive)"
+      - name: github_get_repository_contents
+        method: POST
+        endpoint: /github-get-repository-contents
+        description: "Get file or directory contents from a repository"
+      - name: github_get_repository_languages
+        method: POST
+        endpoint: /github-get-repository-languages
+        description: "Get language breakdown for a repository"
+      - name: github_get_repository_readme
+        method: POST
+        endpoint: /github-get-repository-readme
+        description: "Get the README file for a repository"
+      - name: github_get_repository_pulls
+        method: POST
+        endpoint: /github-get-repository-pulls
+        description: "List pull requests for a repository"
+      - name: github_get_pull_request
+        method: POST
+        endpoint: /github-get-pull-request
+        description: "Get a single pull request with full details"
+      - name: github_get_pull_request_reviews
+        method: POST
+        endpoint: /github-get-pull-request-reviews
+        description: "Get reviews for a pull request"
+      - name: github_get_pull_request_files
+        method: POST
+        endpoint: /github-get-pull-request-files
+        description: "Get files changed in a pull request"
+      - name: github_get_repository_contributors
+        method: POST
+        endpoint: /github-get-repository-contributors
+        description: "Get repository contributors with commit counts"
+      - name: github_get_commit
+        method: POST
+        endpoint: /github-get-commit
+        description: "Get a single commit with stats (additions, deletions, files)"
+  gmail:
+    file: integrations/gmail.yaml
+    endpoint_count: 11
+    endpoints:
+      - name: gmail_onboarding
+        method: POST
+        endpoint: /gmail-onboarding
+        description: "Get Gmail onboarding OAuth URL with all permissions"
+      - name: gmail_reply
+        method: POST
+        endpoint: /gmail-reply
+        description: "Reply to Gmail thread"
+      - name: send_email
+        method: POST
+        endpoint: /send-email
+        description: "Send email via Gmail"
+      - name: status
+        method: GET
+        endpoint: /status
+        description: "Check connection status"
+      - name: google_auth_url
+        method: GET
+        endpoint: /google-auth-url
+        description: "Get OAuth URL for Google"
+      - name: google_disconnect
+        method: DELETE
+        endpoint: /google-disconnect
+        description: "Disconnect Google integration"
+      - name: google_contacts
+        method: GET
+        endpoint: /google-contacts
+        description: "Fetch Google contacts"
+      - name: drive_upload
+        method: POST
+        endpoint: /drive-upload
+        description: "Upload file to Google Drive"
+      - name: drive_list
+        method: GET
+        endpoint: /drive-list
+        description: "List files in Google Drive"
+      - name: drive_download
+        method: GET
+        endpoint: /drive-download
+        description: "Download file from Google Drive"
+      - name: drive_delete
+        method: DELETE
+        endpoint: /drive-delete
+        description: "Delete file from Google Drive"
+  images:
+    file: integrations/images.yaml
+    endpoint_count: 24
+    endpoints:
+      - name: generate_image
+        method: POST
+        endpoint: /generate-image
+        description: "Generate image from prompt (async)"
+      - name: generate_image_classic
+        method: POST
+        endpoint: /generate-image-classic
+        description: "Generate image from text with full parameter control (classic fast model)"
+      - name: generate_image_mystic
+        method: POST
+        endpoint: /generate-image-mystic
+        description: "Generate ultra-realistic, high-resolution images using Freepik Mystic model"
+      - name: generate_image_flux_dev
+        method: POST
+        endpoint: /generate-image-flux-dev
+        description: "Generate images using Freepik Flux Dev model"
+      - name: generate_image_flux_pro
+        method: POST
+        endpoint: /generate-image-flux-pro
+        description: "Generate images using Freepik Flux Pro v1.1 model"
+      - name: generate_image_hyperflux
+        method: POST
+        endpoint: /generate-image-hyperflux
+        description: "Generate images using Freepik Hyperflux model"
+      - name: generate_image_seedream
+        method: POST
+        endpoint: /generate-image-seedream
+        description: "Generate images using Freepik Seedream v3 model"
+      - name: generate_image_seedream_v4
+        method: POST
+        endpoint: /generate-image-seedream-v4
+        description: "Generate images using Freepik Seedream v4 model"
+      - name: generate_image_gpt
+        method: POST
+        endpoint: /generate-image-gpt
+        description: "Generate images using OpenAI GPT Image models (gpt-image-1.5, gpt-image-1, gpt-image-1-mini)"
+      - name: remove_background
+        method: POST
+        endpoint: /remove-background
+        description: "Remove background from image"
+      - name: upscale_image
+        method: POST
+        endpoint: /upscale-image
+        description: "Precision upscale an image"
+      - name: upscale_status_taskId
+        method: POST
+        endpoint: /upscale-status/:taskId
+        description: "Get upscaling task status"
+      - name: upscale_tasks
+        method: GET
+        endpoint: /upscale-tasks
+        description: "List upscaling tasks"
+      - name: relight_image
+        method: POST
+        endpoint: /relight-image
+        description: "Relight an image"
+      - name: relight_status_taskId
+        method: POST
+        endpoint: /relight-status/:taskId
+        description: "Get relighting task status"
+      - name: relight_tasks
+        method: GET
+        endpoint: /relight-tasks
+        description: "List relighting tasks"
+      - name: style_transfer_image
+        method: POST
+        endpoint: /style-transfer-image
+        description: "Style transfer from a reference image"
+      - name: expand_image
+        method: POST
+        endpoint: /expand-image
+        description: "Outpaint/expand an image"
+      - name: search_icons
+        method: POST
+        endpoint: /search-icons
+        description: "Search Freepik icons"
+      - name: download_icon
+        method: POST
+        endpoint: /download-icon
+        description: "Download a Freepik icon"
+      - name: search_stock_images
+        method: POST
+        endpoint: /search-stock-images
+        description: "Search stock images"
+      - name: search_stock_videos
+        method: POST
+        endpoint: /search-stock-videos
+        description: "Search stock videos"
+      - name: download_stock_image
+        method: POST
+        endpoint: /download-stock-image
+        description: "Download a stock image"
+      - name: download_stock_video
+        method: POST
+        endpoint: /download-stock-video
+        description: "Download a stock video"
+  internal:
+    file: integrations/internal.yaml
+    endpoint_count: 3
+    endpoints:
+      - name: usage
+        method: GET
+        endpoint: /usage
+        description: "Get user integration spending summary"
+      - name: get_canvas_users
+        method: POST
+        endpoint: /get-canvas-users
+        description: "List users for a canvas room"
+      - name: get_current_user
+        method: POST
+        endpoint: /get-current-user
+        description: "Get current authenticated user"
+  linkedin:
+    file: integrations/linkedin.yaml
+    endpoint_count: 4
+    endpoints:
+      - name: linkedin_search_profiles
+        method: POST
+        endpoint: /linkedin-search-profiles
+        description: "Search LinkedIn profiles"
+      - name: linkedin_analyze_profiles
+        method: POST
+        endpoint: /linkedin-analyze-profiles
+        description: "Analyze LinkedIn profiles for outreach"
+      - name: linkedin_generate_messages
+        method: POST
+        endpoint: /linkedin-generate-messages
+        description: "Generate LinkedIn outreach messages"
+      - name: linkedin_analyze_profile_url
+        method: POST
+        endpoint: /linkedin-analyze-profile-url
+        description: "Analyze LinkedIn profile from URL"
+  market:
+    file: integrations/market.yaml
+    endpoint_count: 3
+    endpoints:
+      - name: search_market_symbols
+        method: POST
+        endpoint: /search-market-symbols
+        description: "Search stock market symbols"
+      - name: search_stocks
+        method: POST
+        endpoint: /search-stocks
+        description: "Search stocks (alias of market symbols)"
+      - name: search_crypto
+        method: POST
+        endpoint: /search-crypto
+        description: "Search cryptocurrencies"
+  nasa:
+    file: integrations/nasa.yaml
+    endpoint_count: 7
+    endpoints:
+      - name: nasa_apod
+        method: POST
+        endpoint: /nasa-apod
+        description: "Get NASA Astronomy Picture of the Day. Supports single date, date range, or random count."
+      - name: nasa_donki_cme
+        method: POST
+        endpoint: /nasa-donki-cme
+        description: "Get NASA DONKI Coronal Mass Ejection (CME) data. startDate defaults to 30 days prior, endDate defaults to current UTC date."
+      - name: nasa_donki_gst
+        method: POST
+        endpoint: /nasa-donki-gst
+        description: "Get NASA DONKI Geomagnetic Storm (GST) data. startDate defaults to 30 days prior, endDate defaults to current UTC date."
+      - name: nasa_donki_flr
+        method: POST
+        endpoint: /nasa-donki-flr
+        description: "Get NASA DONKI Solar Flare (FLR) data. startDate defaults to 30 days prior, endDate defaults to current UTC date."
+      - name: nasa_neows_feed
+        method: POST
+        endpoint: /nasa-neows-feed
+        description: "Get NASA NeoWs (Near-Earth Objects) Feed. Retrieves asteroids based on closest approach date to Earth. endDate defaults to 7 days after startDate."
+      - name: nasa_neows_lookup
+        method: POST
+        endpoint: /nasa-neows-lookup
+        description: "Lookup a specific Near-Earth Object by its NASA JPL small body (SPK-ID) ID"
+      - name: nasa_neows_browse
+        method: POST
+        endpoint: /nasa-neows-browse
+        description: "Browse the overall Near-Earth Objects data-set"
+  news:
+    file: integrations/news.yaml
+    endpoint_count: 2
+    endpoints:
+      - name: news_top_headlines
+        method: POST
+        endpoint: /news-top-headlines
+        description: "Get top headlines"
+      - name: news_search
+        method: POST
+        endpoint: /news-search
+        description: "Search news articles"
+  polymarket:
+    file: integrations/polymarket.yaml
+    endpoint_count: 12
+    endpoints:
+      - name: polymarket_events
+        method: GET
+        endpoint: /polymarket-events
+        description: "Get prediction market events from Polymarket. Events group related markets (e.g., \"2024 Election\" contains multiple questions). Returns event details with volume, liquidity, active status, and all associated markets."
+      - name: polymarket_event_by_id
+        method: GET
+        endpoint: /polymarket-event-by-id
+        description: "Get detailed information for a single Polymarket event including title, description, dates, total volume/liquidity, and all associated prediction markets"
+      - name: polymarket_markets
+        method: GET
+        endpoint: /polymarket-markets
+        description: "Get prediction markets from Polymarket with filtering and pagination. Markets are individual questions with outcomes, current prices (probabilities), volume, and liquidity data"
+      - name: polymarket_market_by_id
+        method: GET
+        endpoint: /polymarket-market-by-id
+        description: "Get detailed information for a single prediction market including question, outcomes, current prices, volume, liquidity, and trading status"
+      - name: polymarket_tags
+        method: GET
+        endpoint: /polymarket-tags
+        description: "Get available categories/tags for filtering Polymarket events and markets"
+      - name: polymarket_search
+        method: GET
+        endpoint: /polymarket-search
+        description: "Full-text search for Polymarket events and markets by title, description, or keywords. Uses public-search endpoint. Returns matching events with their associated markets"
+      - name: polymarket_event_comments
+        method: GET
+        endpoint: /polymarket-event-comments
+        description: "Get community comments and discussion for a specific Polymarket event including content, timestamps, user profile, reactions, and engagement metrics"
+      - name: polymarket_price
+        method: GET
+        endpoint: /polymarket-price
+        description: "Get current price for a Polymarket outcome token. Prices represent market probability (0-1) for that outcome. Side parameter is required per Polymarket API docs."
+      - name: polymarket_prices
+        method: GET
+        endpoint: /polymarket-prices
+        description: "Get current prices for multiple Polymarket outcome tokens in batch. Uses POST /prices endpoint internally. Returns prices keyed by token_id with BUY/SELL nested values."
+      - name: polymarket_orderbook
+        method: GET
+        endpoint: /polymarket-orderbook
+        description: "Get orderbook depth showing all bids and asks for a Polymarket outcome token. Includes market metadata like min_order_size, tick_size, and neg_risk flag."
+      - name: polymarket_price_history
+        method: GET
+        endpoint: /polymarket-price-history
+        description: "Get historical price data for a Polymarket market showing how outcome probabilities changed over time. Returns time-series data with configurable intervals (1m to 1w)"
+      - name: polymarket_trades
+        method: GET
+        endpoint: /polymarket-trades
+        description: "Get recent trade history from Polymarket including trade size, price, side (buy/sell), timestamp, and transaction details. Supports filtering by market, user, side, and more."
+  scholar:
+    file: integrations/scholar.yaml
+    endpoint_count: 7
+    endpoints:
+      - name: scholar_search_authors
+        method: POST
+        endpoint: /scholar-search-authors
+        description: "Search Google Scholar authors"
+      - name: scholar_search_papers
+        method: POST
+        endpoint: /scholar-search-papers
+        description: "Search Google Scholar papers"
+      - name: scholar_get_author_papers
+        method: POST
+        endpoint: /scholar-get-author-papers
+        description: "Get papers by Google Scholar author"
+      - name: scholar_get_citation_details
+        method: POST
+        endpoint: /scholar-get-citation-details
+        description: "Get detailed citation information"
+      - name: scholar_summarize_papers
+        method: POST
+        endpoint: /scholar-summarize-papers
+        description: "Summarize selected papers using LLM"
+      - name: scholar_draft_email
+        method: POST
+        endpoint: /scholar-draft-email
+        description: "Draft outreach email using LLM"
+      - name: scholar_get_author_details
+        method: POST
+        endpoint: /scholar-get-author-details
+        description: "Get detailed author information"
+  search:
+    file: integrations/search.yaml
+    endpoint_count: 8
+    endpoints:
+      - name: search_web
+        method: POST
+        endpoint: /search-web
+        description: "Search web pages and get AI-summarized content with citations"
+      - name: search_web_raw
+        method: POST
+        endpoint: /search-web-raw
+        description: "Search web pages and return raw results without AI summarization (includes extracted text)"
+      - name: search_web_ai
+        method: POST
+        endpoint: /search-web-ai
+        description: "Search web pages and process results with ChatGPT using custom prompt"
+      - name: search_images
+        method: POST
+        endpoint: /search-images
+        description: "Search for images and return URLs with metadata"
+      - name: search_videos
+        method: POST
+        endpoint: /search-videos
+        description: "Search for videos and return URLs with metadata (duration, views, thumbnails)"
+      - name: search_pdfs
+        method: POST
+        endpoint: /search-pdfs
+        description: "Search for PDF documents and return URLs with metadata"
+      - name: search_academic
+        method: POST
+        endpoint: /search-academic
+        description: "Search academic/educational content (.edu domains) with AI-summarized results and citations"
+      - name: advanced_web_search
+        method: POST
+        endpoint: /advanced-web-search
+        description: "Advanced multi-modal web search with structured output for widgets"
+  submagic:
+    file: integrations/submagic.yaml
+    endpoint_count: 3
+    endpoints:
+      - name: submagic_create_video
+        method: POST
+        endpoint: /submagic-create-video
+        description: "Create SubMagic video (async)"
+      - name: submagic_get_project_projectId
+        method: POST
+        endpoint: /submagic-get-project/:projectId
+        description: "Get SubMagic project status"
+      - name: submagic_wait_for_completion_projectId
+        method: POST
+        endpoint: /submagic-wait-for-completion/:projectId
+        description: "Poll SubMagic project until completion"
+  text-generation:
+    file: integrations/text-generation.yaml
+    endpoint_count: 1
+    endpoints:
+      - name: generate_text
+        method: POST
+        endpoint: /generate-text
+        description: "Generate text with LLM"
+  tiktok:
+    file: integrations/tiktok.yaml
+    endpoint_count: 4
+    endpoints:
+      - name: tiktok_post_video
+        method: POST
+        endpoint: /tiktok-post-video
+        description: "Post a video to TikTok (sandbox)"
+      - name: tiktok_user_info
+        method: GET
+        endpoint: /tiktok-user-info
+        description: "Get TikTok user profile"
+      - name: tiktok_scheduled_posts
+        method: GET
+        endpoint: /tiktok-scheduled-posts
+        description: "List scheduled TikTok posts"
+      - name: tiktok_cancel_scheduled_postId
+        method: POST
+        endpoint: /tiktok-cancel-scheduled/:postId
+        description: "Cancel a scheduled TikTok post"
+  travel:
+    file: integrations/travel.yaml
+    endpoint_count: 5
+    endpoints:
+      - name: flights
+        method: GET
+        endpoint: /flights
+        description: "Search flights via SerpAPI Google Flights. Supports round-trip and one-way searches."
+      - name: serp_places
+        method: GET
+        endpoint: /serp-places
+        description: "Search places via SerpAPI Google Maps (attractions, restaurants, etc.)"
+      - name: serp_places_reviews
+        method: GET
+        endpoint: /serp-places-reviews
+        description: "Get reviews for a place via SerpAPI Google Maps"
+      - name: serp_hotels
+        method: GET
+        endpoint: /serp-hotels
+        description: "Search hotels via SerpAPI Google Hotels"
+      - name: serp_events
+        method: GET
+        endpoint: /serp-events
+        description: "Search events via SerpAPI Google Events"
+  video:
+    file: integrations/video.yaml
+    endpoint_count: 1
+    endpoints:
+      - name: generate_video
+        method: POST
+        endpoint: /generate-video
+        description: "Generate a video from an image and prompt"
+  weather:
+    file: integrations/weather.yaml
+    endpoint_count: 3
+    endpoints:
+      - name: geocode_city
+        method: POST
+        endpoint: /geocode-city
+        description: "Geocode a city name"
+      - name: current_weather
+        method: POST
+        endpoint: /current-weather
+        description: "Get current weather"
+      - name: weather_forecast
+        method: POST
+        endpoint: /weather-forecast
+        description: "Get 5-day forecast"
+  wikipedia:
+    file: integrations/wikipedia.yaml
+    endpoint_count: 4
+    endpoints:
+      - name: wikipedia_summary
+        method: POST
+        endpoint: /wikipedia-summary
+        description: "Get Wikipedia page summary"
+      - name: wikipedia_content
+        method: POST
+        endpoint: /wikipedia-content
+        description: "Get full page content (HTML)"
+      - name: wikipedia_search
+        method: POST
+        endpoint: /wikipedia-search
+        description: "Search Wikipedia articles"
+      - name: wikipedia_random
+        method: POST
+        endpoint: /wikipedia-random
+        description: "Get a random page"
+  youtube:
+    file: integrations/youtube.yaml
+    endpoint_count: 3
+    endpoints:
+      - name: youtube_search
+        method: POST
+        endpoint: /youtube-search
+        description: "Search YouTube videos"
+      - name: youtube_video_details
+        method: POST
+        endpoint: /youtube-video-details
+        description: "Get details for videos"
+      - name: youtube_trending
+        method: POST
+        endpoint: /youtube-trending
+        description: "Get trending videos"

@@ -1,0 +1,15 @@
+{
+  "id": "pdf-generator-react",
+  "name": "PDF Generator",
+  "description": "Create 8.5x11 documents with HTML pages and export to PDF",
+  "icon": {
+    "type": "react-icon",
+    "value": "Fi:FiFileText"
+  },
+  "category": "productivity",
+  "defaultSize": {
+    "width": 1000,
+    "height": 750
+  },
+  "screenshotUrl": "https://bucket-production-e0b5.up.railway.app/miyagi-images/widget-screenshots/system-pregenerated/pdf-generator-react-2025-12-28T19-15-05.png"
+}

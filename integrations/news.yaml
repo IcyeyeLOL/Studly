@@ -1,0 +1,215 @@
+# news integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: Call using miyagiAPI:
+#   miyagiAPI.post('/endpoint', { ...params })
+#   miyagiAPI.get('/endpoint', { ...params })
+
+tools:
+
+  news_top_headlines:
+    method: POST
+    endpoint: /news-top-headlines
+    description: "Get top headlines"
+    input_schema:
+      type: object
+      properties:
+        country:
+          type: string
+        category:
+          type: string
+          enum:
+            - business
+            - entertainment
+            - general
+            - health
+            - science
+            - sports
+            - technology
+        sources:
+          type: string
+        q:
+          type: string
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+        page:
+          type: integer
+          minimum: 1
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            headlines:
+              type: array
+              items:
+                type: string
+            articles:
+              type: array
+              items:
+                type: object
+                properties:
+                  source:
+                    type: object
+                    properties:
+                      id:
+                        type:
+                          - string
+                          - null
+                      name:
+                        type: string
+                    required:
+                      - id
+                      - name
+                    additionalProperties: false
+                  author:
+                    type:
+                      - string
+                      - null
+                  title:
+                    type: string
+                  description:
+                    type:
+                      - string
+                      - null
+                  url:
+                    type: string
+                  urlToImage:
+                    type:
+                      - string
+                      - null
+                  publishedAt:
+                    type: string
+                  content:
+                    type:
+                      - string
+                      - null
+                required:
+                  - source
+                  - author
+                  - title
+                  - description
+                  - url
+                  - urlToImage
+                  - publishedAt
+                  - content
+                additionalProperties: false
+            totalResults:
+              type: number
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  news_search:
+    method: POST
+    endpoint: /news-search
+    description: "Search news articles"
+    input_schema:
+      type: object
+      properties:
+        q:
+          type: string
+          minLength: 1
+        sources:
+          type: string
+        domains:
+          type: string
+        excludeDomains:
+          type: string
+        from:
+          type: string
+        to:
+          type: string
+        language:
+          type: string
+        sortBy:
+          type: string
+          enum:
+            - relevancy
+            - popularity
+            - publishedAt
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+        page:
+          type: integer
+          minimum: 1
+      required:
+        - q
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            headlines:
+              type: array
+              items:
+                type: string
+            articles:
+              type: array
+              items:
+                type: object
+                properties:
+                  source:
+                    type: object
+                    properties:
+                      id:
+                        type:
+                          - string
+                          - null
+                      name:
+                        type: string
+                    required:
+                      - id
+                      - name
+                    additionalProperties: false
+                  author:
+                    type:
+                      - string
+                      - null
+                  title:
+                    type: string
+                  description:
+                    type:
+                      - string
+                      - null
+                  url:
+                    type: string
+                  urlToImage:
+                    type:
+                      - string
+                      - null
+                  publishedAt:
+                    type: string
+                  content:
+                    type:
+                      - string
+                      - null
+                required:
+                  - source
+                  - author
+                  - title
+                  - description
+                  - url
+                  - urlToImage
+                  - publishedAt
+                  - content
+                additionalProperties: false
+            totalResults:
+              type: number
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

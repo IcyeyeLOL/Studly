@@ -1,0 +1,318 @@
+# nasa integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: Call using miyagiAPI:
+#   miyagiAPI.post('/endpoint', { ...params })
+#   miyagiAPI.get('/endpoint', { ...params })
+
+tools:
+
+  nasa_apod:
+    method: POST
+    endpoint: /nasa-apod
+    description: "Get NASA Astronomy Picture of the Day. Supports single date, date range, or random count."
+    input_schema:
+      type: object
+      properties:
+        date:
+          type: string
+          pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+          description: "Specific date in YYYY-MM-DD format. Cannot be used with start_date/end_date or count."
+        start_date:
+          type: string
+          pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+          description: "Start date for date range in YYYY-MM-DD format. Cannot be used with date or count."
+        end_date:
+          type: string
+          pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+          description: "End date for date range in YYYY-MM-DD format. Used with start_date."
+        count:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: Number of random APOD images to return. Cannot be used with date or start_date/end_date.
+        thumbs:
+          type: boolean
+          description: "Return video thumbnail URL if APOD is a video. Default: false."
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            apod:
+              anyOf:
+                - 
+                  type: object
+                  properties:
+                    copyright:
+                      type: string
+                    date:
+                      type: string
+                    explanation:
+                      type: string
+                    hdurl:
+                      type: string
+                    media_type:
+                      type: string
+                    title:
+                      type: string
+                    url:
+                      type: string
+                    thumbnail_url:
+                      type: string
+                  required:
+                    - date
+                    - explanation
+                    - media_type
+                    - title
+                    - url
+                  additionalProperties: false
+                - 
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      copyright:
+                        type: string
+                      date:
+                        type: string
+                      explanation:
+                        type: string
+                      hdurl:
+                        type: string
+                      media_type:
+                        type: string
+                      title:
+                        type: string
+                      url:
+                        type: string
+                      thumbnail_url:
+                        type: string
+                    required:
+                      - date
+                      - explanation
+                      - media_type
+                      - title
+                      - url
+                    additionalProperties: false
+          required:
+            - apod
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  nasa_donki_cme:
+    method: POST
+    endpoint: /nasa-donki-cme
+    description: "Get NASA DONKI Coronal Mass Ejection (CME) data. startDate defaults to 30 days prior, endDate defaults to current UTC date."
+    input_schema:
+      type: object
+      properties:
+        startDate:
+          type: string
+          pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+          description: "Start date in YYYY-MM-DD format. Defaults to 30 days prior to current UTC date."
+        endDate:
+          type: string
+          pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+          description: "End date in YYYY-MM-DD format. Defaults to current UTC date."
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            cme:
+              type: array
+              items:
+                type: object
+                properties: {}
+                additionalProperties: true
+          required:
+            - cme
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  nasa_donki_gst:
+    method: POST
+    endpoint: /nasa-donki-gst
+    description: "Get NASA DONKI Geomagnetic Storm (GST) data. startDate defaults to 30 days prior, endDate defaults to current UTC date."
+    input_schema:
+      type: object
+      properties:
+        startDate:
+          type: string
+          pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+          description: "Start date in YYYY-MM-DD format. Defaults to 30 days prior to current UTC date."
+        endDate:
+          type: string
+          pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+          description: "End date in YYYY-MM-DD format. Defaults to current UTC date."
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            gst:
+              type: array
+              items:
+                type: object
+                properties: {}
+                additionalProperties: true
+          required:
+            - gst
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  nasa_donki_flr:
+    method: POST
+    endpoint: /nasa-donki-flr
+    description: "Get NASA DONKI Solar Flare (FLR) data. startDate defaults to 30 days prior, endDate defaults to current UTC date."
+    input_schema:
+      type: object
+      properties:
+        startDate:
+          type: string
+          pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+          description: "Start date in YYYY-MM-DD format. Defaults to 30 days prior to current UTC date."
+        endDate:
+          type: string
+          pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+          description: "End date in YYYY-MM-DD format. Defaults to current UTC date."
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            flr:
+              type: array
+              items:
+                type: object
+                properties: {}
+                additionalProperties: true
+          required:
+            - flr
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  nasa_neows_feed:
+    method: POST
+    endpoint: /nasa-neows-feed
+    description: "Get NASA NeoWs (Near-Earth Objects) Feed. Retrieves asteroids based on closest approach date to Earth. endDate defaults to 7 days after startDate."
+    input_schema:
+      type: object
+      properties:
+        startDate:
+          type: string
+          pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+          description: "Start date in YYYY-MM-DD format. Defaults to today."
+        endDate:
+          type: string
+          pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+          description: "End date in YYYY-MM-DD format. Defaults to 7 days after startDate."
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            neos:
+              type: object
+              properties:
+                element_count:
+                  type: number
+                near_earth_objects:
+                  type: object
+                  additionalProperties:
+                    type: array
+                    items:
+                      type: object
+                      properties: {}
+                      additionalProperties: true
+              additionalProperties: true
+          required:
+            - neos
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  nasa_neows_lookup:
+    method: POST
+    endpoint: /nasa-neows-lookup
+    description: "Lookup a specific Near-Earth Object by its NASA JPL small body (SPK-ID) ID"
+    input_schema:
+      type: object
+      properties:
+        asteroidId:
+          type: string
+          minLength: 1
+          description: "Asteroid SPK-ID (NASA JPL small body ID)"
+      required:
+        - asteroidId
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+        error:
+          type: string
+      required:
+        - success
+    output_description: "data contains: { neo: Single asteroid object with detailed information }"
+
+  nasa_neows_browse:
+    method: POST
+    endpoint: /nasa-neows-browse
+    description: "Browse the overall Near-Earth Objects data-set"
+    input_schema:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 0
+          description: "Page number (0-indexed)"
+        size:
+          type: integer
+          minimum: 1
+          maximum: 20
+          description: "Page size (1-20)"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+        error:
+          type: string
+      required:
+        - success
+    output_description: "data contains: { neos: NeoWs browse response with paginated asteroid data }"

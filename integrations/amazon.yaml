@@ -1,0 +1,70 @@
+# amazon integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: Call using miyagiAPI:
+#   miyagiAPI.post('/endpoint', { ...params })
+#   miyagiAPI.get('/endpoint', { ...params })
+
+tools:
+
+  amazon_search:
+    method: POST
+    endpoint: /amazon-search
+    description: "Search Amazon products"
+    input_schema:
+      type: object
+      properties:
+        query:
+          type: string
+          minLength: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 20
+      required:
+        - query
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            products:
+              type: array
+              items:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  link:
+                    type: string
+                    format: uri
+                  price:
+                    type: string
+                  image:
+                    type: string
+                    format: uri
+                  rating:
+                    type: number
+                  boughtInPastMonth:
+                    type: string
+                  deliveryInfo:
+                    type: string
+                  snapEligible:
+                    type: boolean
+                required:
+                  - title
+                  - link
+                  - price
+                  - image
+                additionalProperties: true
+            usageId:
+              type: string
+            cost: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

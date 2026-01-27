@@ -1,0 +1,67 @@
+# internal integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: Call using miyagiAPI:
+#   miyagiAPI.post('/endpoint', { ...params })
+#   miyagiAPI.get('/endpoint', { ...params })
+
+tools:
+
+  usage:
+    method: GET
+    endpoint: /usage
+    description: "Get user integration spending summary"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+        error:
+          type: string
+      required:
+        - success
+    output_description: "data contains: { totalSpent, currency, usageCount }"
+
+  get_canvas_users:
+    method: POST
+    endpoint: /get-canvas-users
+    description: "List users for a canvas room"
+    input_schema:
+      type: object
+      properties:
+        roomId:
+          type: string
+          minLength: 1
+      required:
+        - roomId
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+        error:
+          type: string
+      required:
+        - success
+    output_description: "data contains: { success, users: [...] }"
+
+  get_current_user:
+    method: POST
+    endpoint: /get-current-user
+    description: "Get current authenticated user"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+        error:
+          type: string
+      required:
+        - success
+    output_description: "data contains: { success, user: {...} }"
