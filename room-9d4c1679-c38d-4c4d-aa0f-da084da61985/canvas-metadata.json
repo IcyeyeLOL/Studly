@@ -26,7 +26,7 @@
       "name": "Page 1",
       "index": "a1",
       "typeName": "page",
-      "lastChangedClock": 883
+      "lastChangedClock": 894
     }
   ],
   "schema": {
@@ -71,9 +71,9 @@
       "com.tldraw.binding.arrow": 1
     }
   },
-  "generatedAt": "2026-01-28T03:16:49.606Z",
-  "clock": 891,
-  "documentClock": 890,
+  "generatedAt": "2026-01-28T03:20:12.222Z",
+  "clock": 897,
+  "documentClock": 897,
   "tombstones": {
     "shape:social-media-tracker-ujEtVNtfwvhzIQNF4KFSj": 768
   },
