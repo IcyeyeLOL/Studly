@@ -383,13 +383,26 @@ function FinancialCommandCenter() {
             platform: 'youtube',
           })));
         } else {
-          setSocialError(response.error || 'Failed to search YouTube. Check your API key.');
+          // Show specific error from backend
+          const errorMsg = response.error || response.message || 'Failed to search YouTube';
+          setSocialError(`YouTube Error: ${errorMsg}. Make sure YOUTUBE_API_KEY is set in your environment.`);
           setSocialResults([]);
         }
       }
     } catch (error) {
       console.error('Error searching social:', error);
-      setSocialError(error.message || 'An error occurred while searching');
+      const errorMessage = error.message || error.toString();
+      
+      // Provide specific guidance based on error type
+      if (errorMessage.includes('400') || errorMessage.includes('Bad Request')) {
+        setSocialError('YouTube API Error (400): Bad Request. Your YOUTUBE_API_KEY may be missing or invalid. Check your environment variables and ensure the key is set correctly.');
+      } else if (errorMessage.includes('403') || errorMessage.includes('Forbidden')) {
+        setSocialError('YouTube API Error (403): Access Forbidden. Your API key may have incorrect restrictions. In Google Cloud Console → Credentials → API Key, set "Application restrictions" to "None" or "IP addresses" (not HTTP referrers, which block server requests).');
+      } else if (errorMessage.includes('429')) {
+        setSocialError('YouTube API Error (429): Quota exceeded. You have hit the daily API quota limit. Try again tomorrow or request a quota increase in Google Cloud Console.');
+      } else {
+        setSocialError(`Error: ${errorMessage}`);
+      }
       setSocialResults([]);
     } finally {
       setSocialLoading(false);

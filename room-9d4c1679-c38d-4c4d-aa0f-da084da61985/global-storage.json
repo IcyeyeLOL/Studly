@@ -34,6 +34,7 @@
   "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.watchlist": "[]",
   "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.positions": "{}",
   "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.lastAlertCheck": "2026-01-28T03:16:35.197Z",
+  "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.followedAccounts": "[]",
   "files/slides/config.json": "\"{\\n  \\\"currentDeckId\\\": \\\"welcome-deck\\\",\\n  \\\"deckOrder\\\": [\\n    \\\"welcome-deck\\\"\\n  ]\\n}\"",
   "files/slides/welcome-deck/deck.json": "\"{\\n  \\\"title\\\": \\\"Welcome Presentation\\\",\\n  \\\"themeId\\\": \\\"modern\\\",\\n  \\\"currentSlideIndex\\\": 1,\\n  \\\"slideOrder\\\": [\\n    \\\"slide-1\\\",\\n    \\\"slide-2\\\"\\n  ],\\n  \\\"createdAt\\\": 1769483252674,\\n  \\\"updatedAt\\\": 1769483252674\\n}\"",
   "files/slides/welcome-deck/slide-1.html": "\"<div style=\\\"display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 60px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\\\">\\n  <h1 style=\\\"font-size: 56px; font-weight: 700; color: white; margin: 0 0 24px 0; text-shadow: 0 2px 4px rgba(0,0,0,0.2);\\\">Welcome to Slide Deck</h1>\\n  <p style=\\\"font-size: 24px; color: rgba(255,255,255,0.9); max-width: 600px; line-height: 1.6;\\\">Create beautiful presentations with HTML slides</p>\\n</div>\"",
