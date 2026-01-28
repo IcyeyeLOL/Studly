@@ -371,12 +371,17 @@ function FinancialCommandCenter() {
         }
       } else if (socialSearchPlatform === 'youtube') {
         // YouTube API returns data.videos, not data.items
+        console.log('[YouTube Search] Calling miyagiAPI with:', { q: socialSearchQuery, maxResults: 20 });
+        
         const response = await miyagiAPI.post('/youtube-search', {
           q: socialSearchQuery,
           maxResults: 20,
         });
         
+        console.log('[YouTube Search] Response:', response);
+        
         if (response.success && response.data && response.data.videos) {
+          console.log('[YouTube Search] Found videos:', response.data.videos.length);
           setSocialResults(response.data.videos.map((video, idx) => ({
             ...video,
             id: video.id?.videoId || video.id || `video-${idx}`,
@@ -384,8 +389,9 @@ function FinancialCommandCenter() {
           })));
         } else {
           // Show specific error from backend
+          console.error('[YouTube Search] Error response:', response);
           const errorMsg = response.error || response.message || 'Failed to search YouTube';
-          setSocialError(`YouTube Error: ${errorMsg}. Make sure YOUTUBE_API_KEY is set in your environment.`);
+          setSocialError(`YouTube Error: ${errorMsg}. The DeepSpace YouTube integration may need configuration.`);
           setSocialResults([]);
         }
       }
@@ -1529,6 +1535,23 @@ function FinancialCommandCenter() {
                   ? 'Find professionals and thought leaders in the financial space'
                   : 'Discover financial content creators and market analysis videos'}
               </div>
+              
+              {/* YouTube API Notice */}
+              {socialSearchPlatform === 'youtube' && (
+                <div style={{
+                  padding: '12px 16px',
+                  backgroundColor: '#eff6ff',
+                  border: '1px solid #dbeafe',
+                  borderRadius: '8px',
+                  marginBottom: '16px',
+                  fontSize: '13px',
+                  color: '#1e40af',
+                  lineHeight: '1.5',
+                }}>
+                  <strong>YouTube Search:</strong> This feature uses DeepSpace's YouTube integration. If you get a 400 error, the YOUTUBE_API_KEY may need to be configured in the DeepSpace system settings.
+                </div>
+              )}
+              
               <div style={{ display: 'flex', gap: '12px' }}>
                 <input
                   type="text"
@@ -1740,17 +1763,34 @@ function FinancialCommandCenter() {
                 ...styles.card,
                 backgroundColor: '#fef2f2',
                 borderColor: '#fecaca',
-                padding: '20px',
+                padding: '24px',
               }}>
-                <div style={{ fontSize: '16px', fontWeight: '600', color: '#dc2626', marginBottom: '8px' }}>
-                  Search Error
+                <div style={{ fontSize: '16px', fontWeight: '600', color: '#dc2626', marginBottom: '12px' }}>
+                  {socialSearchPlatform === 'youtube' ? 'YouTube Search Error' : 'LinkedIn Search Error'}
                 </div>
-                <div style={{ fontSize: '14px', color: '#991b1b' }}>
+                <div style={{ fontSize: '14px', color: '#991b1b', marginBottom: '16px', lineHeight: '1.6' }}>
                   {socialError}
                 </div>
-                {socialSearchPlatform === 'youtube' && socialError.includes('API key') && (
-                  <div style={{ fontSize: '13px', color: '#991b1b', marginTop: '8px' }}>
-                    Make sure your YouTube API key is set in your environment variables.
+                
+                {/* Detailed help for YouTube 400 error */}
+                {socialSearchPlatform === 'youtube' && socialError.includes('400') && (
+                  <div style={{
+                    padding: '16px',
+                    backgroundColor: '#fff7ed',
+                    border: '1px solid #fed7aa',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    color: '#92400e',
+                    lineHeight: '1.6',
+                  }}>
+                    <strong>Troubleshooting YouTube 400 Error:</strong>
+                    <ul style={{ marginTop: '8px', marginBottom: '0', paddingLeft: '20px' }}>
+                      <li>DeepSpace's YouTube integration requires a valid YOUTUBE_API_KEY</li>
+                      <li>Check if the API key is configured in DeepSpace's system settings</li>
+                      <li>The key should have "YouTube Data API v3" enabled in Google Cloud Console</li>
+                      <li>API key restrictions should be set to "None" or "IP addresses" (not HTTP referrers)</li>
+                      <li>Contact DeepSpace support if the integration needs to be configured</li>
+                    </ul>
                   </div>
                 )}
               </div>
