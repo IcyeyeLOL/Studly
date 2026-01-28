@@ -999,7 +999,7 @@ function FinancialCommandCenter() {
                 fontWeight: '500',
               }}
             >
-              View All â†’
+              View All
             </button>
           )}
         </div>
@@ -1264,7 +1264,7 @@ function FinancialCommandCenter() {
               )}
               {!watchlistSearchError && watchlistSearchResults && watchlistSearchResults.length > 0 && (
                 <div style={{ marginTop: '12px' }}>
-                  <div style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>Results â€” click Add to watchlist</div>
+                  <div style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>Search results - click Add to add to watchlist</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                     {watchlistSearchResults.map((result) => {
                       const symbol = (result && result.symbol) || (typeof result === 'string' ? result : '');
@@ -2019,7 +2019,7 @@ function FinancialCommandCenter() {
               )}
               {!portfolioSearchError && portfolioSearchResults && portfolioSearchResults.length > 0 && (
                 <div style={{ marginTop: '12px' }}>
-                  <div style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>Results â€” click Add to track</div>
+                  <div style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>Search results - click Add to add to portfolio</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                     {portfolioSearchResults.map((result) => {
                       const symbol = (result && result.symbol) || (typeof result === 'string' ? result : '');
