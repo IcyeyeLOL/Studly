@@ -331,6 +331,63 @@ function FinancialCommandCenter() {
     setSelectedSectors(prev => prev.filter(s => s !== sectorId));
   };
 
+  const searchSocial = async () => {
+    if (!socialSearchQuery.trim()) return;
+    
+    setSocialLoading(true);
+    try {
+      if (socialSearchPlatform === 'linkedin') {
+        const response = await miyagiAPI.post('/linkedin-search-profiles', {
+          query: socialSearchQuery,
+        });
+        if (response.success) {
+          setSocialResults((response.data.profiles || []).map(profile => ({
+            ...profile,
+            platform: 'linkedin',
+          })));
+        } else {
+          setSocialResults([]);
+        }
+      } else if (socialSearchPlatform === 'youtube') {
+        const response = await miyagiAPI.post('/youtube-search', {
+          q: socialSearchQuery,
+          maxResults: 20,
+        });
+        if (response.success) {
+          setSocialResults((response.data.items || []).map(item => ({
+            ...item,
+            platform: 'youtube',
+          })));
+        } else {
+          setSocialResults([]);
+        }
+      }
+    } catch (error) {
+      console.error('Error searching social:', error);
+      setSocialResults([]);
+    } finally {
+      setSocialLoading(false);
+    }
+  };
+
+  const followAccount = (account) => {
+    const isFollowing = followedAccounts.some(
+      acc => (acc.id === account.id || acc.id === account.snippet?.channelId) && acc.platform === account.platform
+    );
+    
+    if (!isFollowing) {
+      setFollowedAccounts(prev => [...(prev || []), account]);
+    }
+  };
+
+  const unfollowAccount = (accountId, platform) => {
+    setFollowedAccounts(prev =>
+      (prev || []).filter(
+        acc => !(acc.id === accountId && acc.platform === platform)
+      )
+    );
+  };
+
   const addTickerToWatchlist = async () => {
     if (!newTickerInput.trim()) return;
     
@@ -505,6 +562,7 @@ function FinancialCommandCenter() {
             { id: 'alerts', label: '🔔 Alerts' },
             { id: 'ticker', label: '📰 Ticker Detail' },
             { id: 'digest', label: '📋 Digest' },
+            { id: 'social', label: '🌐 Social' },
             { id: 'portfolio', label: '💼 Portfolio' },
             { id: 'sectors', label: '🏢 Sectors' },
           ].map(item => (
@@ -921,6 +979,269 @@ function FinancialCommandCenter() {
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Social View */}
+        {activeView === 'social' && (
+          <div>
+            <h2 style={{ fontSize: '32px', fontWeight: '600', marginBottom: '32px', letterSpacing: '-0.02em' }}>Social Tracking</h2>
+            
+            {/* Platform Toggle */}
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '32px' }}>
+              <button
+                onClick={() => {
+                  setSocialSearchPlatform('linkedin');
+                  setSocialResults([]);
+                }}
+                style={{
+                  padding: '14px 28px',
+                  backgroundColor: socialSearchPlatform === 'linkedin' ? '#6366f1' : 'transparent',
+                  color: socialSearchPlatform === 'linkedin' ? '#ffffff' : '#000000',
+                  border: '1px solid #f0f0f0',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontSize: '15px',
+                  fontWeight: '500',
+                  transition: 'all 0.2s',
+                }}
+              >
+                LinkedIn
+              </button>
+              <button
+                onClick={() => {
+                  setSocialSearchPlatform('youtube');
+                  setSocialResults([]);
+                }}
+                style={{
+                  padding: '14px 28px',
+                  backgroundColor: socialSearchPlatform === 'youtube' ? '#6366f1' : 'transparent',
+                  color: socialSearchPlatform === 'youtube' ? '#ffffff' : '#000000',
+                  border: '1px solid #f0f0f0',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontSize: '15px',
+                  fontWeight: '500',
+                  transition: 'all 0.2s',
+                }}
+              >
+                YouTube
+              </button>
+            </div>
+
+            {/* Search */}
+            <div style={styles.card}>
+              <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>
+                Search {socialSearchPlatform === 'linkedin' ? 'LinkedIn' : 'YouTube'}
+              </div>
+              <div style={{ fontSize: '14px', color: '#666', marginBottom: '16px' }}>
+                {socialSearchPlatform === 'linkedin' 
+                  ? 'Find professionals and thought leaders in the financial space'
+                  : 'Discover financial content creators and market analysis videos'}
+              </div>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <input
+                  type="text"
+                  placeholder={`Search ${socialSearchPlatform === 'linkedin' ? 'LinkedIn profiles' : 'YouTube channels/videos'}...`}
+                  value={socialSearchQuery}
+                  onChange={(e) => setSocialSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && searchSocial()}
+                  style={{ ...styles.input, flex: 1 }}
+                />
+                <button
+                  onClick={searchSocial}
+                  disabled={socialLoading || !socialSearchQuery.trim()}
+                  style={{
+                    ...styles.button('primary'),
+                    opacity: socialLoading || !socialSearchQuery.trim() ? 0.5 : 1,
+                  }}
+                >
+                  {socialLoading ? 'Searching...' : 'Search'}
+                </button>
+              </div>
+            </div>
+
+            {/* Following Section */}
+            {followedAccounts.length > 0 && (
+              <div style={{ marginBottom: '32px' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '20px' }}>
+                  Following ({followedAccounts.length})
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+                  {followedAccounts.map((account, idx) => {
+                    const isLinkedIn = account.platform === 'linkedin';
+                    const linkUrl = isLinkedIn 
+                      ? `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(account.name || account.headline || '')}`
+                      : account.id?.videoId 
+                        ? `https://www.youtube.com/watch?v=${account.id.videoId}`
+                        : account.snippet?.channelId
+                          ? `https://www.youtube.com/channel/${account.snippet.channelId}`
+                          : `https://www.youtube.com/results?search_query=${encodeURIComponent(account.snippet?.title || account.title || '')}`;
+                    
+                    return (
+                      <div key={idx} style={{
+                        ...styles.card,
+                        padding: '24px',
+                      }}>
+                        <div style={{ marginBottom: '16px' }}>
+                          <a
+                            href={linkUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              fontSize: '16px',
+                              fontWeight: '600',
+                              color: '#6366f1',
+                              textDecoration: 'none',
+                              display: 'block',
+                              marginBottom: '6px',
+                            }}
+                          >
+                            {account.name || account.snippet?.title || account.title || 'Unknown'}
+                          </a>
+                          <div style={{ fontSize: '13px', color: '#666', marginBottom: '12px' }}>
+                            {isLinkedIn ? (account.headline || 'No headline') : (account.snippet?.channelTitle || account.snippet?.description?.substring(0, 60) || 'No description')}
+                          </div>
+                          <span style={{
+                            display: 'inline-block',
+                            padding: '6px 12px',
+                            backgroundColor: isLinkedIn ? '#0077b515' : '#ff000015',
+                            color: isLinkedIn ? '#0077b5' : '#ff0000',
+                            borderRadius: '8px',
+                            fontSize: '12px',
+                            fontWeight: '500',
+                          }}>
+                            {isLinkedIn ? 'LinkedIn' : 'YouTube'}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => unfollowAccount(account.id || account.snippet?.channelId, account.platform)}
+                          style={{
+                            ...styles.button('danger'),
+                            width: '100%',
+                            padding: '10px',
+                            fontSize: '14px',
+                          }}
+                        >
+                          Unfollow
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Search Results */}
+            {socialLoading && (
+              <div style={{ textAlign: 'center', padding: '80px', color: '#999' }}>
+                Searching {socialSearchPlatform}...
+              </div>
+            )}
+
+            {!socialLoading && socialResults.length > 0 && (
+              <div>
+                <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '20px' }}>
+                  Search Results ({socialResults.length})
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+                  {socialResults.map((result, idx) => {
+                    const isLinkedIn = result.platform === 'linkedin';
+                    const isFollowing = followedAccounts.some(
+                      acc => (acc.id === result.id || acc.id === result.snippet?.channelId) && acc.platform === result.platform
+                    );
+                    
+                    const linkUrl = isLinkedIn
+                      ? `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(result.name || result.headline || socialSearchQuery)}`
+                      : result.id?.videoId
+                        ? `https://www.youtube.com/watch?v=${result.id.videoId}`
+                        : result.snippet?.channelId
+                          ? `https://www.youtube.com/channel/${result.snippet.channelId}`
+                          : `https://www.youtube.com/results?search_query=${encodeURIComponent(result.snippet?.title || result.title || socialSearchQuery)}`;
+
+                    return (
+                      <div key={idx} style={{
+                        ...styles.card,
+                        padding: '24px',
+                      }}>
+                        <div style={{ marginBottom: '16px' }}>
+                          <a
+                            href={linkUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              fontSize: '16px',
+                              fontWeight: '600',
+                              color: '#6366f1',
+                              textDecoration: 'none',
+                              display: 'block',
+                              marginBottom: '6px',
+                            }}
+                          >
+                            {result.name || result.snippet?.title || result.title || 'Unknown'}
+                          </a>
+                          <div style={{ fontSize: '13px', color: '#666', marginBottom: '8px', lineHeight: '1.5' }}>
+                            {isLinkedIn ? (result.headline || 'No headline') : (result.snippet?.channelTitle || result.snippet?.description?.substring(0, 80) || 'No description')}
+                          </div>
+                          
+                          {/* Additional metadata */}
+                          {isLinkedIn && result.location && (
+                            <div style={{ fontSize: '12px', color: '#999', marginBottom: '8px' }}>
+                              📍 {result.location}
+                            </div>
+                          )}
+                          {!isLinkedIn && result.snippet?.publishedAt && (
+                            <div style={{ fontSize: '12px', color: '#999', marginBottom: '8px' }}>
+                              📅 {new Date(result.snippet.publishedAt).toLocaleDateString()}
+                            </div>
+                          )}
+                          
+                          <span style={{
+                            display: 'inline-block',
+                            padding: '6px 12px',
+                            backgroundColor: isLinkedIn ? '#0077b515' : '#ff000015',
+                            color: isLinkedIn ? '#0077b5' : '#ff0000',
+                            borderRadius: '8px',
+                            fontSize: '12px',
+                            fontWeight: '500',
+                          }}>
+                            {isLinkedIn ? 'LinkedIn' : 'YouTube'}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => isFollowing 
+                            ? unfollowAccount(result.id || result.snippet?.channelId, result.platform) 
+                            : followAccount(result)
+                          }
+                          style={{
+                            ...styles.button(isFollowing ? 'ghost' : 'primary'),
+                            width: '100%',
+                            padding: '10px',
+                            fontSize: '14px',
+                          }}
+                        >
+                          {isFollowing ? '✓ Following' : '+ Follow'}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {!socialLoading && socialResults.length === 0 && socialSearchQuery && (
+              <div style={{ textAlign: 'center', padding: '80px', color: '#999' }}>
+                <div style={{ fontSize: '18px', marginBottom: '8px' }}>No results found</div>
+                <div style={{ fontSize: '14px' }}>Try a different search query or platform</div>
+              </div>
+            )}
+
+            {!socialLoading && socialResults.length === 0 && !socialSearchQuery && followedAccounts.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '80px', color: '#999' }}>
+                <div style={{ fontSize: '18px', marginBottom: '8px' }}>Start exploring</div>
+                <div style={{ fontSize: '14px' }}>Search for professionals or content creators to follow</div>
               </div>
             )}
           </div>
