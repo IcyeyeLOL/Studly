@@ -1066,22 +1066,25 @@ function FinancialCommandCenter() {
               {sector.custom && <span style={{ fontSize: '11px', color: '#6366f1', marginLeft: '6px' }}>(Custom)</span>}
             </label>
           ))}
-          {(customSectors || []).length + SECTORS.length > 5 && (
-            <button
-              onClick={() => setActiveView('sectors')}
-              style={{
-                marginTop: '12px',
-                fontSize: '13px',
-                color: '#6366f1',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontWeight: '500',
-              }}
-            >
-              View All
-            </button>
-          )}
+          {(() => {
+            const totalSectors = (customSectors || []).length + (SECTORS || []).length;
+            return totalSectors > 5 ? (
+              <button
+                onClick={() => setActiveView('sectors')}
+                style={{
+                  marginTop: '12px',
+                  fontSize: '13px',
+                  color: '#6366f1',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                }}
+              >
+                View All ({totalSectors})
+              </button>
+            ) : null;
+          })()}
         </div>
 
         <div>
