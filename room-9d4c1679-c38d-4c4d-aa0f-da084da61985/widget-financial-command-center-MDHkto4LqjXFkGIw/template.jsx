@@ -1,6 +1,6 @@
 ﻿/**
- * Financial Command Center â€” single file for copy-paste into widget.
- * Uses miyagiAPI.post(endpoint, body) â†’ { success, data } and useStorage(key, initial, { scope: 'user' }).
+ * Financial Command Center - single file for copy-paste into widget.
+ * Uses miyagiAPI.post(endpoint, body) -> { success, data } and useStorage(key, initial, { scope: 'user' }).
  *
  * DEEP SPACE: All APIs (news, stock search, AI, social) first use Deep Space's miyagiAPI when available.
  * If Deep Space doesn't support an endpoint or returns an error, we fall back to YOUR backend when
@@ -11,8 +11,10 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
-// Backend URL - automatically connects to the deployed Stock Tracker API.
-const WIDGET_API_BASE = 'https://stock-tracker-uo3z.vercel.app';
+// Backend URL (optional).
+// - Leave empty for localhost (same-origin /api/*)
+// - Set to your deployed app URL if needed in Deep Space
+const WIDGET_API_BASE = '';
 
 function getApiBase() {
   return WIDGET_API_BASE;
@@ -250,6 +252,7 @@ function FinancialCommandCenter() {
   const [loading, setLoading] = useState(false);
   const [selectedSectors, setSelectedSectors] = useStorage('financial.selectedSectors', [], { scope: 'user' });
   const [selectedCatalysts, setSelectedCatalysts] = useStorage('financial.selectedCatalysts', [], { scope: 'user' });
+  const [showAllSectors, setShowAllSectors] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [alerts, setAlerts] = useState([]);
   const [selectedTicker, setSelectedTicker] = useState(null);
@@ -682,7 +685,7 @@ function FinancialCommandCenter() {
       return;
     }
     if (failures.length > 0) {
-      setPriceAlertError(`Some tickers could not be added: ${failures.slice(0, 3).join(' â€¢ ')}${failures.length > 3 ? ' â€¦' : ''}`);
+      setPriceAlertError(`Some tickers could not be added: ${failures.slice(0, 3).join(' | ')}${failures.length > 3 ? ' ...' : ''}`);
     }
     if (toAdd.length > 0) {
       setPriceAlertRules([...toAdd, ...rules]);
@@ -867,7 +870,7 @@ function FinancialCommandCenter() {
       if (errorMessage.includes('400') || errorMessage.includes('Bad Request')) {
         setSocialError('YouTube API Error (400): Bad Request. Your YOUTUBE_API_KEY may be missing or invalid. Check your environment variables and ensure the key is set correctly.');
       } else if (errorMessage.includes('403') || errorMessage.includes('Forbidden')) {
-        setSocialError('YouTube API Error (403): Access Forbidden. Your API key may have incorrect restrictions. In Google Cloud Console â†’ Credentials â†’ API Key, set "Application restrictions" to "None" or "IP addresses" (not HTTP referrers, which block server requests).');
+        setSocialError('YouTube API Error (403): Access Forbidden. Your API key may have incorrect restrictions. In Google Cloud Console -> Credentials -> API Key, set "Application restrictions" to "None" or "IP addresses" (not HTTP referrers, which block server requests).');
       } else if (errorMessage.includes('429')) {
         setSocialError('YouTube API Error (429): Quota exceeded. You have hit the daily API quota limit. Try again tomorrow or request a quota increase in Google Cloud Console.');
       } else {
@@ -1290,7 +1293,6 @@ function FinancialCommandCenter() {
             { id: 'digest', label: 'Digest' },
             { id: 'social', label: 'Social' },
             { id: 'portfolio', label: 'Portfolio' },
-            { id: 'sectors', label: 'Sectors' },
           ].map((item) => (
             <button
               key={item.id}
@@ -1323,7 +1325,7 @@ function FinancialCommandCenter() {
           <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '16px', color: theme.text }}>
             Sectors ({allSectorsList.length})
           </div>
-          {allSectorsList.slice(0, 5).map((sector) => (
+          {allSectorsList.slice(0, showAllSectors ? undefined : 5).map((sector) => (
             <label key={sector.id} style={{ display: 'block', marginBottom: '12px', fontSize: '14px', cursor: 'pointer' }}>
               <input
                 type="checkbox"
@@ -1341,7 +1343,7 @@ function FinancialCommandCenter() {
           {allSectorsList.length > 5 && (
             <button
               type="button"
-              onClick={() => setActiveView('sectors')}
+              onClick={() => setShowAllSectors((v) => !v)}
               style={{
                 marginTop: '12px',
                 fontSize: '13px',
@@ -1352,7 +1354,7 @@ function FinancialCommandCenter() {
                 fontWeight: '500',
               }}
             >
-              View All ({allSectorsList.length})
+              {showAllSectors ? 'View less' : `View all (${allSectorsList.length})`}
             </button>
           )}
         </div>
@@ -1498,7 +1500,7 @@ function FinancialCommandCenter() {
                         >
                           <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px', lineHeight: '1.4' }}>{article.title}</div>
                           <div style={{ fontSize: '12px', color: theme.textMuted, marginBottom: '8px' }}>
-                            {(article.source && article.source.name) || 'Unknown'} â€¢ {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString() : ''}
+                            {(article.source && article.source.name) || 'Unknown'} | {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString() : ''}
                           </div>
                           {article.catalysts && article.catalysts.length > 0 && (
                             <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
@@ -1774,7 +1776,7 @@ function FinancialCommandCenter() {
                 <div>
                   <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '4px' }}>Price Alerts</div>
                   <div style={{ fontSize: '12px', color: theme.textMuted }}>
-                    Rules: {(priceAlertRules || []).length} â€¢ Enabled: {(priceAlertRules || []).filter((r) => r && r.enabled).length} â€¢ Last check:{' '}
+                    Rules: {(priceAlertRules || []).length} | Enabled: {(priceAlertRules || []).filter((r) => r && r.enabled).length} | Last check:{' '}
                     {priceAlertLastCheck ? new Date(priceAlertLastCheck).toLocaleString() : 'Never'}
                   </div>
                 </div>
@@ -1793,7 +1795,7 @@ function FinancialCommandCenter() {
                     fontWeight: '500',
                   }}
                 >
-                  {priceAlertChecking ? 'Checkingâ€¦' : 'Check Prices Now'}
+                  {priceAlertChecking ? 'Checking...' : 'Check Prices Now'}
                 </button>
               </div>
 
@@ -1898,7 +1900,7 @@ function FinancialCommandCenter() {
                       fontWeight: '600',
                     }}
                   >
-                    {priceAlertTickerSearching ? 'Searchingâ€¦' : 'Search'}
+                    {priceAlertTickerSearching ? 'Searching...' : 'Search'}
                   </button>
                 </div>
 
@@ -1921,12 +1923,12 @@ function FinancialCommandCenter() {
                       >
                         <div>
                           <div style={{ fontSize: '14px', fontWeight: '700', color: theme.text }}>
-                            {(r && r.symbol) ? String(r.symbol).toUpperCase() : 'â€”'}
+                            {(r && r.symbol) ? String(r.symbol).toUpperCase() : '-'}
                             {r && r.name ? <span style={{ marginLeft: 8, fontSize: '12px', fontWeight: '500', color: theme.textMuted }}>{r.name}</span> : null}
                           </div>
                           {(r && (r.type || r.region)) ? (
                             <div style={{ fontSize: '12px', color: theme.textMuted, marginTop: 2 }}>
-                              {[r.type, r.region].filter(Boolean).join(' â€¢ ')}
+                              {[r.type, r.region].filter(Boolean).join(' | ')}
                             </div>
                           ) : null}
                         </div>
@@ -2034,7 +2036,7 @@ function FinancialCommandCenter() {
                         <div style={{ fontSize: '14px', fontWeight: '600', color: theme.text }}>{_formatPriceRuleLabel(rule)}</div>
                         <div style={{ fontSize: '12px', color: theme.textMuted, marginTop: '2px' }}>
                           {String(rule.type || '').startsWith('pct') && typeof rule.referencePrice === 'number' ? `Baseline: $${Number(rule.referencePrice).toFixed(2)}` : ''}
-                          {rule.lastTriggeredAt ? ` â€¢ Last triggered: ${new Date(rule.lastTriggeredAt).toLocaleString()}` : ''}
+                          {rule.lastTriggeredAt ? ` | Last triggered: ${new Date(rule.lastTriggeredAt).toLocaleString()}` : ''}
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -2125,8 +2127,8 @@ function FinancialCommandCenter() {
                     >
                       <div style={{ fontSize: '14px', fontWeight: '600', color: theme.text }}>{evt.ruleLabel}</div>
                       <div style={{ fontSize: '12px', color: theme.textMuted, marginTop: '2px' }}>
-                        ${Number(evt.price || 0).toFixed(2)} â€¢ {new Date(evt.triggeredAt).toLocaleString()}
-                        {typeof evt.changePercentFromRef === 'number' ? ` â€¢ ${Number(evt.changePercentFromRef).toFixed(2)}% vs baseline` : ''}
+                        ${Number(evt.price || 0).toFixed(2)} | {new Date(evt.triggeredAt).toLocaleString()}
+                        {typeof evt.changePercentFromRef === 'number' ? ` | ${Number(evt.changePercentFromRef).toFixed(2)}% vs baseline` : ''}
                       </div>
                     </div>
                   ))}
@@ -2181,7 +2183,7 @@ function FinancialCommandCenter() {
                   >
                     <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px', lineHeight: '1.4' }}>{article.title}</div>
                     <div style={{ fontSize: '12px', color: theme.textMuted, marginBottom: '12px' }}>
-                      {(article.source && article.source.name) || 'Unknown'} â€¢ {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString() : ''}
+                      {(article.source && article.source.name) || 'Unknown'} | {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString() : ''}
                     </div>
                     {article.catalysts && article.catalysts.length > 0 && (
                       <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
@@ -2282,7 +2284,7 @@ function FinancialCommandCenter() {
                       >
                         <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>{article.title}</div>
                         <div style={{ fontSize: '12px', color: theme.textMuted }}>
-                          {(article.source && article.source.name) || 'Unknown'} â€¢ {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString() : ''}
+                          {(article.source && article.source.name) || 'Unknown'} | {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString() : ''}
                         </div>
                       </a>
                     ))}
@@ -3100,154 +3102,7 @@ function FinancialCommandCenter() {
           </div>
         )}
 
-        {activeView === 'sectors' && (
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <button
-                  type="button"
-                  onClick={() => setActiveView('dashboard')}
-                  style={{
-                    padding: '8px 14px',
-                    backgroundColor: 'transparent',
-                    color: theme.text,
-                    border: `1px solid ${theme.border}`,
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                  }}
-                >
-                  â† Back
-                </button>
-                <h2 style={{ fontSize: '24px', fontWeight: '600', margin: 0 }}>Sectors</h2>
-              </div>
-            </div>
-
-            <div
-              style={{
-                padding: '20px',
-                backgroundColor: theme.surface,
-                border: `1px solid ${theme.border}`,
-                borderRadius: '12px',
-                marginBottom: '24px',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
-              }}
-            >
-              <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px' }}>Add Custom Sector</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'flex-end' }}>
-                <div style={{ flex: '1 1 200px' }}>
-                  <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px' }}>Sector name</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Crypto"
-                    value={newSectorName}
-                    onChange={(e) => setNewSectorName(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      border: `1px solid ${theme.border}`,
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      backgroundColor: theme.surface,
-                      color: theme.text,
-                    }}
-                  />
-                </div>
-                <div style={{ flex: '1 1 240px' }}>
-                  <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px' }}>Keywords (comma-separated)</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. bitcoin, ethereum, crypto"
-                    value={newSectorKeywords}
-                    onChange={(e) => setNewSectorKeywords(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      border: `1px solid ${theme.border}`,
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      backgroundColor: theme.surface,
-                      color: theme.text,
-                    }}
-                  />
-                </div>
-                <button
-                  onClick={addCustomSector}
-                  style={{
-                    padding: '10px 20px',
-                    backgroundColor: '#6366f1',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                  }}
-                >
-                  Add Custom Sector
-                </button>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '16px' }}>
-              {allSectorsList.map((sector) => (
-                <div
-                  key={sector.id}
-                  style={{
-                    padding: '20px',
-                    backgroundColor: theme.surface,
-                    border: `1px solid ${theme.border}`,
-                    borderRadius: '12px',
-                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
-                    <div>
-                      <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '4px' }}>
-                        {sector.name}
-                        {sector.custom && <span style={{ fontSize: '11px', color: '#6366f1', marginLeft: '8px' }}>(Custom)</span>}
-                      </div>
-                      <div style={{ fontSize: '12px', color: theme.textMuted }}>Keywords: {(sector.keywords || []).join(', ')}</div>
-                    </div>
-                    {sector.custom && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (typeof window !== 'undefined' && window.confirm && window.confirm(`Delete sector "${sector.name}"?`)) {
-                            deleteCustomSector(sector.id);
-                          }
-                        }}
-                        style={{
-                          padding: '4px 8px',
-                          backgroundColor: '#ef4444',
-                          color: '#ffffff',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '11px',
-                        }}
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </div>
-                  <label style={{ display: 'flex', alignItems: 'center', fontSize: '13px' }}>
-                    <input
-                      type="checkbox"
-                      checked={(selectedSectors || []).includes(sector.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) setSelectedSectors((prev) => [...(prev || []), sector.id]);
-                        else setSelectedSectors((prev) => (prev || []).filter((s) => s !== sector.id));
-                      }}
-                      style={{ marginRight: '8px' }}
-                    />
-                    Active
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Sectors page removed in widget build (matches localhost UI) */}
       </div>
 
       <style>{`
