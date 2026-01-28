@@ -784,13 +784,16 @@ function FinancialCommandCenter() {
   };
 
   const deletePosition = (ticker) => {
-    if (window.confirm(`Remove position for ${ticker}?`)) {
-      setPositions((prev) => {
-        const newPositions = { ...(prev || {}) };
-        delete newPositions[ticker];
-        return newPositions;
-      });
-    }
+    setPositions((prev) => {
+      const newPositions = { ...(prev || {}) };
+      delete newPositions[ticker];
+      return newPositions;
+    });
+    setTickerNotes((prev) => {
+      const newNotes = { ...(prev || {}) };
+      delete newNotes[ticker];
+      return newNotes;
+    });
   };
 
   const refreshQuote = async (ticker) => {
@@ -2228,7 +2231,8 @@ function FinancialCommandCenter() {
                           <button
                             onClick={() => {
                               if (typeof window !== 'undefined' && window.confirm && window.confirm(`Remove ${ticker} from tracking?`)) {
-                                setWatchlist((watchlist || []).filter((t) => t !== ticker));
+                                const currentWatchlist = watchlist || [];
+                                setWatchlist(currentWatchlist.filter((t) => t !== ticker));
                                 deletePosition(ticker);
                               }
                             }}
