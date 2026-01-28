@@ -1760,7 +1760,7 @@ function FinancialCommandCenter() {
                 style={{
                   padding: '10px 20px',
                   backgroundColor: socialSearchPlatform === 'linkedin' ? '#6366f1' : 'transparent',
-                  color: socialSearchPlatform === 'linkedin' ? '#ffffff' : '#000000',
+                  color: socialSearchPlatform === 'linkedin' ? '#ffffff' : theme.text,
                   border: `1px solid ${theme.border}`,
                   borderRadius: '8px',
                   cursor: 'pointer',
@@ -1775,7 +1775,7 @@ function FinancialCommandCenter() {
                 style={{
                   padding: '10px 20px',
                   backgroundColor: socialSearchPlatform === 'youtube' ? '#6366f1' : 'transparent',
-                  color: socialSearchPlatform === 'youtube' ? '#ffffff' : '#000000',
+                  color: socialSearchPlatform === 'youtube' ? '#ffffff' : theme.text,
                   border: `1px solid ${theme.border}`,
                   borderRadius: '8px',
                   cursor: 'pointer',
