@@ -89,6 +89,13 @@ function FinancialCommandCenter() {
     }
   }, [selectedSectors]);
 
+  // Auto-check alerts when watchlist changes
+  useEffect(() => {
+    if (watchlist.length > 0 && alerts.length === 0) {
+      checkAlerts();
+    }
+  }, [watchlist]);
+
   // Functions
   const loadNews = async () => {
     setLoading(true);
@@ -1317,7 +1324,14 @@ function FinancialCommandCenter() {
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
               <h2 style={{ fontSize: '32px', fontWeight: '600', letterSpacing: '-0.02em' }}>Alerts</h2>
-              <button onClick={checkAlerts} disabled={loading} style={styles.button('primary')}>
+              <button 
+                onClick={checkAlerts} 
+                disabled={loading || watchlist.length === 0} 
+                style={{
+                  ...styles.button('primary'),
+                  opacity: loading || watchlist.length === 0 ? 0.5 : 1,
+                }}
+              >
                 {loading ? 'Checking...' : '🔄 Check Alerts'}
               </button>
             </div>
@@ -1328,9 +1342,38 @@ function FinancialCommandCenter() {
               </div>
             )}
 
-            {alerts.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '80px', color: '#999' }}>
-                No alerts. Your watchlist stocks haven't been mentioned recently.
+            {watchlist.length === 0 ? (
+              <div style={styles.card}>
+                <div style={{ textAlign: 'center', padding: '60px 40px' }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔔</div>
+                  <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '12px', color: '#000' }}>
+                    No Stocks in Watchlist
+                  </div>
+                  <div style={{ fontSize: '14px', color: '#666', marginBottom: '24px' }}>
+                    Add stocks to your watchlist to receive alerts when they're mentioned in the news
+                  </div>
+                  <button
+                    onClick={() => setActiveView('watchlist')}
+                    style={styles.button('primary')}
+                  >
+                    Go to Watchlist
+                  </button>
+                </div>
+              </div>
+            ) : alerts.length === 0 ? (
+              <div style={styles.card}>
+                <div style={{ textAlign: 'center', padding: '60px 40px' }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
+                  <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '12px', color: '#000' }}>
+                    No New Alerts
+                  </div>
+                  <div style={{ fontSize: '14px', color: '#666', marginBottom: '16px' }}>
+                    Your watchlist stocks ({watchlist.join(', ')}) haven't been mentioned in recent news
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#999' }}>
+                    Click "Check Alerts" to refresh
+                  </div>
+                </div>
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
@@ -1368,8 +1411,39 @@ function FinancialCommandCenter() {
           <div>
             <h2 style={{ fontSize: '32px', fontWeight: '600', marginBottom: '32px', letterSpacing: '-0.02em' }}>Ticker Detail</h2>
             {!tickerBrief ? (
-              <div style={{ textAlign: 'center', padding: '80px', color: '#999' }}>
-                Select a ticker from Watchlist and click "Brief Me" to see details.
+              <div style={styles.card}>
+                <div style={{ textAlign: 'center', padding: '60px 40px' }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>📰</div>
+                  <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '12px', color: '#000' }}>
+                    No Ticker Selected
+                  </div>
+                  <div style={{ fontSize: '14px', color: '#666', marginBottom: '24px' }}>
+                    Go to Watchlist, select a ticker, and click "Brief Me" to see AI-generated analysis
+                  </div>
+                  {watchlist.length > 0 && (
+                    <div>
+                      <div style={{ fontSize: '13px', color: '#666', marginBottom: '12px' }}>
+                        Quick access to your watchlist:
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                        {watchlist.slice(0, 5).map(ticker => (
+                          <button
+                            key={ticker}
+                            onClick={() => briefTicker(ticker)}
+                            disabled={loading}
+                            style={{
+                              ...styles.button('primary'),
+                              padding: '8px 16px',
+                              fontSize: '14px',
+                            }}
+                          >
+                            {ticker}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
               <div>
@@ -1818,14 +1892,11 @@ function FinancialCommandCenter() {
                       lineHeight: '1.6',
                       marginBottom: '16px',
                     }}>
-                      <strong>Troubleshooting YouTube 400 Error:</strong>
-                      <ul style={{ marginTop: '8px', marginBottom: '0', paddingLeft: '20px' }}>
-                        <li>DeepSpace's YouTube integration requires a valid YOUTUBE_API_KEY</li>
-                        <li>Check if the API key is configured in DeepSpace's system settings</li>
-                        <li>The key should have "YouTube Data API v3" enabled in Google Cloud Console</li>
-                        <li>API key restrictions should be set to "None" or "IP addresses" (not HTTP referrers)</li>
-                        <li>Contact DeepSpace support if the integration needs to be configured</li>
-                      </ul>
+                      <strong>YouTube API Configuration Issue</strong>
+                      <div style={{ marginTop: '8px', marginBottom: '12px' }}>
+                        The DeepSpace YouTube integration is returning an error. This usually means the YOUTUBE_API_KEY needs to be configured in the DeepSpace system.
+                      </div>
+                      <strong>In the meantime:</strong> Use the button below to search directly on YouTube.com
                     </div>
                     
                     {/* Fallback: Open YouTube Search */}
@@ -1835,15 +1906,24 @@ function FinancialCommandCenter() {
                       rel="noopener noreferrer"
                       style={{
                         display: 'block',
-                        padding: '14px 20px',
+                        padding: '16px 24px',
                         backgroundColor: '#6366f1',
                         color: '#ffffff',
                         textAlign: 'center',
                         textDecoration: 'none',
                         borderRadius: '10px',
                         fontSize: '15px',
-                        fontWeight: '500',
+                        fontWeight: '600',
                         transition: 'all 0.2s',
+                        boxShadow: '0 4px 16px rgba(99, 102, 241, 0.2)',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-1px)';
+                        e.currentTarget.style.boxShadow = '0 6px 20px rgba(99, 102, 241, 0.3)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 4px 16px rgba(99, 102, 241, 0.2)';
                       }}
                     >
                       🔍 Search "{socialSearchQuery}" on YouTube.com

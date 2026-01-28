@@ -3,7 +3,7 @@
   "widgetId": "news-stock-social-tracker_1769483198604",
   "templateHandle": "news-stock-social-tracker",
   "position": {
-    "x": 1013.0970556161394,
+    "x": 671.8102508178843,
     "y": 129.11668484187567
   },
   "size": {
@@ -25,5 +25,5 @@
   },
   "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
   "index": "aO3dck7V",
-  "lastChangedClock": 963
+  "lastChangedClock": 1019
 }
