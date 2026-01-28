@@ -1,6 +1,6 @@
 {
-  "clock": 1009,
-  "documentClock": 1007,
+  "clock": 1024,
+  "documentClock": 1021,
   "tombstones": {
     "shape:social-media-tracker-ujEtVNtfwvhzIQNF4KFSj": 768
   },
@@ -65,7 +65,7 @@
         "type": "miyagi-widget",
         "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
         "index": "aO3dck7V",
-        "x": 1013.0970556161394,
+        "x": 671.8102508178843,
         "y": 129.11668484187567,
         "rotation": 0,
         "isLocked": false,
@@ -93,7 +93,7 @@
           }
         }
       },
-      "lastChangedClock": 1007
+      "lastChangedClock": 1019
     },
     {
       "state": {
@@ -183,15 +183,25 @@
             "config": {
               "type": "dock",
               "name": "Dock Space",
-              "description": "Dock mode with macOS-style dock bar for widgets (zoom locked at 50% via DOCK_MODE_ZOOM constant)"
+              "description": "Dock mode with macOS-style dock bar for widgets (zoom locked at 50% via DOCK_MODE_ZOOM constant)",
+              "canvasBounds": {
+                "x": 0,
+                "y": 0,
+                "w": 2261.286804798255,
+                "h": 1080
+              },
+              "canvasSize": {
+                "width": 2261.286804798255,
+                "height": 1080
+              }
             },
-            "lastUpdated": 1769573844113
+            "lastUpdated": 1769615865383
           }
         },
         "id": "document:document",
         "typeName": "document"
       },
-      "lastChangedClock": 1007
+      "lastChangedClock": 1021
     },
     {
       "state": {
@@ -321,7 +331,7 @@
           "fcc-watchlists": "[{\"id\":\"default\",\"name\":\"My Watchlist\",\"tickers\":[]}]",
           "fcc-followed-accounts": "[]",
           "fcc-last-check": "2026-01-27T03:40:08.580Z",
-          "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.watchlist": "[]",
+          "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.watchlist": "[\"500.PAR\"]",
           "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.positions": "{}",
           "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.lastAlertCheck": "2026-01-28T03:16:35.197Z",
           "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.followedAccounts": "[]",
@@ -333,7 +343,7 @@
         "id": "canvas_storage:main",
         "typeName": "canvas_storage"
       },
-      "lastChangedClock": 1007
+      "lastChangedClock": 1018
     }
   ]
 }
