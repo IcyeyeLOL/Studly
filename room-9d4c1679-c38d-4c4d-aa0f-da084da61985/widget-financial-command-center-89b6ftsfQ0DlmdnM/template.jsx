@@ -1002,7 +1002,7 @@ function FinancialCommandCenter() {
                 }}
                 style={{ marginRight: '10px' }}
               />
-              <span style={{ color: catalyst.color }}>â—</span> {catalyst.name}
+              <span style={{ display: 'inline-block', width: 8, height: 8, backgroundColor: catalyst.color, borderRadius: 1, marginRight: 6, verticalAlign: 'middle' }} aria-hidden /> {catalyst.name}
             </label>
           ))}
         </div>
