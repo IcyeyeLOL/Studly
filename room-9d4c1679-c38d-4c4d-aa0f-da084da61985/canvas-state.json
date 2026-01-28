@@ -1,6 +1,6 @@
 {
-  "clock": 1038,
-  "documentClock": 1038,
+  "clock": 1046,
+  "documentClock": 1046,
   "tombstones": {
     "shape:social-media-tracker-ujEtVNtfwvhzIQNF4KFSj": 768
   },
@@ -56,7 +56,7 @@
         "index": "a1",
         "typeName": "page"
       },
-      "lastChangedClock": 1028
+      "lastChangedClock": 1039
     },
     {
       "state": {
@@ -93,7 +93,7 @@
           }
         }
       },
-      "lastChangedClock": 1028
+      "lastChangedClock": 1039
     },
     {
       "state": {
@@ -130,7 +130,7 @@
           }
         }
       },
-      "lastChangedClock": 1028
+      "lastChangedClock": 1039
     },
     {
       "state": {
@@ -139,8 +139,8 @@
         "type": "miyagi-widget",
         "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
         "index": "aU",
-        "x": 127.73173391493992,
-        "y": 102.58451472191928,
+        "x": 214.8854961832061,
+        "y": 96.6957470010905,
         "rotation": 0,
         "isLocked": false,
         "opacity": 1,
@@ -168,7 +168,7 @@
           }
         }
       },
-      "lastChangedClock": 1038
+      "lastChangedClock": 1046
     },
     {
       "state": {
@@ -201,7 +201,7 @@
         "id": "document:document",
         "typeName": "document"
       },
-      "lastChangedClock": 1028
+      "lastChangedClock": 1039
     },
     {
       "state": {
@@ -247,7 +247,7 @@
           "zoomScale": 1
         }
       },
-      "lastChangedClock": 1028
+      "lastChangedClock": 1039
     },
     {
       "state": {
@@ -280,7 +280,7 @@
           "targetSpaceType": "dock"
         }
       },
-      "lastChangedClock": 1028
+      "lastChangedClock": 1039
     },
     {
       "state": {
@@ -343,7 +343,7 @@
         "id": "canvas_storage:main",
         "typeName": "canvas_storage"
       },
-      "lastChangedClock": 1028
+      "lastChangedClock": 1039
     }
   ]
 }
