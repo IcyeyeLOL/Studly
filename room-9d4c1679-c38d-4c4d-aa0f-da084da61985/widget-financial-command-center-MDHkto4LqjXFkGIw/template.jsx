@@ -45,6 +45,8 @@ function FinancialCommandCenter() {
   const [socialSearchQuery, setSocialSearchQuery] = useState('');
   const [socialResults, setSocialResults] = useState([]);
   const [socialLoading, setSocialLoading] = useState(false);
+  const [socialError, setSocialError] = useState(null);
+  const [hasSocialSearched, setHasSocialSearched] = useState(false);
   const [editingPosition, setEditingPosition] = useState(null);
   const [newTickerInput, setNewTickerInput] = useState('');
   const [newSectorName, setNewSectorName] = useState('');
@@ -346,35 +348,48 @@ function FinancialCommandCenter() {
     if (!socialSearchQuery.trim()) return;
     
     setSocialLoading(true);
+    setSocialError(null);
+    setHasSocialSearched(true);
+    
     try {
       if (socialSearchPlatform === 'linkedin') {
+        // LinkedIn API accepts: name, company, title, education, location
+        // We'll use the query as 'name' for person searches
         const response = await miyagiAPI.post('/linkedin-search-profiles', {
-          query: socialSearchQuery,
+          name: socialSearchQuery,
         });
-        if (response.success) {
-          setSocialResults((response.data.profiles || []).map(profile => ({
+        
+        if (response.success && response.data && response.data.profiles) {
+          setSocialResults(response.data.profiles.map(profile => ({
             ...profile,
+            id: profile.link || `${profile.name}-${idx}`,
             platform: 'linkedin',
           })));
         } else {
+          setSocialError(response.error || 'Failed to search LinkedIn profiles');
           setSocialResults([]);
         }
       } else if (socialSearchPlatform === 'youtube') {
+        // YouTube API returns data.videos, not data.items
         const response = await miyagiAPI.post('/youtube-search', {
           q: socialSearchQuery,
           maxResults: 20,
         });
-        if (response.success) {
-          setSocialResults((response.data.items || []).map(item => ({
-            ...item,
+        
+        if (response.success && response.data && response.data.videos) {
+          setSocialResults(response.data.videos.map((video, idx) => ({
+            ...video,
+            id: video.id?.videoId || video.id || `video-${idx}`,
             platform: 'youtube',
           })));
         } else {
+          setSocialError(response.error || 'Failed to search YouTube. Check your API key.');
           setSocialResults([]);
         }
       }
     } catch (error) {
       console.error('Error searching social:', error);
+      setSocialError(error.message || 'An error occurred while searching');
       setSocialResults([]);
     } finally {
       setSocialLoading(false);
@@ -1533,12 +1548,8 @@ function FinancialCommandCenter() {
                   {followedAccounts.map((account, idx) => {
                     const isLinkedIn = account.platform === 'linkedin';
                     const linkUrl = isLinkedIn 
-                      ? `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(account.name || account.headline || '')}`
-                      : account.id?.videoId 
-                        ? `https://www.youtube.com/watch?v=${account.id.videoId}`
-                        : account.snippet?.channelId
-                          ? `https://www.youtube.com/channel/${account.snippet.channelId}`
-                          : `https://www.youtube.com/results?search_query=${encodeURIComponent(account.snippet?.title || account.title || '')}`;
+                      ? (account.link || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(account.name || '')}`)
+                      : (account.links?.watch || `https://www.youtube.com/results?search_query=${encodeURIComponent(account.snippet?.title || '')}`);
                     
                     return (
                       <div key={idx} style={{
@@ -1559,11 +1570,16 @@ function FinancialCommandCenter() {
                               marginBottom: '6px',
                             }}
                           >
-                            {account.name || account.snippet?.title || account.title || 'Unknown'}
+                            {account.name || account.snippet?.title || 'Unknown'}
                           </a>
                           <div style={{ fontSize: '13px', color: '#666', marginBottom: '12px' }}>
-                            {isLinkedIn ? (account.headline || 'No headline') : (account.snippet?.channelTitle || account.snippet?.description?.substring(0, 60) || 'No description')}
+                            {isLinkedIn ? (account.headline || 'No headline') : (account.snippet?.channelTitle || 'No channel info')}
                           </div>
+                          {isLinkedIn && account.location && (
+                            <div style={{ fontSize: '12px', color: '#999', marginBottom: '8px' }}>
+                              📍 {account.location}
+                            </div>
+                          )}
                           <span style={{
                             display: 'inline-block',
                             padding: '6px 12px',
@@ -1577,7 +1593,7 @@ function FinancialCommandCenter() {
                           </span>
                         </div>
                         <button
-                          onClick={() => unfollowAccount(account.id || account.snippet?.channelId, account.platform)}
+                          onClick={() => unfollowAccount(account.id, account.platform)}
                           style={{
                             ...styles.button('danger'),
                             width: '100%',
@@ -1610,16 +1626,13 @@ function FinancialCommandCenter() {
                   {socialResults.map((result, idx) => {
                     const isLinkedIn = result.platform === 'linkedin';
                     const isFollowing = followedAccounts.some(
-                      acc => (acc.id === result.id || acc.id === result.snippet?.channelId) && acc.platform === result.platform
+                      acc => acc.id === result.id && acc.platform === result.platform
                     );
                     
+                    // Use proper link from API or construct fallback
                     const linkUrl = isLinkedIn
-                      ? `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(result.name || result.headline || socialSearchQuery)}`
-                      : result.id?.videoId
-                        ? `https://www.youtube.com/watch?v=${result.id.videoId}`
-                        : result.snippet?.channelId
-                          ? `https://www.youtube.com/channel/${result.snippet.channelId}`
-                          : `https://www.youtube.com/results?search_query=${encodeURIComponent(result.snippet?.title || result.title || socialSearchQuery)}`;
+                      ? (result.link || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(result.name || '')}`)
+                      : (result.links?.watch || `https://www.youtube.com/results?search_query=${encodeURIComponent(result.snippet?.title || '')}`);
 
                     return (
                       <div key={idx} style={{
@@ -1640,11 +1653,28 @@ function FinancialCommandCenter() {
                               marginBottom: '6px',
                             }}
                           >
-                            {result.name || result.snippet?.title || result.title || 'Unknown'}
+                            {result.name || result.snippet?.title || 'Unknown'}
                           </a>
                           <div style={{ fontSize: '13px', color: '#666', marginBottom: '8px', lineHeight: '1.5' }}>
-                            {isLinkedIn ? (result.headline || 'No headline') : (result.snippet?.channelTitle || result.snippet?.description?.substring(0, 80) || 'No description')}
+                            {isLinkedIn ? (result.headline || 'No headline') : (result.snippet?.channelTitle || 'No channel info')}
                           </div>
+                          
+                          {/* Description for YouTube */}
+                          {!isLinkedIn && result.snippet?.description && (
+                            <div style={{ 
+                              fontSize: '12px', 
+                              color: '#999', 
+                              marginBottom: '8px',
+                              lineHeight: '1.4',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                            }}>
+                              {result.snippet.description}
+                            </div>
+                          )}
                           
                           {/* Additional metadata */}
                           {isLinkedIn && result.location && (
@@ -1672,7 +1702,7 @@ function FinancialCommandCenter() {
                         </div>
                         <button
                           onClick={() => isFollowing 
-                            ? unfollowAccount(result.id || result.snippet?.channelId, result.platform) 
+                            ? unfollowAccount(result.id, result.platform) 
                             : followAccount(result)
                           }
                           style={{
@@ -1691,14 +1721,40 @@ function FinancialCommandCenter() {
               </div>
             )}
 
-            {!socialLoading && socialResults.length === 0 && socialSearchQuery && (
-              <div style={{ textAlign: 'center', padding: '80px', color: '#999' }}>
-                <div style={{ fontSize: '18px', marginBottom: '8px' }}>No results found</div>
-                <div style={{ fontSize: '14px' }}>Try a different search query or platform</div>
+            {/* Error State */}
+            {socialError && (
+              <div style={{
+                ...styles.card,
+                backgroundColor: '#fef2f2',
+                borderColor: '#fecaca',
+                padding: '20px',
+              }}>
+                <div style={{ fontSize: '16px', fontWeight: '600', color: '#dc2626', marginBottom: '8px' }}>
+                  Search Error
+                </div>
+                <div style={{ fontSize: '14px', color: '#991b1b' }}>
+                  {socialError}
+                </div>
+                {socialSearchPlatform === 'youtube' && socialError.includes('API key') && (
+                  <div style={{ fontSize: '13px', color: '#991b1b', marginTop: '8px' }}>
+                    Make sure your YouTube API key is set in your environment variables.
+                  </div>
+                )}
               </div>
             )}
 
-            {!socialLoading && socialResults.length === 0 && !socialSearchQuery && followedAccounts.length === 0 && (
+            {!socialLoading && !socialError && socialResults.length === 0 && hasSocialSearched && (
+              <div style={{ textAlign: 'center', padding: '80px', color: '#999' }}>
+                <div style={{ fontSize: '18px', marginBottom: '8px' }}>No results found</div>
+                <div style={{ fontSize: '14px' }}>
+                  {socialSearchPlatform === 'linkedin' 
+                    ? 'Try searching for a person\'s name or company'
+                    : 'Try different keywords or video topics'}
+                </div>
+              </div>
+            )}
+
+            {!socialLoading && socialResults.length === 0 && !hasSocialSearched && followedAccounts.length === 0 && (
               <div style={{ textAlign: 'center', padding: '80px', color: '#999' }}>
                 <div style={{ fontSize: '18px', marginBottom: '8px' }}>Start exploring</div>
                 <div style={{ fontSize: '14px' }}>Search for professionals or content creators to follow</div>
