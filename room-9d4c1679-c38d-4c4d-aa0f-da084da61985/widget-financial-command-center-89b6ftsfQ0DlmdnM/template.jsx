@@ -11,16 +11,18 @@
  */
 import React, { useState, useEffect, useMemo } from 'react';
 
-// When pasting into Deep Space, set this to your deployed Stock Tracker URL so stock search, AI, social work.
-// You can also set it at runtime: in Deep Space, use the "Backend URL" field in the sidebar, or set
+// Default backend URL - automatically connects to the deployed Stock Tracker API.
+// Users can override this at runtime: in Deep Space, use the "Backend URL" field in the sidebar, or set
 // window.FINANCIAL_COMMAND_CENTER_API_BASE or localStorage 'financial.commandCenter.apiBase'.
-const WIDGET_API_BASE = '';
+const WIDGET_API_BASE = 'https://stock-tracker-uo3z.vercel.app';
 
 function getApiBase() {
   if (typeof window === 'undefined') return WIDGET_API_BASE;
+  // Check runtime overrides first (user-set via sidebar or window/localStorage)
   const runtime = (window.FINANCIAL_COMMAND_CENTER_API_BASE || '').trim()
     || (typeof localStorage !== 'undefined' && localStorage.getItem('financial.commandCenter.apiBase') || '').trim();
-  return (WIDGET_API_BASE || runtime) || '';
+  // Use runtime override if set, otherwise fall back to default WIDGET_API_BASE
+  return runtime || WIDGET_API_BASE || '';
 }
 
 function _buildApiUrl(path) {
