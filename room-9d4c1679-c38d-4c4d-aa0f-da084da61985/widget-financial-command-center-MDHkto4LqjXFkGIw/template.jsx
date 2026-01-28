@@ -9,7 +9,7 @@
  *
  * LOCALHOST: Leave WIDGET_API_BASE empty; fallback calls same-origin /api/*.
  */
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 // Backend URL - automatically connects to the deployed Stock Tracker API.
 const WIDGET_API_BASE = 'https://stock-tracker-uo3z.vercel.app';
@@ -285,6 +285,27 @@ function FinancialCommandCenter() {
   const [emailInput, setEmailInput] = useState('');
   const [emailError, setEmailError] = useState(null);
 
+  // Price alerts (persistent rules + optional polling/email)
+  const [priceAlertRules, setPriceAlertRules] = useStorage('financial.priceAlertRules', [], { scope: 'user' });
+  const [priceAlertEvents, setPriceAlertEvents] = useStorage('financial.priceAlertEvents', [], { scope: 'user' });
+  const [priceAlertPollingEnabled, setPriceAlertPollingEnabled] = useStorage('financial.priceAlertPollingEnabled', false, { scope: 'user' });
+  const [priceAlertPollingMinutes, setPriceAlertPollingMinutes] = useStorage('financial.priceAlertPollingMinutes', 5, { scope: 'user' });
+  const [priceAlertEmailEnabled, setPriceAlertEmailEnabled] = useStorage('financial.priceAlertEmailEnabled', false, { scope: 'user' });
+  const [priceAlertEmail, setPriceAlertEmail] = useStorage('financial.priceAlertEmail', '', { scope: 'user' });
+  const [priceAlertChecking, setPriceAlertChecking] = useState(false);
+  const [priceAlertError, setPriceAlertError] = useState(null);
+  const [priceAlertLastCheck, setPriceAlertLastCheck] = useState(null);
+  const priceAlertCheckingRef = useRef(false);
+
+  const [newPriceAlertTicker, setNewPriceAlertTicker] = useState('');
+  const [newPriceAlertType, setNewPriceAlertType] = useState('above'); // above | below | pct_up | pct_down
+  const [newPriceAlertThreshold, setNewPriceAlertThreshold] = useState('100');
+
+  // Price alerts ticker search (same flow as watchlist/portfolio search)
+  const [priceAlertTickerQuery, setPriceAlertTickerQuery] = useState('');
+  const [priceAlertTickerResults, setPriceAlertTickerResults] = useState([]);
+  const [priceAlertTickerSearching, setPriceAlertTickerSearching] = useState(false);
+
   useEffect(() => {
     const t = THEMES[themeMode] ?? THEMES.light;
     document.body.style.backgroundColor = t.bg;
@@ -299,7 +320,7 @@ function FinancialCommandCenter() {
 
   useEffect(() => {
     loadNews();
-    checkAlerts();
+    checkAlerts({ updateTimestamp: false });
   }, []);
 
   // Clean up any hardcoded/default tickers on mount
@@ -321,9 +342,25 @@ function FinancialCommandCenter() {
     if ((selectedSectors || []).length > 0) loadNews();
   }, [selectedSectors]);
 
+  // Keep Alerts synced to the Dashboard news feed without changing "Last checked"
   useEffect(() => {
-    if (watchlist.length > 0 && alerts.length === 0) checkAlerts();
-  }, [watchlist]);
+    if ((watchlist || []).length === 0) {
+      setAlerts([]);
+      return;
+    }
+    if (!Array.isArray(news) || news.length === 0) return;
+    checkAlerts({ updateTimestamp: false });
+  }, [watchlist, news]);
+
+  useEffect(() => {
+    if (!priceAlertPollingEnabled) return;
+    const mins = Math.max(1, Math.min(60, Number(priceAlertPollingMinutes) || 5));
+    const id = setInterval(() => {
+      runPriceAlertCheck('poll');
+    }, mins * 60 * 1000);
+    runPriceAlertCheck('poll');
+    return () => clearInterval(id);
+  }, [priceAlertPollingEnabled, priceAlertPollingMinutes, priceAlertRules, priceAlertEmailEnabled, priceAlertEmail]);
 
   const loadNews = async () => {
     setLoading(true);
@@ -439,24 +476,262 @@ function FinancialCommandCenter() {
       .map(([id]) => id);
   };
 
-  const checkAlerts = async () => {
-    if (watchlist.length === 0) return;
+  const checkAlerts = async (opts = { updateTimestamp: true }) => {
+    if ((watchlist || []).length === 0) {
+      setAlerts([]);
+      return;
+    }
     try {
-      const response = await miyagiAPI.post('/news-top-headlines', {
-        category: 'business',
-        country: 'us',
-        pageSize: 100,
+      const sourceNews = Array.isArray(news) ? news : [];
+      const newStories = sourceNews.filter((article) => {
+        const text = `${article.title} ${article.description || ''}`.toLowerCase();
+        return (watchlist || []).some((ticker) => text.includes(String(ticker || '').toLowerCase()));
       });
-      if (response.success) {
-        const newStories = (response.data.articles || []).filter((article) => {
-          const text = `${article.title} ${article.description || ''}`.toLowerCase();
-          return watchlist.some((ticker) => text.includes(ticker.toLowerCase()));
-        });
-        setAlerts(newStories);
+      setAlerts(newStories);
+      if (opts && opts.updateTimestamp) {
         setLastAlertCheck(new Date().toISOString());
       }
     } catch (error) {
       console.error('Error checking alerts:', error);
+    }
+  };
+
+  const _isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
+
+  const _formatPriceRuleLabel = (rule) => {
+    const t = String(rule.ticker || '').toUpperCase();
+    const isPct = rule.type === 'pct_up' || rule.type === 'pct_down';
+    const v = isPct ? `${rule.threshold}%` : `$${rule.threshold}`;
+    if (rule.type === 'above') return `${t} above ${v}`;
+    if (rule.type === 'below') return `${t} below ${v}`;
+    if (rule.type === 'pct_up') return `${t} up ${v} (vs baseline)`;
+    if (rule.type === 'pct_down') return `${t} down ${v} (vs baseline)`;
+    return `${t} alert`;
+  };
+
+  const _fetchQuote = async (ticker) => {
+    const symbol = String(ticker || '').trim().toUpperCase();
+    if (!symbol) return { ok: false, error: 'Ticker is required' };
+    const { ok, data, error } = await _request(`/api/stocks/quote?symbol=${encodeURIComponent(symbol)}`, { method: 'GET' });
+    if (!ok) return { ok: false, error: error || 'Quote request failed' };
+    const price = Number(data && data.price);
+    if (!Number.isFinite(price) || price <= 0) return { ok: false, error: `Invalid quote price for ${symbol}` };
+    return { ok: true, quote: data };
+  };
+
+  const runPriceAlertCheck = async (reason = 'manual') => {
+    if (priceAlertCheckingRef.current) return;
+    priceAlertCheckingRef.current = true;
+    setPriceAlertChecking(true);
+    setPriceAlertError(null);
+    try {
+      const rules = Array.isArray(priceAlertRules) ? priceAlertRules : [];
+      const enabled = rules.filter((r) => r && r.enabled);
+      const nowIso = new Date().toISOString();
+      const updated = rules.slice();
+      const newEvents = [];
+
+      for (const rule of enabled) {
+        const q = await _fetchQuote(rule.ticker);
+        if (!q.ok) {
+          const msg = String(q.error || '');
+          if (msg.includes('429') || msg.toLowerCase().includes('rate limit')) {
+            setPriceAlertError('Quote rate limit exceeded. Try again in ~60 seconds or reduce polling frequency.');
+            break;
+          }
+          const idx = updated.findIndex((r) => r.id === rule.id);
+          if (idx >= 0) updated[idx] = { ...updated[idx], lastCheckedAt: nowIso };
+          continue;
+        }
+
+        const price = Number(q.quote.price || 0);
+        const threshold = Number(rule.threshold || 0);
+        const ref = typeof rule.referencePrice === 'number' ? rule.referencePrice : null;
+
+        let triggered = false;
+        let pctFromRef = null;
+        if (rule.type === 'above') triggered = price >= threshold;
+        if (rule.type === 'below') triggered = price <= threshold;
+        if (rule.type === 'pct_up' || rule.type === 'pct_down') {
+          if (ref && ref > 0) {
+            pctFromRef = ((price - ref) / ref) * 100;
+            const up = pctFromRef >= threshold;
+            const down = (-pctFromRef) >= threshold;
+            triggered = rule.type === 'pct_up' ? up : down;
+          } else {
+            triggered = false;
+          }
+        }
+
+        const prevState = !!rule.lastState;
+        const shouldFire = triggered && !prevState;
+        const idx = updated.findIndex((r) => r.id === rule.id);
+        if (idx >= 0) {
+          updated[idx] = {
+            ...updated[idx],
+            lastCheckedAt: nowIso,
+            lastState: triggered,
+            lastTriggeredAt: shouldFire ? nowIso : (updated[idx].lastTriggeredAt || null),
+          };
+        }
+
+        if (shouldFire) {
+          newEvents.push({
+            id: `evt-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+            ruleId: rule.id,
+            ticker: String(rule.ticker || '').toUpperCase(),
+            ruleLabel: _formatPriceRuleLabel(rule),
+            price,
+            triggeredAt: nowIso,
+            referencePrice: ref,
+            changePercentFromRef: pctFromRef,
+          });
+        }
+      }
+
+      if (newEvents.length > 0) {
+        const nextEvents = [...newEvents, ...(Array.isArray(priceAlertEvents) ? priceAlertEvents : [])].slice(0, 50);
+        setPriceAlertEvents(nextEvents);
+
+        if (priceAlertEmailEnabled) {
+          if (!_isValidEmail(priceAlertEmail)) {
+            setPriceAlertError('Email alerts are enabled, but the email address is invalid.');
+          } else {
+            for (const evt of newEvents) {
+              await _request('/api/email/alert', {
+                method: 'POST',
+                body: JSON.stringify({
+                  email: String(priceAlertEmail || '').trim().toLowerCase(),
+                  alert: {
+                    ticker: evt.ticker,
+                    ruleLabel: evt.ruleLabel,
+                    price: evt.price,
+                    triggeredAt: evt.triggeredAt,
+                    referencePrice: evt.referencePrice ?? null,
+                    changePercentFromRef: evt.changePercentFromRef ?? null,
+                  },
+                }),
+              }).catch(() => null);
+            }
+          }
+        }
+      }
+
+      setPriceAlertRules(updated);
+      setPriceAlertLastCheck(nowIso);
+    } catch (e) {
+      setPriceAlertError((e && e.message) || 'Failed to check price alerts');
+    } finally {
+      setPriceAlertChecking(false);
+      priceAlertCheckingRef.current = false;
+    }
+  };
+
+  const addPriceAlertRule = async () => {
+    const threshold = Number(newPriceAlertThreshold);
+    const raw = String(newPriceAlertTicker || '');
+    const tickers = Array.from(
+      new Set(
+        raw
+          .split(/[\s,]+/)
+          .map((t) => String(t || '').trim().toUpperCase())
+          .filter(Boolean)
+      )
+    );
+
+    if (tickers.length === 0) return;
+    if (tickers.length > 10) {
+      setPriceAlertError('Please add at most 10 tickers at a time (rate limits).');
+      return;
+    }
+    if (!Number.isFinite(threshold) || threshold <= 0) {
+      setPriceAlertError('Please enter a valid threshold.');
+      return;
+    }
+
+    const rules = Array.isArray(priceAlertRules) ? priceAlertRules : [];
+    const toAdd = [];
+    const failures = [];
+    setPriceAlertError(null);
+
+    for (const ticker of tickers) {
+      const dup = rules.some((r) => r && String(r.ticker || '').toUpperCase() === ticker && r.type === newPriceAlertType && Number(r.threshold) === threshold);
+      if (dup) continue;
+
+      let referencePrice = null;
+      if (newPriceAlertType === 'pct_up' || newPriceAlertType === 'pct_down') {
+        const q = await _fetchQuote(ticker);
+        if (!q.ok) {
+          failures.push(`${ticker}: ${q.error}`);
+          continue;
+        }
+        referencePrice = Number(q.quote.price || 0);
+        if (!referencePrice) {
+          failures.push(`${ticker}: invalid quote price`);
+          continue;
+        }
+      }
+
+      toAdd.push({
+        id: `rule-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        ticker,
+        type: newPriceAlertType,
+        threshold,
+        enabled: true,
+        createdAt: new Date().toISOString(),
+        referencePrice,
+        lastState: false,
+        lastCheckedAt: null,
+        lastTriggeredAt: null,
+      });
+    }
+
+    if (toAdd.length === 0 && failures.length === 0) {
+      setPriceAlertError('Those rules already exist.');
+      return;
+    }
+    if (failures.length > 0) {
+      setPriceAlertError(`Some tickers could not be added: ${failures.slice(0, 3).join(' â€¢ ')}${failures.length > 3 ? ' â€¦' : ''}`);
+    }
+    if (toAdd.length > 0) {
+      setPriceAlertRules([...toAdd, ...rules]);
+      setNewPriceAlertTicker('');
+    }
+  };
+
+  const _appendTickerToPriceAlertInput = (symbol) => {
+    const sym = String(symbol || '').trim().toUpperCase();
+    if (!sym) return;
+    const existing = Array.from(
+      new Set(
+        String(newPriceAlertTicker || '')
+          .split(/[\s,]+/)
+          .map((t) => String(t || '').trim().toUpperCase())
+          .filter(Boolean)
+      )
+    );
+    if (!existing.includes(sym)) existing.push(sym);
+    setNewPriceAlertTicker(existing.join(', '));
+  };
+
+  const searchPriceAlertTickers = async () => {
+    const q = String(priceAlertTickerQuery || '').trim();
+    if (!q) return;
+    setPriceAlertTickerSearching(true);
+    setPriceAlertTickerResults([]);
+    setPriceAlertError(null);
+    try {
+      const { ok, data, error } = await _request(`/api/stocks?query=${encodeURIComponent(q)}`, { method: 'GET' });
+      if (!ok) {
+        setPriceAlertError(error || 'Ticker search failed');
+        return;
+      }
+      const results = (data && data.results) || [];
+      setPriceAlertTickerResults(Array.isArray(results) ? results.slice(0, 25) : []);
+    } catch (e) {
+      setPriceAlertError((e && e.message) || 'Ticker search failed');
+    } finally {
+      setPriceAlertTickerSearching(false);
     }
   };
 
@@ -1493,6 +1768,380 @@ function FinancialCommandCenter() {
             >
               {loading ? 'Checking...' : 'Check Alerts'}
             </button>
+
+            <div
+              style={{
+                padding: '20px',
+                backgroundColor: theme.surface,
+                border: `1px solid ${theme.border}`,
+                borderRadius: '12px',
+                marginBottom: '24px',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '12px' }}>
+                <div>
+                  <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '4px' }}>Price Alerts</div>
+                  <div style={{ fontSize: '12px', color: theme.textMuted }}>
+                    Rules: {(priceAlertRules || []).length} â€¢ Enabled: {(priceAlertRules || []).filter((r) => r && r.enabled).length} â€¢ Last check:{' '}
+                    {priceAlertLastCheck ? new Date(priceAlertLastCheck).toLocaleString() : 'Never'}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => runPriceAlertCheck('manual')}
+                  disabled={priceAlertChecking}
+                  style={{
+                    padding: '10px 16px',
+                    backgroundColor: '#6366f1',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: priceAlertChecking ? 'not-allowed' : 'pointer',
+                    fontSize: '13px',
+                    fontWeight: '500',
+                  }}
+                >
+                  {priceAlertChecking ? 'Checkingâ€¦' : 'Check Prices Now'}
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                <input
+                  type="text"
+                  value={newPriceAlertTicker}
+                  onChange={(e) => setNewPriceAlertTicker((e.target.value || '').toUpperCase())}
+                  placeholder="Tickers (e.g. AAPL, TSLA, NVDA)"
+                  style={{
+                    flex: '1 1 160px',
+                    padding: '10px 12px',
+                    border: `1px solid ${theme.border}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    backgroundColor: theme.surface,
+                    color: theme.text,
+                  }}
+                />
+                <select
+                  value={newPriceAlertType}
+                  onChange={(e) => setNewPriceAlertType(e.target.value)}
+                  style={{
+                    flex: '1 1 200px',
+                    padding: '10px 12px',
+                    border: `1px solid ${theme.border}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    backgroundColor: theme.surface,
+                    color: theme.text,
+                  }}
+                >
+                  <option value="above">Above ($)</option>
+                  <option value="below">Below ($)</option>
+                  <option value="pct_up">Up (%) vs baseline</option>
+                  <option value="pct_down">Down (%) vs baseline</option>
+                </select>
+                <input
+                  type="text"
+                  value={newPriceAlertThreshold}
+                  onChange={(e) => setNewPriceAlertThreshold(e.target.value)}
+                  placeholder={String(newPriceAlertType || '').startsWith('pct') ? 'Percent (e.g. 5)' : 'Price (e.g. 200)'}
+                  style={{
+                    flex: '1 1 160px',
+                    padding: '10px 12px',
+                    border: `1px solid ${theme.border}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    backgroundColor: theme.surface,
+                    color: theme.text,
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={addPriceAlertRule}
+                  style={{
+                    padding: '10px 16px',
+                    backgroundColor: theme.secondaryBg,
+                    color: theme.text,
+                    border: `1px solid ${theme.border}`,
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                  }}
+                >
+                  Add Rule
+                </button>
+              </div>
+
+              <div style={{ marginBottom: '12px' }}>
+                <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: theme.text }}>Search tickers</div>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  <input
+                    type="text"
+                    value={priceAlertTickerQuery}
+                    onChange={(e) => setPriceAlertTickerQuery(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && searchPriceAlertTickers()}
+                    placeholder="Search by name or symbol (e.g. Tesla, AAPL, SPY)"
+                    style={{
+                      flex: '1 1 260px',
+                      padding: '10px 12px',
+                      border: `1px solid ${theme.border}`,
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      backgroundColor: theme.surface,
+                      color: theme.text,
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={searchPriceAlertTickers}
+                    disabled={priceAlertTickerSearching}
+                    style={{
+                      padding: '10px 16px',
+                      backgroundColor: '#6366f1',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: priceAlertTickerSearching ? 'not-allowed' : 'pointer',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                    }}
+                  >
+                    {priceAlertTickerSearching ? 'Searchingâ€¦' : 'Search'}
+                  </button>
+                </div>
+
+                {(priceAlertTickerResults || []).length > 0 && (
+                  <div style={{ marginTop: '10px', display: 'grid', gap: '10px' }}>
+                    {(priceAlertTickerResults || []).map((r, idx) => (
+                      <div
+                        key={(r && (r.symbol || r.id)) || idx}
+                        style={{
+                          padding: '12px',
+                          borderRadius: '10px',
+                          border: `1px solid ${theme.border}`,
+                          backgroundColor: theme.secondaryBgAlt,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '12px',
+                          flexWrap: 'wrap',
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontSize: '14px', fontWeight: '700', color: theme.text }}>
+                            {(r && r.symbol) ? String(r.symbol).toUpperCase() : 'â€”'}
+                            {r && r.name ? <span style={{ marginLeft: 8, fontSize: '12px', fontWeight: '500', color: theme.textMuted }}>{r.name}</span> : null}
+                          </div>
+                          {(r && (r.type || r.region)) ? (
+                            <div style={{ fontSize: '12px', color: theme.textMuted, marginTop: 2 }}>
+                              {[r.type, r.region].filter(Boolean).join(' â€¢ ')}
+                            </div>
+                          ) : null}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => _appendTickerToPriceAlertInput(r && r.symbol)}
+                          style={{
+                            padding: '6px 10px',
+                            backgroundColor: '#6366f1',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            fontWeight: '700',
+                          }}
+                        >
+                          Add
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '12px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: theme.text }}>
+                  <input
+                    type="checkbox"
+                    checked={!!priceAlertPollingEnabled}
+                    onChange={(e) => setPriceAlertPollingEnabled(e.target.checked)}
+                  />
+                  Background polling
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: theme.textMuted }}>
+                  Every
+                  <input
+                    type="number"
+                    min={1}
+                    max={60}
+                    value={priceAlertPollingMinutes}
+                    onChange={(e) => setPriceAlertPollingMinutes(Number(e.target.value))}
+                    style={{
+                      width: '80px',
+                      padding: '6px 8px',
+                      border: `1px solid ${theme.border}`,
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      backgroundColor: theme.surface,
+                      color: theme.text,
+                    }}
+                  />
+                  minutes
+                </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: theme.text }}>
+                  <input
+                    type="checkbox"
+                    checked={!!priceAlertEmailEnabled}
+                    onChange={(e) => setPriceAlertEmailEnabled(e.target.checked)}
+                  />
+                  Email me when triggered
+                </label>
+                <input
+                  type="email"
+                  value={priceAlertEmail}
+                  onChange={(e) => setPriceAlertEmail(e.target.value)}
+                  placeholder="you@email.com"
+                  style={{
+                    flex: '1 1 220px',
+                    padding: '10px 12px',
+                    border: `1px solid ${theme.border}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    backgroundColor: theme.surface,
+                    color: theme.text,
+                  }}
+                />
+              </div>
+
+              {priceAlertError && (
+                <div style={{ marginTop: '12px', padding: '12px', backgroundColor: theme.errorBg, borderRadius: '8px', color: theme.errorText, fontSize: '13px' }}>
+                  <strong>Price alerts:</strong> {priceAlertError}
+                </div>
+              )}
+
+              {(priceAlertRules || []).length > 0 && (
+                <div style={{ marginTop: '14px' }}>
+                  {(priceAlertRules || []).map((rule) => (
+                    <div
+                      key={rule.id}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        gap: '12px',
+                        flexWrap: 'wrap',
+                        alignItems: 'center',
+                        padding: '12px',
+                        border: `1px solid ${theme.border}`,
+                        borderRadius: '10px',
+                        marginBottom: '10px',
+                        backgroundColor: theme.secondaryBgAlt,
+                      }}
+                    >
+                      <div style={{ minWidth: 220 }}>
+                        <div style={{ fontSize: '14px', fontWeight: '600', color: theme.text }}>{_formatPriceRuleLabel(rule)}</div>
+                        <div style={{ fontSize: '12px', color: theme.textMuted, marginTop: '2px' }}>
+                          {String(rule.type || '').startsWith('pct') && typeof rule.referencePrice === 'number' ? `Baseline: $${Number(rule.referencePrice).toFixed(2)}` : ''}
+                          {rule.lastTriggeredAt ? ` â€¢ Last triggered: ${new Date(rule.lastTriggeredAt).toLocaleString()}` : ''}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        {String(rule.type || '').startsWith('pct') && (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const q = await _fetchQuote(rule.ticker);
+                              if (!q.ok) {
+                                setPriceAlertError(`Could not reset baseline: ${q.error}`);
+                                return;
+                              }
+                              const ref = Number(q.quote.price || 0);
+                              setPriceAlertRules((prev) =>
+                                (prev || []).map((r) => (r.id === rule.id ? { ...r, referencePrice: ref, lastState: false } : r))
+                              );
+                            }}
+                            style={{
+                              padding: '6px 10px',
+                              backgroundColor: theme.secondaryBg,
+                              color: theme.text,
+                              border: `1px solid ${theme.border}`,
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              fontWeight: '500',
+                            }}
+                          >
+                            Reset baseline
+                          </button>
+                        )}
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: theme.text }}>
+                          <input
+                            type="checkbox"
+                            checked={!!rule.enabled}
+                            onChange={(e) =>
+                              setPriceAlertRules((prev) =>
+                                (prev || []).map((r) => (r.id === rule.id ? { ...r, enabled: e.target.checked, lastState: false } : r))
+                              )
+                            }
+                          />
+                          Enabled
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setPriceAlertRules((prev) => (prev || []).filter((r) => r.id !== rule.id))}
+                          style={{
+                            padding: '6px 10px',
+                            backgroundColor: '#ef4444',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {(priceAlertEvents || []).length > 0 && (
+                <div style={{ marginTop: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <div style={{ fontSize: '14px', fontWeight: '600', color: theme.text }}>Triggered</div>
+                    <button
+                      type="button"
+                      onClick={() => setPriceAlertEvents([])}
+                      style={{ background: 'none', border: 'none', color: '#6366f1', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  {(priceAlertEvents || []).slice(0, 10).map((evt) => (
+                    <div
+                      key={evt.id}
+                      style={{
+                        padding: '12px',
+                        borderRadius: '10px',
+                        border: `1px solid ${theme.border}`,
+                        backgroundColor: theme.surface,
+                        marginBottom: '10px',
+                      }}
+                    >
+                      <div style={{ fontSize: '14px', fontWeight: '600', color: theme.text }}>{evt.ruleLabel}</div>
+                      <div style={{ fontSize: '12px', color: theme.textMuted, marginTop: '2px' }}>
+                        ${Number(evt.price || 0).toFixed(2)} â€¢ {new Date(evt.triggeredAt).toLocaleString()}
+                        {typeof evt.changePercentFromRef === 'number' ? ` â€¢ ${Number(evt.changePercentFromRef).toFixed(2)}% vs baseline` : ''}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {(watchlist || []).length === 0 ? (
               <div style={{ textAlign: 'center', padding: '40px', color: theme.textMutedLight }}>
