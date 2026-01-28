@@ -191,7 +191,7 @@ tools:
   google_auth_url:
     method: GET
     endpoint: /google-auth-url
-    description: "Get OAuth URL for Google"
+    description: "Get OAuth URL for Google with optional return URL for redirect after auth"
     input_schema:
       type: object
       properties:
@@ -202,6 +202,9 @@ tools:
             - calendar
             - drive
             - contacts
+        returnUrl:
+          type: string
+          format: uri
       required:
         - service
     output:

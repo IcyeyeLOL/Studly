@@ -363,11 +363,11 @@ class CanvasStateUnpacker {
   }
 
   /**
-   * Unpack general shape - writes general-shape-{type}-{id}.json
+   * Unpack general shape - writes shape-{id}.json
    */
   async unpackGeneralShape(state, lastChangedClock, roomDir) {
     const objectIdClean = state.id.replace('shape:', '');
-    const objectFileName = `general-shape-${state.type}-${objectIdClean}.json`;
+    const objectFileName = `shape-${objectIdClean}.json`;
     const objectFilePath = path.join(roomDir, objectFileName);
 
     const objectData = {
@@ -514,7 +514,7 @@ class CanvasStateUnpacker {
           fs.rmSync(fullPath, { recursive: true, force: true });
         }
       } else if (entry.isFile()) {
-        if ((entry.name.startsWith('general-shape-') || 
+        if ((entry.name.startsWith('shape-') || 
              entry.name.startsWith('general-asset-') || 
              entry.name.startsWith('canvas-link-')) && 
             entry.name.endsWith('.json')) {

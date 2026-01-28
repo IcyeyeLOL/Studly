@@ -30,6 +30,14 @@ categories:
         method: POST
         endpoint: /speech-to-text
         description: "Transcribe speech audio to text"
+  booking:
+    file: integrations/booking.yaml
+    endpoint_count: 1
+    endpoints:
+      - name: booking_create_event
+        method: POST
+        endpoint: /booking-create-event
+        description: "Create a calendar event on a host's Google Calendar and send invite to guest. Uses the host's stored OAuth tokens."
   calendar:
     file: integrations/calendar.yaml
     endpoint_count: 2
@@ -41,7 +49,7 @@ categories:
       - name: google_calendar_create_events
         method: POST
         endpoint: /google-calendar-create-events
-        description: "Create events on the user's Google Calendar"
+        description: "Create events on the user's Google Calendar with optional video conferencing"
   document:
     file: integrations/document.yaml
     endpoint_count: 3
@@ -58,6 +66,14 @@ categories:
         method: POST
         endpoint: /generate-tasks-from-document
         description: "Generate structured travel tasks from extracted document text"
+  email:
+    file: integrations/email.yaml
+    endpoint_count: 1
+    endpoints:
+      - name: miniapp_send_email
+        method: POST
+        endpoint: /miniapp-send-email
+        description: "Send transactional email from a miniapp. Emails are sent from noreply@{miniappId}.spaces.site with rate limiting."
   formula1:
     file: integrations/formula1.yaml
     endpoint_count: 13
@@ -213,7 +229,7 @@ categories:
       - name: google_auth_url
         method: GET
         endpoint: /google-auth-url
-        description: "Get OAuth URL for Google"
+        description: "Get OAuth URL for Google with optional return URL for redirect after auth"
       - name: google_disconnect
         method: DELETE
         endpoint: /google-disconnect
@@ -390,6 +406,26 @@ categories:
         method: POST
         endpoint: /search-crypto
         description: "Search cryptocurrencies"
+  mta:
+    file: integrations/mta.yaml
+    endpoint_count: 4
+    endpoints:
+      - name: mta_subway_feeds
+        method: GET
+        endpoint: /mta-subway-feeds
+        description: "List all available NYC Subway GTFS-RT feeds and the lines they cover"
+      - name: mta_subway_feed
+        method: GET
+        endpoint: /mta-subway-feed
+        description: "Get real-time NYC Subway feed data including trip updates, vehicle positions, and alerts for specific lines"
+      - name: mta_subway_arrivals
+        method: GET
+        endpoint: /mta-subway-arrivals
+        description: "Get real-time arrival times for a specific NYC Subway line, optionally filtered by stop"
+      - name: mta_subway_alerts
+        method: GET
+        endpoint: /mta-subway-alerts
+        description: "Get current service alerts for NYC Subway lines including delays, planned work, and service changes"
   nasa:
     file: integrations/nasa.yaml
     endpoint_count: 7
@@ -554,6 +590,34 @@ categories:
         method: POST
         endpoint: /advanced-web-search
         description: "Advanced multi-modal web search with structured output for widgets"
+  social-media:
+    file: integrations/social-media.yaml
+    endpoint_count: 1
+    endpoints:
+      - name: instagram_extract_content
+        method: POST
+        endpoint: /instagram-extract-content
+        description: "Extract content from Instagram posts (captions and media)"
+  storage:
+    file: integrations/storage.yaml
+    endpoint_count: 4
+    endpoints:
+      - name: shared_user_data_set
+        method: POST
+        endpoint: /shared-user-data-set
+        description: "Set a key-value pair in a user's shared storage. Data is accessible across all miniapps/sites."
+      - name: shared_user_data_get
+        method: POST
+        endpoint: /shared-user-data-get
+        description: "Get a value from a user's shared storage by key."
+      - name: shared_user_data_delete
+        method: POST
+        endpoint: /shared-user-data-delete
+        description: "Delete a key from a user's shared storage."
+      - name: shared_user_data_list
+        method: POST
+        endpoint: /shared-user-data-list
+        description: "List all keys in a user's shared storage."
   submagic:
     file: integrations/submagic.yaml
     endpoint_count: 3

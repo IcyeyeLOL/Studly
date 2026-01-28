@@ -1,0 +1,353 @@
+# mta integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: Call using miyagiAPI:
+#   miyagiAPI.post('/endpoint', { ...params })
+#   miyagiAPI.get('/endpoint', { ...params })
+
+tools:
+
+  mta_subway_feeds:
+    method: GET
+    endpoint: /mta-subway-feeds
+    description: "List all available NYC Subway GTFS-RT feeds and the lines they cover"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            feeds:
+              type: array
+              items:
+                type: object
+                properties:
+                  feedId:
+                    type: string
+                    description: Feed identifier (e.g., "ace", "bdfm", "1234567")
+                  lines:
+                    type: array
+                    items:
+                      type: string
+                    description: Subway lines covered by this feed
+                  url:
+                    type: string
+                    description: Feed URL
+                required:
+                  - feedId
+                  - lines
+                  - url
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  mta_subway_feed:
+    method: GET
+    endpoint: /mta-subway-feed
+    description: "Get real-time NYC Subway feed data including trip updates, vehicle positions, and alerts for specific lines"
+    input_schema:
+      type: object
+      properties:
+        feedId:
+          type: string
+          enum:
+            - ace
+            - bdfm
+            - g
+            - jz
+            - l
+            - nqrw
+            - 1234567
+            - sir
+          description: "Feed ID: ace (A/C/E), bdfm (B/D/F/M), g (G), jz (J/Z), l (L), nqrw (N/Q/R/W), 1234567 (numbered lines), sir (Staten Island Railway)"
+      required:
+        - feedId
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            feed:
+              type: object
+              properties:
+                feedId:
+                  type: string
+                timestamp:
+                  type: number
+                  description: Feed timestamp (Unix seconds)
+                tripUpdates:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      tripId:
+                        type: string
+                      routeId:
+                        type: string
+                        description: The subway line (e.g., "A", "1")
+                      startDate:
+                        type: string
+                      startTime:
+                        type: string
+                      scheduleRelationship:
+                        type: string
+                      stopTimeUpdates:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            stopId:
+                              type: string
+                            stationName:
+                              type: string
+                              description: "Human-readable station name"
+                            arrival:
+                              type: object
+                              properties:
+                                time:
+                                  type: number
+                                  description: Arrival time (Unix seconds)
+                                delay:
+                                  type: number
+                                  description: Delay in seconds
+                              required:
+                                - time
+                              additionalProperties: false
+                            departure:
+                              type: object
+                              properties:
+                                time:
+                                  type: number
+                                  description: Departure time (Unix seconds)
+                                delay:
+                                  type: number
+                                  description: Delay in seconds
+                              required:
+                                - time
+                              additionalProperties: false
+                            scheduleRelationship:
+                              type: string
+                          required:
+                            - stopId
+                          additionalProperties: false
+                    required:
+                      - tripId
+                      - routeId
+                      - stopTimeUpdates
+                    additionalProperties: false
+                vehiclePositions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      tripId:
+                        type: string
+                      routeId:
+                        type: string
+                      currentStopSequence:
+                        type: number
+                      currentStatus:
+                        type: string
+                        description: INCOMING_AT, STOPPED_AT, or IN_TRANSIT_TO
+                      timestamp:
+                        type: number
+                      stopId:
+                        type: string
+                      stationName:
+                        type: string
+                        description: "Human-readable station name"
+                    additionalProperties: false
+                alerts:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      headerText:
+                        type: string
+                      descriptionText:
+                        type: string
+                      activePeriods:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            start:
+                              type: number
+                            end:
+                              type: number
+                          additionalProperties: false
+                      informedEntities:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            agencyId:
+                              type: string
+                            routeId:
+                              type: string
+                            stopId:
+                              type: string
+                            stationName:
+                              type: string
+                              description: "Human-readable station name"
+                          additionalProperties: false
+                      cause:
+                        type: string
+                      effect:
+                        type: string
+                    required:
+                      - id
+                      - activePeriods
+                      - informedEntities
+                    additionalProperties: false
+              required:
+                - feedId
+                - timestamp
+                - tripUpdates
+                - vehiclePositions
+                - alerts
+              additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  mta_subway_arrivals:
+    method: GET
+    endpoint: /mta-subway-arrivals
+    description: "Get real-time arrival times for a specific NYC Subway line, optionally filtered by stop"
+    input_schema:
+      type: object
+      properties:
+        line:
+          type: string
+          minLength: 1
+          description: Subway line (e.g., "A", "1", "L", "G")
+        stopId:
+          type: string
+          description: Optional MTA stop ID to filter arrivals
+      required:
+        - line
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            arrivals:
+              type: array
+              items:
+                type: object
+                properties:
+                  tripId:
+                    type: string
+                  routeId:
+                    type: string
+                  stopId:
+                    type: string
+                  stationName:
+                    type: string
+                    description: "Human-readable station name"
+                  arrivalTime:
+                    type: number
+                    description: Arrival time (Unix seconds)
+                  departureTime:
+                    type: number
+                    description: Departure time (Unix seconds)
+                  delay:
+                    type: number
+                    description: Delay in seconds (negative = early)
+                required:
+                  - tripId
+                  - routeId
+                  - stopId
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  mta_subway_alerts:
+    method: GET
+    endpoint: /mta-subway-alerts
+    description: "Get current service alerts for NYC Subway lines including delays, planned work, and service changes"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            alerts:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  headerText:
+                    type: string
+                    description: Alert headline
+                  descriptionText:
+                    type: string
+                    description: Full alert description
+                  activePeriods:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        start:
+                          type: number
+                          description: Start time (Unix seconds)
+                        end:
+                          type: number
+                          description: End time (Unix seconds)
+                      additionalProperties: false
+                  informedEntities:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        agencyId:
+                          type: string
+                        routeId:
+                          type: string
+                          description: Affected subway line
+                        stopId:
+                          type: string
+                          description: Affected stop ID
+                        stationName:
+                          type: string
+                          description: "Human-readable station name"
+                      additionalProperties: false
+                  cause:
+                    type: string
+                    description: Alert cause (e.g., CONSTRUCTION, WEATHER)
+                  effect:
+                    type: string
+                    description: Alert effect (e.g., DELAYS, NO_SERVICE)
+                required:
+                  - id
+                  - activePeriods
+                  - informedEntities
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

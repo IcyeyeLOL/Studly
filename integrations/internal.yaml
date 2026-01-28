@@ -18,11 +18,22 @@ tools:
           type: boolean
         data:
           type: object
+          properties:
+            totalSpent:
+              type: number
+            currency:
+              type: string
+            usageCount:
+              type: number
+          required:
+            - totalSpent
+            - currency
+            - usageCount
+          additionalProperties: false
         error:
           type: string
       required:
         - success
-    output_description: "data contains: { totalSpent, currency, usageCount }"
 
   get_canvas_users:
     method: POST
@@ -43,11 +54,40 @@ tools:
           type: boolean
         data:
           type: object
+          properties:
+            data:
+              type: object
+              properties:
+                users:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      publicUsername:
+                        type: string
+                      email:
+                        type: string
+                      isOwner:
+                        type: boolean
+                    required:
+                      - id
+                      - name
+                      - publicUsername
+                      - email
+                      - isOwner
+                    additionalProperties: false
+              required:
+                - users
+              additionalProperties: false
+          additionalProperties: false
         error:
           type: string
       required:
         - success
-    output_description: "data contains: { success, users: [...] }"
 
   get_current_user:
     method: POST
@@ -60,8 +100,35 @@ tools:
           type: boolean
         data:
           type: object
+          properties:
+            data:
+              type: object
+              properties:
+                user:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    publicUsername:
+                      type: string
+                    email:
+                      type: string
+                    isCurrentUser:
+                      type: boolean
+                  required:
+                    - id
+                    - name
+                    - publicUsername
+                    - email
+                    - isCurrentUser
+                  additionalProperties: false
+              required:
+                - user
+              additionalProperties: false
+          additionalProperties: false
         error:
           type: string
       required:
         - success
-    output_description: "data contains: { success, user: {...} }"

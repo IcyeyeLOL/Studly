@@ -1,0 +1,84 @@
+# social-media integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: Call using miyagiAPI:
+#   miyagiAPI.post('/endpoint', { ...params })
+#   miyagiAPI.get('/endpoint', { ...params })
+
+tools:
+
+  instagram_extract_content:
+    method: POST
+    endpoint: /instagram-extract-content
+    description: "Extract content from Instagram posts (captions and media)"
+    input_schema:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+        includeMedia:
+          type: boolean
+          default: true
+          description: Include media URLs in response
+      required:
+        - url
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            postId:
+              type: string
+              description: Instagram media ID
+            caption:
+              type: string
+              description: Post caption/description
+            mediaType:
+              type: string
+              enum:
+                - IMAGE
+                - VIDEO
+                - CAROUSEL_ALBUM
+              description: Type of media content
+            mediaUrls:
+              type: array
+              items:
+                type: string
+              description: URLs to media files
+            thumbnailUrl:
+              type: string
+              description: Video thumbnail URL
+            permalink:
+              type: string
+              description: Permanent link to Instagram post
+            timestamp:
+              type: string
+              description: Post creation timestamp (ISO 8601)
+            author:
+              type: object
+              properties:
+                username:
+                  type: string
+                id:
+                  type: string
+              required:
+                - username
+                - id
+              additionalProperties: false
+              description: Post author information
+          required:
+            - postId
+            - caption
+            - mediaType
+            - mediaUrls
+            - permalink
+            - timestamp
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

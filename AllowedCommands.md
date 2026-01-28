@@ -28,6 +28,38 @@ This repository enforces strict agent constraints. Read this document together w
 
 ---
 
+## Document Inspection
+
+- `inspect document <assetId>` - Fetch and process document from canvas
+  - Supported types: PDF, DOCX, images, text files
+  - What it does:
+    - **PDF/DOCX**: Extracts text + metadata
+    - **Images**: Fetches image (viewable with Read - Claude has vision)
+    - **Text**: Fetches text content
+  - Saves results to `.canvas-documents/`
+  - Example: `inspect document abc123`
+  - Example: `inspect document abc123 --extract-images`
+  - Options (PDF only):
+    - `--extract-images` - Extract embedded images from PDFs
+    - `--extract-attachments` - Extract embedded files from PDFs
+- After extraction, use Read tool to view the content
+  - PDF/DOCX: `Read .canvas-documents/abc123.txt`
+  - Images: `Read .canvas-documents/abc123.png`
+  - Metadata: `Read .canvas-documents/abc123.json`
+
+---
+
+## Room Navigation
+
+- `locate-room` - Find the full path to your current room
+  - Uses room ID from `/app/container_vars.json`
+  - Returns full path like `/app/workspace/repo/parent-room/your-room`
+  - Example: `locate-room`
+  - Example: `locate-room room-487be075-a712-4234-aa53-2017d8021e2e`
+- Use this to find your workspace before starting work
+
+---
+
 ## Prohibited Actions
 - No shell/OS commands of any kind.
 - No git commands

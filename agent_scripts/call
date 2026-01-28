@@ -1,0 +1,279 @@
+#!/usr/bin/env node
+
+/**
+ * Tool Call Command for Miniapp Agents
+ * 
+ * MCP-like interface for calling tools on deployed miniapps.
+ * 
+ * Usage:
+ *   call --list                                    # List available tools
+ *   call --describe storage.write                  # Describe a tool
+ *   call storage.list scope=global                 # Execute a tool
+ *   call storage.read scope=global keys=todos,settings
+ *   call storage.write scope=global data='{"key":"value"}'
+ *   call storage.delete scope=global keys=oldKey
+ * 
+ * Params are passed as key=value pairs. JSON values should be quoted.
+ */
+
+const fs = require('fs');
+const https = require('https');
+const http = require('http');
+
+// ============================================================================
+// Config
+// ============================================================================
+
+const CONTAINER_VARS_PATH = '/app/container_vars.json';
+
+function loadContext() {
+  try {
+    const content = fs.readFileSync(CONTAINER_VARS_PATH, 'utf8');
+    const vars = JSON.parse(content);
+    
+    if (!vars.spacesSite || !vars.spacesSite.url) {
+      console.error('❌ Error: Not in a spaces.site context');
+      process.exit(1);
+    }
+    
+    return {
+      siteUrl: vars.spacesSite.url,
+      roomId: vars.spacesSite.roomId || 'default',
+      appName: vars.spacesSite.appName,
+      userId: vars.userId,
+    };
+  } catch (error) {
+    console.error('❌ Error: Could not load context');
+    console.error('   ' + error.message);
+    process.exit(1);
+  }
+}
+
+// ============================================================================
+// HTTP Client
+// ============================================================================
+
+function makeRequest(url, options = {}) {
+  return new Promise((resolve, reject) => {
+    const parsedUrl = new URL(url);
+    const client = parsedUrl.protocol === 'https:' ? https : http;
+    
+    const body = options.body ? JSON.stringify(options.body) : null;
+    
+    const reqOptions = {
+      hostname: parsedUrl.hostname,
+      port: parsedUrl.port || (parsedUrl.protocol === 'https:' ? 443 : 80),
+      path: parsedUrl.pathname + parsedUrl.search,
+      method: options.method || 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(body ? { 'Content-Length': Buffer.byteLength(body) } : {}),
+      },
+    };
+    
+    const req = client.request(reqOptions, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          resolve({ status: res.statusCode, data: JSON.parse(data) });
+        } catch {
+          resolve({ status: res.statusCode, data });
+        }
+      });
+    });
+    
+    req.on('error', reject);
+    if (body) req.write(body);
+    req.end();
+  });
+}
+
+// ============================================================================
+// Commands
+// ============================================================================
+
+async function listTools(context) {
+  const url = `${context.siteUrl}/api/tools/list`;
+  const response = await makeRequest(url);
+  
+  console.log('📦 Available Tools:\n');
+  for (const tool of response.data.tools || []) {
+    console.log(`  ${tool.name}`);
+    console.log(`    ${tool.description}`);
+    console.log('');
+  }
+}
+
+async function describeTool(context, toolName) {
+  const url = `${context.siteUrl}/api/tools/describe/${toolName}`;
+  const response = await makeRequest(url);
+  
+  if (response.status === 404) {
+    console.error(`❌ Tool not found: ${toolName}`);
+    process.exit(1);
+  }
+  
+  const tool = response.data.tool;
+  console.log(`📦 ${tool.name}`);
+  console.log(`   ${tool.description}\n`);
+  console.log('Parameters:');
+  for (const [name, spec] of Object.entries(tool.params)) {
+    const required = spec.required ? '(required)' : '(optional)';
+    console.log(`  ${name}: ${spec.type} ${required}`);
+    console.log(`    ${spec.description}`);
+  }
+}
+
+async function executeTool(context, toolName, params) {
+  const url = `${context.siteUrl}/api/tools/execute/${context.roomId}`;
+  
+  const response = await makeRequest(url, {
+    method: 'POST',
+    body: { tool: toolName, params },
+  });
+  
+  const result = response.data;
+  
+  if (result.success) {
+    console.log(JSON.stringify(result.data, null, 2));
+  } else {
+    console.error(`❌ Error: ${result.error}`);
+    process.exit(1);
+  }
+}
+
+// ============================================================================
+// Parse Arguments
+// ============================================================================
+
+function parseArgs(args) {
+  const result = {
+    command: null,
+    toolName: null,
+    params: {},
+  };
+  
+  for (const arg of args) {
+    if (arg === '--list') {
+      result.command = 'list';
+    } else if (arg === '--describe') {
+      result.command = 'describe';
+    } else if (arg === '--help' || arg === '-h') {
+      result.command = 'help';
+    } else if (result.command === 'describe' && !result.toolName) {
+      result.toolName = arg;
+    } else if (!result.toolName && !arg.includes('=')) {
+      result.toolName = arg;
+    } else if (arg.includes('=')) {
+      const [key, ...valueParts] = arg.split('=');
+      let value = valueParts.join('=');
+      
+      // Try to parse as JSON
+      try {
+        value = JSON.parse(value);
+      } catch {
+        // Try to parse comma-separated as array
+        if (value.includes(',') && !value.startsWith('{') && !value.startsWith('[')) {
+          value = value.split(',');
+        }
+      }
+      
+      result.params[key] = value;
+    }
+  }
+  
+  // Default command is execute if we have a tool name
+  if (!result.command && result.toolName) {
+    result.command = 'execute';
+  }
+  
+  return result;
+}
+
+function printUsage() {
+  console.log(`
+📦 Tool Call Command for Miniapp Agents
+
+Usage:
+  call --list                              List available tools
+  call --describe <tool>                   Describe a tool's parameters
+  call <tool> [param=value ...]            Execute a tool
+
+Examples:
+  call --list
+  call --describe storage.write
+  call storage.list scope=global
+  call storage.read scope=global keys=todos,settings
+  call storage.write scope=global data='{"todos":[]}'
+  call storage.delete scope=global keys=oldKey
+
+Parameter Syntax:
+  - Simple values:    key=value
+  - Arrays:           keys=a,b,c
+  - JSON objects:     data='{"key":"value"}'
+
+Built-in Storage Tools:
+  storage.list     List keys in a scope
+  storage.read     Read one or more keys (batch)
+  storage.write    Write key-value pairs (batch)
+  storage.delete   Delete keys
+`);
+}
+
+// ============================================================================
+// Main
+// ============================================================================
+
+async function main() {
+  const args = process.argv.slice(2);
+  
+  if (args.length === 0) {
+    printUsage();
+    process.exit(0);
+  }
+  
+  const parsed = parseArgs(args);
+  
+  if (parsed.command === 'help') {
+    printUsage();
+    process.exit(0);
+  }
+  
+  const context = loadContext();
+  
+  try {
+    switch (parsed.command) {
+      case 'list':
+        await listTools(context);
+        break;
+        
+      case 'describe':
+        if (!parsed.toolName) {
+          console.error('❌ Missing tool name for --describe');
+          process.exit(1);
+        }
+        await describeTool(context, parsed.toolName);
+        break;
+        
+      case 'execute':
+        if (!parsed.toolName) {
+          console.error('❌ Missing tool name');
+          printUsage();
+          process.exit(1);
+        }
+        await executeTool(context, parsed.toolName, parsed.params);
+        break;
+        
+      default:
+        printUsage();
+        process.exit(1);
+    }
+  } catch (error) {
+    console.error('❌ Error:', error.message);
+    process.exit(1);
+  }
+}
+
+main();
+

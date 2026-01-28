@@ -408,12 +408,12 @@ class CanvasStateGenerator {
   }
 
 
-  // Load all general objects from general-shape-*.json, general-asset-*.json, and canvas-link-*.json files in a room
+  // Load all general objects from shape-*.json, general-asset-*.json, and canvas-link-*.json files in a room
   async loadGeneralObjects(roomDir) {
     const entries = fs.readdirSync(roomDir, { withFileTypes: true });
     const generalObjectFiles = entries
       .filter(entry => entry.isFile() && 
-        (entry.name.startsWith('general-shape-') || 
+        (entry.name.startsWith('shape-') || 
          entry.name.startsWith('general-asset-') || 
          entry.name.startsWith('canvas-link-')) && 
         entry.name.endsWith('.json'))
@@ -439,7 +439,7 @@ class CanvasStateGenerator {
     return { generalObjects, canvasLinks };
   }
 
-  // Load a single general object from general-shape-*.json, general-asset-*.json, or canvas-link-*.json file
+  // Load a single general object from shape-*.json, general-asset-*.json, or canvas-link-*.json file
   async loadGeneralObject(roomDir, objectFileName) {
     const objectFilePath = path.join(roomDir, objectFileName);
     

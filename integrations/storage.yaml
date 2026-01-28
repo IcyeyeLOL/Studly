@@ -1,0 +1,192 @@
+# storage integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: Call using miyagiAPI:
+#   miyagiAPI.post('/endpoint', { ...params })
+#   miyagiAPI.get('/endpoint', { ...params })
+
+tools:
+
+  shared_user_data_set:
+    method: POST
+    endpoint: /shared-user-data-set
+    description: "Set a key-value pair in a user's shared storage. Data is accessible across all miniapps/sites."
+    input_schema:
+      type: object
+      properties:
+        targetUserId:
+          type: string
+          minLength: 1
+          description: Clerk user ID whose storage to write to
+        key:
+          type: string
+          minLength: 1
+          description: "Storage key (e.g., \"upcoming-meetings\", \"notifications\")"
+        data:
+          description: "Any JSON-serializable data to store"
+        miniappId:
+          type: string
+          description: ID of the miniapp writing the data
+      required:
+        - targetUserId
+        - key
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  shared_user_data_get:
+    method: POST
+    endpoint: /shared-user-data-get
+    description: "Get a value from a user's shared storage by key."
+    input_schema:
+      type: object
+      properties:
+        targetUserId:
+          type: string
+          minLength: 1
+          description: Clerk user ID whose storage to read from
+        key:
+          type: string
+          minLength: 1
+          description: Storage key to retrieve
+      required:
+        - targetUserId
+        - key
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            exists:
+              type: boolean
+              description: Whether the key exists
+            data:
+              anyOf:
+                - 
+                  type: object
+                  properties:
+                    data:
+                      description: The stored data
+                    updatedAt:
+                      type: string
+                      description: ISO timestamp of last update
+                    writtenBy:
+                      type:
+                        - string
+                        - null
+                      description: Clerk user ID who wrote the data
+                    miniappId:
+                      type:
+                        - string
+                        - null
+                      description: Miniapp that wrote the data
+                  required:
+                    - updatedAt
+                    - writtenBy
+                    - miniappId
+                  additionalProperties: false
+                - 
+                  type: null
+          required:
+            - exists
+            - data
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  shared_user_data_delete:
+    method: POST
+    endpoint: /shared-user-data-delete
+    description: "Delete a key from a user's shared storage."
+    input_schema:
+      type: object
+      properties:
+        targetUserId:
+          type: string
+          minLength: 1
+          description: Clerk user ID whose storage to delete from
+        key:
+          type: string
+          minLength: 1
+          description: Storage key to delete
+      required:
+        - targetUserId
+        - key
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  shared_user_data_list:
+    method: POST
+    endpoint: /shared-user-data-list
+    description: "List all keys in a user's shared storage."
+    input_schema:
+      type: object
+      properties:
+        targetUserId:
+          type: string
+          minLength: 1
+          description: Clerk user ID whose storage to list
+      required:
+        - targetUserId
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            keys:
+              type: array
+              items:
+                type: object
+                properties:
+                  key:
+                    type: string
+                    description: Storage key name
+                  size:
+                    type: number
+                    description: Size in bytes
+                  uploaded:
+                    type:
+                      - string
+                      - null
+                    description: ISO timestamp when uploaded
+                required:
+                  - key
+                  - size
+                  - uploaded
+                additionalProperties: false
+          required:
+            - keys
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

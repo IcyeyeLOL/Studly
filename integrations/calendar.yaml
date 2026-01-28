@@ -56,7 +56,7 @@ tools:
   google_calendar_create_events:
     method: POST
     endpoint: /google-calendar-create-events
-    description: "Create events on the user's Google Calendar"
+    description: "Create events on the user's Google Calendar with optional video conferencing"
     input_schema:
       type: object
       properties:
@@ -85,6 +85,14 @@ tools:
                 default: false
               groupId:
                 type: string
+              addVideoConferencing:
+                type: boolean
+                default: false
+              attendees:
+                type: array
+                items:
+                  type: string
+                  format: email
             required:
               - title
               - start
@@ -119,6 +127,8 @@ tools:
                   start:
                     type: string
                   end:
+                    type: string
+                  meetLink:
                     type: string
                 required:
                   - id

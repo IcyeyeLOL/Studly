@@ -282,11 +282,16 @@ tools:
           type: boolean
         data:
           type: object
+          properties:
+            neo: {}
+            usageId:
+              type: string
+            cost: {}
+          additionalProperties: false
         error:
           type: string
       required:
         - success
-    output_description: "data contains: { neo: Single asteroid object with detailed information }"
 
   nasa_neows_browse:
     method: POST
@@ -311,8 +316,13 @@ tools:
           type: boolean
         data:
           type: object
+          properties:
+            neos: {}
+            usageId:
+              type: string
+            cost: {}
+          additionalProperties: false
         error:
           type: string
       required:
         - success
-    output_description: "data contains: { neos: NeoWs browse response with paginated asteroid data }"

@@ -1,0 +1,64 @@
+# email integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: Call using miyagiAPI:
+#   miyagiAPI.post('/endpoint', { ...params })
+#   miyagiAPI.get('/endpoint', { ...params })
+
+tools:
+
+  miniapp_send_email:
+    method: POST
+    endpoint: /miniapp-send-email
+    description: "Send transactional email from a miniapp. Emails are sent from noreply@{miniappId}.spaces.site with rate limiting."
+    input_schema:
+      type: object
+      properties:
+        miniappId:
+          type: string
+          minLength: 1
+          description: "Miniapp identifier (e.g., \"book-me\")"
+        to:
+          type: string
+          format: email
+          description: Recipient email address
+        subject:
+          type: string
+          minLength: 1
+          description: Email subject
+        text:
+          type: string
+          description: Plain text content
+        html:
+          type: string
+          minLength: 1
+          description: HTML content
+        replyTo:
+          type: string
+          format: email
+          description: "Reply-to address (e.g., host email for bookings)"
+        senderName:
+          type: string
+          description: Sender display name (defaults to formatted miniapp name)
+      required:
+        - miniappId
+        - to
+        - subject
+        - html
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            messageId:
+              type: string
+            rateLimited:
+              type: boolean
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

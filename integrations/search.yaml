@@ -63,11 +63,19 @@ tools:
           type: boolean
         data:
           type: object
+          properties:
+            summary:
+              type: string
+            citations:
+              type: array
+            sources:
+              type: array
+            debug: {}
+          additionalProperties: false
         error:
           type: string
       required:
         - success
-    output_description: "data contains: { summary, citations[], sources[] }"
 
   search_web_raw:
     method: POST
@@ -123,11 +131,16 @@ tools:
           type: boolean
         data:
           type: object
+          properties:
+            sources:
+              type: array
+            query:
+              type: string
+          additionalProperties: false
         error:
           type: string
       required:
         - success
-    output_description: "data contains: { sources[{ url, title, snippet, extractedText }], query }"
 
   search_web_ai:
     method: POST
@@ -382,11 +395,21 @@ tools:
           type: boolean
         data:
           type: object
+          properties:
+            assets:
+              type: array
+            pdfs:
+              type: array
+            citations:
+              type: array
+            summary:
+              type: string
+            debug: {}
+          additionalProperties: false
         error:
           type: string
       required:
         - success
-    output_description: "data contains: { assets[], citations[], summary }"
 
   search_academic:
     method: POST

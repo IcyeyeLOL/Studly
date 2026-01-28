@@ -9,6 +9,14 @@ room-9ee0cdde-865f-47e8-b0a6-753dcf9108f6/      # Root canvas (your main workspa
 ├── global-storage.json                         # Canvas-wide shared data
 ├── canvas-link-{shapeId}.json                  # Canvas-link to nested room (position, label)
 │
+├── .canvas-images/                             # Image inspection cache (inspect image)
+├── .canvas-documents/                          # Document inspection cache (inspect document)
+│   ├── {assetId}.txt                          # Extracted text
+│   ├── {assetId}.json                         # Document metadata
+│   └── {assetId}/                             # Multi-file extractions
+│       ├── images/                            # Extracted images from PDFs
+│       └── attachments/                       # PDF embedded files
+│
 ├── files/                                      # File storage (room-level, not in widgets)
 │   ├── notes/                                  # Example: Notepad widget files
 │   │   ├── config.json                         # { currentNote, currentFolder }

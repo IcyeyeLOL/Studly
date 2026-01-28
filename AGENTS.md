@@ -20,6 +20,7 @@ Make sure you read the full content of AGENTS.md (this file) as well as all the 
 - Storage.md — useStorage with scope option, useFiles patterns
 - FileEditing.md — how to edit files for useFiles-based widgets
 - ImageAssets.md — working with images on the canvas
+- DocumentAssets.md — working with documents (PDF, DOCX) on canvas
 - Hooks.md — quick reference for all available hooks
 - McAPI.md — miyagiAPI usage patterns and examples
 - Styling.md — rules for when to apply or preserve widget styling
@@ -215,7 +216,19 @@ You can only use these console commands:
 - If the template is a known template from `/app/workspace/repo/agent_scripts/templates`, the tool will do all the work
 - If the template is not under `/app/workspace/repo/agent_scripts/templates`, the tool will do just scaffolding, and you will need to modify template.jsx and any other components
 
-**`inspect image ${ASSET_ID}`**
+**`inspect document ${ASSET_ID} [options]`**
+- Fetches and processes documents from canvas
+- Supported: PDF, DOCX, images (PNG/JPG/etc), text files
+- What it does by type:
+  - **PDF/DOCX**: Extracts text + metadata → `.canvas-documents/{assetId}.txt` and `.json`
+  - **Images**: Saves image file → `.canvas-documents/{assetId}.png` (viewable with Read - Claude has vision)
+  - **Text**: Saves content → `.canvas-documents/{assetId}.txt`
+- After processing, use Read tool to view the content
+- Options (PDF only):
+  - `--extract-images` - Also extract embedded images from PDFs → `.canvas-documents/{assetId}/images/`
+  - `--extract-attachments` - Also extract embedded files from PDFs
+
+**`inspect image ${ASSET_ID}`** (deprecated - use `inspect document` instead)
 - Analyzes an image on the canvas and returns a description of its contents
 - Use when you need to understand what's depicted in a canvas image
 
