@@ -323,24 +323,15 @@ function FinancialCommandCenter() {
     checkAlerts({ updateTimestamp: false });
   }, []);
 
-  // Clean up any hardcoded/default tickers on mount
-  useEffect(() => {
-    if (watchlist && watchlist.length > 0) {
-      const cleaned = watchlist.filter(t => t && t.trim() && t !== '500.PAR');
-      if (cleaned.length !== watchlist.length) {
-        setWatchlist(cleaned);
-      }
-    }
-  }, []); // Run once on mount
-
   const allSectorsList = useMemo(
     () => [...SECTORS, ...(customSectors || [])],
     [customSectors]
   );
 
   useEffect(() => {
-    if ((selectedSectors || []).length > 0) loadNews();
-  }, [selectedSectors]);
+    // Reload news whenever sector filters change (including when cleared)
+    loadNews();
+  }, [selectedSectors, customSectors]);
 
   // Keep Alerts synced to the Dashboard news feed without changing "Last checked"
   useEffect(() => {
