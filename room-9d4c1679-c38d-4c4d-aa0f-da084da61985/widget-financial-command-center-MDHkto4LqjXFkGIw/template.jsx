@@ -326,6 +326,23 @@ function FinancialCommandCenter() {
     checkAlerts({ updateTimestamp: false });
   }, []);
 
+  // One-time migration: remove previously-seeded bogus ticker "500.PAR"
+  useEffect(() => {
+    try {
+      const already = typeof window !== 'undefined' && window.localStorage
+        ? window.localStorage.getItem('financial.migrated.remove_500_par')
+        : null;
+      if (already) return;
+      const list = Array.isArray(watchlist) ? watchlist : [];
+      if (list.includes('500.PAR')) {
+        setWatchlist((prev) => (prev || []).filter((t) => t !== '500.PAR'));
+      }
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem('financial.migrated.remove_500_par', '1');
+      }
+    } catch {}
+  }, []);
+
   const allSectorsList = useMemo(
     () => [...SECTORS, ...(customSectors || [])],
     [customSectors]
@@ -564,6 +581,8 @@ function FinancialCommandCenter() {
           updated[idx] = {
             ...updated[idx],
             lastCheckedAt: nowIso,
+            lastPrice: price,
+            lastChangePercentFromRef: pctFromRef,
             lastState: triggered,
             lastTriggeredAt: shouldFire ? nowIso : (updated[idx].lastTriggeredAt || null),
           };
@@ -2035,7 +2054,10 @@ function FinancialCommandCenter() {
                       <div style={{ minWidth: 220 }}>
                         <div style={{ fontSize: '14px', fontWeight: '600', color: theme.text }}>{_formatPriceRuleLabel(rule)}</div>
                         <div style={{ fontSize: '12px', color: theme.textMuted, marginTop: '2px' }}>
+                          {typeof rule.lastPrice === 'number' ? `Last price: $${Number(rule.lastPrice).toFixed(2)}` : ''}
+                          {typeof rule.lastPrice === 'number' ? (rule.lastState ? ' | Status: triggered' : ' | Status: monitoring') : ''}
                           {String(rule.type || '').startsWith('pct') && typeof rule.referencePrice === 'number' ? `Baseline: $${Number(rule.referencePrice).toFixed(2)}` : ''}
+                          {String(rule.type || '').startsWith('pct') && typeof rule.lastChangePercentFromRef === 'number' ? ` | Move: ${Number(rule.lastChangePercentFromRef).toFixed(2)}%` : ''}
                           {rule.lastTriggeredAt ? ` | Last triggered: ${new Date(rule.lastTriggeredAt).toLocaleString()}` : ''}
                         </div>
                       </div>
