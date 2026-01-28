@@ -12,14 +12,23 @@
 import React, { useState, useEffect, useMemo } from 'react';
 
 // When pasting into Deep Space, set this to your deployed Stock Tracker URL so stock search, AI, social work.
+// You can also set it at runtime: in Deep Space, use the "Backend URL" field in the sidebar, or set
+// window.FINANCIAL_COMMAND_CENTER_API_BASE or localStorage 'financial.commandCenter.apiBase'.
 const WIDGET_API_BASE = '';
+
+function getApiBase() {
+  if (typeof window === 'undefined') return WIDGET_API_BASE;
+  const runtime = (window.FINANCIAL_COMMAND_CENTER_API_BASE || '').trim()
+    || (typeof localStorage !== 'undefined' && localStorage.getItem('financial.commandCenter.apiBase') || '').trim();
+  return (WIDGET_API_BASE || runtime) || '';
+}
 
 function _buildApiUrl(path) {
   const url = path.startsWith('/') ? path : `/${path}`;
   if (url.startsWith('http')) return url;
-  if (WIDGET_API_BASE) {
-    const base = WIDGET_API_BASE.replace(/\/$/, '');
-    return `${base}${url}`;
+  const base = getApiBase();
+  if (base) {
+    return `${base.replace(/\/$/, '')}${url}`;
   }
   if (typeof window !== 'undefined' && window.location && window.location.origin) {
     return window.location.origin + url;
@@ -134,10 +143,10 @@ const miyagiAPI = {
         const normalized = _normalizeResponse(endpoint, res);
         if (normalized && normalized.success) return normalized;
         // Deep Space failed or doesn't support this endpoint; try user's backend if URL is set
-        if (WIDGET_API_BASE) return _fallbackPost(endpoint, body);
+        if (getApiBase()) return _fallbackPost(endpoint, body);
         return normalized || res;
       } catch (e) {
-        if (WIDGET_API_BASE) return _fallbackPost(endpoint, body);
+        if (getApiBase()) return _fallbackPost(endpoint, body);
         return { success: false, error: (e && e.message) || 'Request failed' };
       }
     }
@@ -247,6 +256,14 @@ function FinancialCommandCenter() {
   const [portfolioSearchError, setPortfolioSearchError] = useState(null);
   const [portfolioHasSearched, setPortfolioHasSearched] = useState(false);
   const [emailLoading, setEmailLoading] = useState(false);
+  const [backendUrl, setBackendUrl] = useState('');
+  const [backendUrlSaved, setBackendUrlSaved] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && localStorage) {
+      setBackendUrl(localStorage.getItem('financial.commandCenter.apiBase') || '');
+    }
+  }, []);
 
   useEffect(() => {
     document.body.style.backgroundColor = '#ffffff';
@@ -1006,6 +1023,37 @@ function FinancialCommandCenter() {
             </label>
           ))}
         </div>
+
+        {deepSpace && (
+          <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #f0f0f0' }}>
+            <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: '#000' }}>Backend URL</div>
+            <p style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+              Set your deployed Stock Tracker URL so Social, Digest, Portfolio search, and stock search work.
+            </p>
+            <input
+              type="text"
+              placeholder="https://your-app.vercel.app"
+              value={backendUrl}
+              onChange={(e) => { setBackendUrl(e.target.value); setBackendUrlSaved(false); }}
+              style={{ ...styles.input, padding: '10px 12px', fontSize: '13px', marginBottom: '8px' }}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const url = (backendUrl || '').trim().replace(/\/$/, '');
+                if (url && typeof localStorage !== 'undefined') {
+                  localStorage.setItem('financial.commandCenter.apiBase', url);
+                  setBackendUrl(url);
+                  setBackendUrlSaved(true);
+                  setTimeout(() => setBackendUrlSaved(false), 2000);
+                }
+              }}
+              style={{ ...styles.button('primary'), padding: '8px 16px', fontSize: '13px' }}
+            >
+              {backendUrlSaved ? 'Saved' : 'Save'}
+            </button>
+          </div>
+        )}
       </div>
 
       <div style={styles.mainContent}>
