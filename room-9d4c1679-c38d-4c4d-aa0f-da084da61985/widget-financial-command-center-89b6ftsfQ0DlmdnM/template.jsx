@@ -817,10 +817,22 @@ function FinancialCommandCenter() {
     catalystsFound: new Set(news.flatMap((n) => n.catalysts || [])).size,
   }), [news, watchlist, alerts]);
 
+  // Force localhost look inside Deep Space: isolate from host theme and lock light styles
+  const rootWrapStyle = {
+    backgroundColor: '#ffffff',
+    color: '#000000',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", sans-serif',
+    minHeight: '100%',
+    width: '100%',
+    isolation: 'isolate',
+    overflow: 'auto',
+  };
+
   const styles = {
     container: {
       display: 'flex',
       height: '100vh',
+      minHeight: '600px',
       backgroundColor: '#ffffff',
       color: '#000000',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", sans-serif',
@@ -886,6 +898,11 @@ function FinancialCommandCenter() {
   };
 
   return (
+    <div id="financial-command-center-root" style={rootWrapStyle}>
+      <style>{`
+        #financial-command-center-root, #financial-command-center-root * { box-sizing: border-box; }
+        #financial-command-center-root { background: #ffffff !important; color: #000000 !important; }
+      `}</style>
     <div style={styles.container}>
       <div style={styles.sidebar}>
         <div style={{ marginBottom: '40px' }}>
@@ -2477,6 +2494,7 @@ function FinancialCommandCenter() {
           #digest-content { position: absolute; left: 0; top: 0; width: 100%; }
         }
       `}</style>
+    </div>
     </div>
   );
 }
