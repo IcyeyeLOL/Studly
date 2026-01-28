@@ -3,8 +3,8 @@
   "widgetId": "financial-command-center_1769569274707",
   "templateHandle": "financial-command-center",
   "position": {
-    "x": 102.69356597600904,
-    "y": 122.60632497273718
+    "x": 250.21810250817884,
+    "y": 115.53980370774262
   },
   "size": {
     "w": 1596.2704471101417,
@@ -26,5 +26,5 @@
   },
   "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
   "index": "aU",
-  "lastChangedClock": 956
+  "lastChangedClock": 994
 }

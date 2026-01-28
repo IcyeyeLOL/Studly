@@ -440,11 +440,11 @@ function FinancialCommandCenter() {
     setHasSearched(true);
     try {
       const response = await miyagiAPI.post('/search-stocks', {
-        query: watchlistSearchQuery,
+        term: watchlistSearchQuery,
       });
       
-      if (response.success && response.data.results) {
-        setWatchlistSearchResults(response.data.results);
+      if (response.success && response.data && response.data.symbols) {
+        setWatchlistSearchResults(response.data.symbols);
       } else {
         setWatchlistSearchResults([]);
       }
@@ -500,10 +500,10 @@ function FinancialCommandCenter() {
     
     try {
       const response = await miyagiAPI.post('/search-stocks', {
-        query: ticker,
+        term: ticker,
       });
       
-      if (response.success && response.data.results && response.data.results.length > 0) {
+      if (response.success && response.data && response.data.symbols && response.data.symbols.length > 0) {
         setWatchlist(prev => [...(prev || []), ticker]);
         setNewTickerInput('');
       } else {
@@ -550,11 +550,11 @@ function FinancialCommandCenter() {
     setPortfolioSearching(true);
     try {
       const response = await miyagiAPI.post('/search-stocks', {
-        query: portfolioSearchQuery,
+        term: portfolioSearchQuery,
       });
       
-      if (response.success && response.data.results) {
-        setPortfolioSearchResults(response.data.results);
+      if (response.success && response.data && response.data.symbols) {
+        setPortfolioSearchResults(response.data.symbols);
       } else {
         setPortfolioSearchResults([]);
       }
@@ -614,11 +614,11 @@ function FinancialCommandCenter() {
     setRefreshingQuotes(prev => ({ ...prev, [ticker]: true }));
     try {
       const response = await miyagiAPI.post('/search-stocks', {
-        query: ticker,
+        term: ticker,
       });
       
-      if (response.success && response.data.results && response.data.results.length > 0) {
-        const result = response.data.results[0];
+      if (response.success && response.data && response.data.symbols && response.data.symbols.length > 0) {
+        const result = response.data.symbols[0];
         // For demo purposes, we'll use a mock current price
         // In a real app, you'd call /api/stocks/quote endpoint
         const mockCurrentPrice = positions[ticker]?.entryPrice * (1 + (Math.random() * 0.2 - 0.1));
