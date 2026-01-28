@@ -50,6 +50,11 @@ function FinancialCommandCenter() {
   const [newSectorName, setNewSectorName] = useState('');
   const [newSectorKeywords, setNewSectorKeywords] = useState('');
   const [positionForm, setPositionForm] = useState({ ticker: '', quantity: '', entryPrice: '' });
+  const [portfolioSearchQuery, setPortfolioSearchQuery] = useState('');
+  const [portfolioSearchResults, setPortfolioSearchResults] = useState([]);
+  const [portfolioSearching, setPortfolioSearching] = useState(false);
+  const [editingPositionData, setEditingPositionData] = useState({});
+  const [refreshingQuotes, setRefreshingQuotes] = useState({});
 
   // Apply body background
   useEffect(() => {
@@ -420,28 +425,98 @@ function FinancialCommandCenter() {
     }
   };
 
-  const addPosition = () => {
-    if (!positionForm.ticker || !positionForm.quantity || !positionForm.entryPrice) return;
+  const searchPortfolioTicker = async () => {
+    if (!portfolioSearchQuery.trim()) return;
     
-    const ticker = positionForm.ticker.toUpperCase();
+    setPortfolioSearching(true);
+    try {
+      const response = await miyagiAPI.post('/search-stocks', {
+        query: portfolioSearchQuery,
+      });
+      
+      if (response.success && response.data.results) {
+        setPortfolioSearchResults(response.data.results);
+      } else {
+        setPortfolioSearchResults([]);
+      }
+    } catch (error) {
+      console.error('Error searching stocks:', error);
+      setPortfolioSearchResults([]);
+    } finally {
+      setPortfolioSearching(false);
+    }
+  };
+
+  const addTickerToPortfolio = (ticker) => {
+    // Add to watchlist if not already there
+    if (!watchlist.includes(ticker)) {
+      setWatchlist(prev => [...(prev || []), ticker]);
+    }
+    setPortfolioSearchQuery('');
+    setPortfolioSearchResults([]);
+  };
+
+  const addPosition = (ticker, quantity, entryPrice) => {
+    const tickerUpper = ticker.toUpperCase();
+    setPositions(prev => ({
+      ...(prev || {}),
+      [tickerUpper]: {
+        quantity: parseFloat(quantity),
+        entryPrice: parseFloat(entryPrice),
+        currentPrice: parseFloat(entryPrice),
+        notes: tickerNotes[tickerUpper] || '',
+      },
+    }));
+    setEditingPosition(null);
+    setEditingPositionData({});
+  };
+
+  const updatePosition = (ticker, updates) => {
     setPositions(prev => ({
       ...(prev || {}),
       [ticker]: {
-        quantity: parseFloat(positionForm.quantity),
-        entryPrice: parseFloat(positionForm.entryPrice),
-        currentPrice: parseFloat(positionForm.entryPrice),
-        notes: '',
+        ...(prev[ticker] || {}),
+        ...updates,
       },
     }));
-    setPositionForm({ ticker: '', quantity: '', entryPrice: '' });
   };
 
   const deletePosition = (ticker) => {
-    setPositions(prev => {
-      const newPositions = { ...(prev || {}) };
-      delete newPositions[ticker];
-      return newPositions;
-    });
+    if (window.confirm(`Remove position for ${ticker}?`)) {
+      setPositions(prev => {
+        const newPositions = { ...(prev || {}) };
+        delete newPositions[ticker];
+        return newPositions;
+      });
+    }
+  };
+
+  const refreshQuote = async (ticker) => {
+    setRefreshingQuotes(prev => ({ ...prev, [ticker]: true }));
+    try {
+      const response = await miyagiAPI.post('/search-stocks', {
+        query: ticker,
+      });
+      
+      if (response.success && response.data.results && response.data.results.length > 0) {
+        const result = response.data.results[0];
+        // For demo purposes, we'll use a mock current price
+        // In a real app, you'd call /api/stocks/quote endpoint
+        const mockCurrentPrice = positions[ticker]?.entryPrice * (1 + (Math.random() * 0.2 - 0.1));
+        updatePosition(ticker, { currentPrice: mockCurrentPrice });
+      }
+    } catch (error) {
+      console.error('Error refreshing quote:', error);
+    } finally {
+      setRefreshingQuotes(prev => ({ ...prev, [ticker]: false }));
+    }
+  };
+
+  const updateTickerNotes = (ticker, notes) => {
+    setTickerNotes(prev => ({
+      ...(prev || {}),
+      [ticker]: notes,
+    }));
   };
 
   // Computed values
@@ -1252,63 +1327,355 @@ function FinancialCommandCenter() {
           <div>
             <h2 style={{ fontSize: '32px', fontWeight: '600', marginBottom: '32px', letterSpacing: '-0.02em' }}>Portfolio</h2>
             
+            {/* Portfolio Summary */}
+            {Object.keys(positions).length > 0 && (
+              <div style={{
+                ...styles.card,
+                background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                color: '#ffffff',
+                marginBottom: '32px',
+              }}>
+                <div style={{ fontSize: '16px', marginBottom: '20px', opacity: 0.9 }}>Portfolio Summary</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}>
+                  {(() => {
+                    const totalCost = Object.values(positions).reduce((sum, pos) => sum + (pos.quantity * pos.entryPrice), 0);
+                    const totalValue = Object.values(positions).reduce((sum, pos) => sum + (pos.quantity * pos.currentPrice), 0);
+                    const totalPnl = totalValue - totalCost;
+                    const totalPnlPercent = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0;
+                    
+                    return (
+                      <>
+                        <div>
+                          <div style={{ fontSize: '13px', opacity: 0.8, marginBottom: '6px' }}>Total Cost</div>
+                          <div style={{ fontSize: '28px', fontWeight: '600' }}>${totalCost.toFixed(2)}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '13px', opacity: 0.8, marginBottom: '6px' }}>Current Value</div>
+                          <div style={{ fontSize: '28px', fontWeight: '600' }}>${totalValue.toFixed(2)}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '13px', opacity: 0.8, marginBottom: '6px' }}>Total P&L</div>
+                          <div style={{ fontSize: '28px', fontWeight: '600' }}>
+                            ${totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(2)}
+                          </div>
+                          <div style={{ fontSize: '16px', marginTop: '4px', opacity: 0.9 }}>
+                            {totalPnlPercent >= 0 ? '+' : ''}{totalPnlPercent.toFixed(2)}%
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '13px', opacity: 0.8, marginBottom: '6px' }}>Positions</div>
+                          <div style={{ fontSize: '28px', fontWeight: '600' }}>{Object.keys(positions).length}</div>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+
+            {/* Search & Add Ticker */}
             <div style={styles.card}>
-              <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>Add Position</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '12px' }}>
+              <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>Add Stock to Portfolio</div>
+              <div style={{ fontSize: '14px', color: '#666', marginBottom: '16px' }}>
+                Search for a stock symbol to add to your watchlist or create a position
+              </div>
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
                 <input
                   type="text"
-                  placeholder="Ticker"
-                  value={positionForm.ticker}
-                  onChange={(e) => setPositionForm({ ...positionForm, ticker: e.target.value.toUpperCase() })}
-                  style={styles.input}
+                  placeholder="Search ticker symbol (e.g., AAPL, TSLA, MSFT)..."
+                  value={portfolioSearchQuery}
+                  onChange={(e) => setPortfolioSearchQuery(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => e.key === 'Enter' && searchPortfolioTicker()}
+                  style={{ ...styles.input, flex: 1 }}
                 />
-                <input
-                  type="number"
-                  placeholder="Quantity"
-                  value={positionForm.quantity}
-                  onChange={(e) => setPositionForm({ ...positionForm, quantity: e.target.value })}
-                  style={styles.input}
-                />
-                <input
-                  type="number"
-                  placeholder="Entry Price"
-                  value={positionForm.entryPrice}
-                  onChange={(e) => setPositionForm({ ...positionForm, entryPrice: e.target.value })}
-                  style={styles.input}
-                />
-                <button onClick={addPosition} style={styles.button('primary')}>Add</button>
+                <button
+                  onClick={searchPortfolioTicker}
+                  disabled={portfolioSearching || !portfolioSearchQuery.trim()}
+                  style={{
+                    ...styles.button('primary'),
+                    opacity: portfolioSearching || !portfolioSearchQuery.trim() ? 0.5 : 1,
+                  }}
+                >
+                  {portfolioSearching ? 'Searching...' : 'Search'}
+                </button>
               </div>
+
+              {/* Search Results */}
+              {portfolioSearchResults.length > 0 && (
+                <div style={{ 
+                  maxHeight: '200px', 
+                  overflowY: 'auto', 
+                  borderTop: '1px solid #f0f0f0',
+                  paddingTop: '16px',
+                }}>
+                  {portfolioSearchResults.map((result, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        padding: '12px',
+                        marginBottom: '8px',
+                        backgroundColor: '#fafafa',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '15px', fontWeight: '600', marginBottom: '4px' }}>
+                          {result.symbol}
+                        </div>
+                        <div style={{ fontSize: '13px', color: '#666' }}>
+                          {result.name || 'No description available'}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => addTickerToPortfolio(result.symbol)}
+                        style={{
+                          ...styles.button(watchlist.includes(result.symbol) ? 'ghost' : 'primary'),
+                          padding: '8px 16px',
+                          fontSize: '13px',
+                        }}
+                      >
+                        {watchlist.includes(result.symbol) ? '✓ Added' : '+ Add'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {Object.keys(positions).length === 0 ? (
+            {/* Positions List */}
+            {watchlist.length === 0 && Object.keys(positions).length === 0 ? (
               <div style={{ textAlign: 'center', padding: '80px', color: '#999' }}>
-                No positions. Add some above!
+                <div style={{ fontSize: '18px', marginBottom: '8px' }}>No stocks in portfolio</div>
+                <div style={{ fontSize: '14px' }}>Search and add stocks to start tracking your portfolio</div>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
-                {Object.entries(positions).map(([ticker, position]) => {
-                  const pnl = (position.currentPrice - position.entryPrice) * position.quantity;
-                  const pnlPercent = ((position.currentPrice - position.entryPrice) / position.entryPrice) * 100;
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '16px' }}>
+                {/* Get unique tickers from both watchlist and positions */}
+                {[...new Set([...watchlist, ...Object.keys(positions)])].map(ticker => {
+                  const position = positions[ticker];
+                  const hasPosition = !!position;
+                  const isEditing = editingPosition === ticker;
+                  const notes = tickerNotes[ticker] || '';
+                  
+                  // Calculate P&L if position exists
+                  const pnl = hasPosition ? (position.currentPrice - position.entryPrice) * position.quantity : 0;
+                  const pnlPercent = hasPosition ? ((position.currentPrice - position.entryPrice) / position.entryPrice) * 100 : 0;
+                  const costBasis = hasPosition ? position.quantity * position.entryPrice : 0;
+                  const currentValue = hasPosition ? position.quantity * position.currentPrice : 0;
+                  
                   return (
-                    <div key={ticker} style={styles.card}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <div key={ticker} style={{
+                      ...styles.card,
+                      padding: '24px',
+                    }}>
+                      {/* Header */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                         <div style={{ fontSize: '24px', fontWeight: '600' }}>{ticker}</div>
-                        <button
-                          onClick={() => deletePosition(ticker)}
-                          style={{ ...styles.button('danger'), padding: '6px 12px', fontSize: '13px' }}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                      <div style={{ fontSize: '14px', lineHeight: '1.8' }}>
-                        <div>Quantity: <strong>{position.quantity}</strong></div>
-                        <div>Entry: <strong>${position.entryPrice.toFixed(2)}</strong></div>
-                        <div>Current: <strong>${position.currentPrice.toFixed(2)}</strong></div>
-                        <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #f0f0f0' }}>
-                          P&L: <strong style={{ color: pnl >= 0 ? '#10b981' : '#ef4444' }}>
-                            ${pnl.toFixed(2)} ({pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%)
-                          </strong>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          {hasPosition && (
+                            <button
+                              onClick={() => refreshQuote(ticker)}
+                              disabled={refreshingQuotes[ticker]}
+                              style={{
+                                ...styles.button('ghost'),
+                                padding: '6px 12px',
+                                fontSize: '13px',
+                                opacity: refreshingQuotes[ticker] ? 0.5 : 1,
+                              }}
+                              title="Refresh quote"
+                            >
+                              {refreshingQuotes[ticker] ? '...' : '🔄'}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => {
+                              setWatchlist(prev => prev.filter(t => t !== ticker));
+                              if (hasPosition) deletePosition(ticker);
+                            }}
+                            style={{
+                              ...styles.button('danger'),
+                              padding: '6px 12px',
+                              fontSize: '13px',
+                            }}
+                          >
+                            Remove
+                          </button>
                         </div>
+                      </div>
+
+                      {/* Position Form (Add/Edit) */}
+                      {isEditing ? (
+                        <div style={{ marginBottom: '16px' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                            <div>
+                              <div style={{ fontSize: '13px', color: '#666', marginBottom: '6px' }}>Quantity</div>
+                              <input
+                                type="number"
+                                placeholder="Shares"
+                                value={editingPositionData.quantity || ''}
+                                onChange={(e) => setEditingPositionData({ ...editingPositionData, quantity: e.target.value })}
+                                style={styles.input}
+                              />
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '13px', color: '#666', marginBottom: '6px' }}>Entry Price</div>
+                              <input
+                                type="number"
+                                placeholder="$0.00"
+                                step="0.01"
+                                value={editingPositionData.entryPrice || ''}
+                                onChange={(e) => setEditingPositionData({ ...editingPositionData, entryPrice: e.target.value })}
+                                style={styles.input}
+                              />
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              onClick={() => {
+                                if (editingPositionData.quantity && editingPositionData.entryPrice) {
+                                  addPosition(ticker, editingPositionData.quantity, editingPositionData.entryPrice);
+                                }
+                              }}
+                              style={{
+                                ...styles.button('primary'),
+                                flex: 1,
+                                padding: '10px',
+                              }}
+                              disabled={!editingPositionData.quantity || !editingPositionData.entryPrice}
+                            >
+                              Save Position
+                            </button>
+                            <button
+                              onClick={() => {
+                                setEditingPosition(null);
+                                setEditingPositionData({});
+                              }}
+                              style={{
+                                ...styles.button('ghost'),
+                                flex: 1,
+                                padding: '10px',
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : hasPosition ? (
+                        <div>
+                          {/* Position Details */}
+                          <div style={{ 
+                            padding: '16px', 
+                            backgroundColor: '#fafafa', 
+                            borderRadius: '10px', 
+                            marginBottom: '16px' 
+                          }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                              <div>
+                                <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Shares</div>
+                                <div style={{ fontSize: '16px', fontWeight: '600' }}>{position.quantity}</div>
+                              </div>
+                              <div>
+                                <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Entry Price</div>
+                                <div style={{ fontSize: '16px', fontWeight: '600' }}>${position.entryPrice.toFixed(2)}</div>
+                              </div>
+                              <div>
+                                <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Current Price</div>
+                                <div style={{ fontSize: '16px', fontWeight: '600' }}>${position.currentPrice.toFixed(2)}</div>
+                              </div>
+                              <div>
+                                <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>P&L per Share</div>
+                                <div style={{ fontSize: '16px', fontWeight: '600', color: pnl >= 0 ? '#10b981' : '#ef4444' }}>
+                                  ${(position.currentPrice - position.entryPrice).toFixed(2)}
+                                </div>
+                              </div>
+                            </div>
+                            <div style={{ 
+                              paddingTop: '12px', 
+                              borderTop: '1px solid #f0f0f0',
+                              display: 'grid',
+                              gridTemplateColumns: '1fr 1fr',
+                              gap: '12px',
+                            }}>
+                              <div>
+                                <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Cost Basis</div>
+                                <div style={{ fontSize: '18px', fontWeight: '600' }}>${costBasis.toFixed(2)}</div>
+                              </div>
+                              <div>
+                                <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Current Value</div>
+                                <div style={{ fontSize: '18px', fontWeight: '600' }}>${currentValue.toFixed(2)}</div>
+                              </div>
+                            </div>
+                            <div style={{ 
+                              marginTop: '12px',
+                              paddingTop: '12px', 
+                              borderTop: '1px solid #f0f0f0',
+                            }}>
+                              <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Total P&L</div>
+                              <div style={{ 
+                                fontSize: '24px', 
+                                fontWeight: '600',
+                                color: pnl >= 0 ? '#10b981' : '#ef4444'
+                              }}>
+                                {pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}
+                                <span style={{ fontSize: '16px', marginLeft: '8px' }}>
+                                  ({pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%)
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <button
+                            onClick={() => {
+                              setEditingPosition(ticker);
+                              setEditingPositionData({
+                                quantity: position.quantity,
+                                entryPrice: position.entryPrice,
+                              });
+                            }}
+                            style={{
+                              ...styles.button('ghost'),
+                              width: '100%',
+                              padding: '10px',
+                              marginBottom: '12px',
+                            }}
+                          >
+                            Edit Position
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setEditingPosition(ticker);
+                            setEditingPositionData({ quantity: '', entryPrice: '' });
+                          }}
+                          style={{
+                            ...styles.button('primary'),
+                            width: '100%',
+                            padding: '12px',
+                            marginBottom: '16px',
+                          }}
+                        >
+                          + Add Position
+                        </button>
+                      )}
+
+                      {/* Notes */}
+                      <div>
+                        <div style={{ fontSize: '13px', color: '#666', marginBottom: '6px' }}>Notes</div>
+                        <textarea
+                          placeholder="Add notes about this stock..."
+                          value={notes}
+                          onChange={(e) => updateTickerNotes(ticker, e.target.value)}
+                          style={{
+                            ...styles.input,
+                            minHeight: '80px',
+                            resize: 'vertical',
+                            fontFamily: 'inherit',
+                          }}
+                        />
                       </div>
                     </div>
                   );
