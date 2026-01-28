@@ -248,8 +248,8 @@ function FinancialCommandCenter() {
   const [news, setNews] = useState([]);
   const [newsError, setNewsError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [selectedSectors, setSelectedSectors] = useState([]);
-  const [selectedCatalysts, setSelectedCatalysts] = useState([]);
+  const [selectedSectors, setSelectedSectors] = useStorage('financial.selectedSectors', [], { scope: 'user' });
+  const [selectedCatalysts, setSelectedCatalysts] = useStorage('financial.selectedCatalysts', [], { scope: 'user' });
   const [searchQuery, setSearchQuery] = useState('');
   const [alerts, setAlerts] = useState([]);
   const [selectedTicker, setSelectedTicker] = useState(null);
@@ -312,8 +312,13 @@ function FinancialCommandCenter() {
     }
   }, []); // Run once on mount
 
+  const allSectorsList = useMemo(
+    () => [...SECTORS, ...(customSectors || [])],
+    [customSectors]
+  );
+
   useEffect(() => {
-    if (selectedSectors.length > 0) loadNews();
+    if ((selectedSectors || []).length > 0) loadNews();
   }, [selectedSectors]);
 
   useEffect(() => {
@@ -325,7 +330,7 @@ function FinancialCommandCenter() {
     setNewsError(null);
     try {
       let allNews = [];
-      if (selectedSectors.length === 0) {
+      if ((selectedSectors || []).length === 0) {
         const response = await miyagiAPI.post('/news-top-headlines', {
           category: 'business',
           country: 'us',
@@ -337,11 +342,11 @@ function FinancialCommandCenter() {
           setNewsError(response.error || 'Failed to load news');
         }
       } else {
-        const allSectors = [...SECTORS, ...(customSectors || [])];
-        const sectorQueries = selectedSectors
+        const sectorQueries = (selectedSectors || [])
           .map((sectorId) => {
-            const sector = allSectors.find((s) => s.id === sectorId);
-            return sector?.keywords.join(' OR ') || '';
+            const sector = allSectorsList.find((s) => s.id === sectorId);
+            const keywords = sector && Array.isArray(sector.keywords) ? sector.keywords : [];
+            return keywords.length ? keywords.join(' OR ') : '';
           })
           .filter(Boolean);
         for (const query of sectorQueries) {
@@ -874,9 +879,10 @@ function FinancialCommandCenter() {
 
   const filteredNews = useMemo(() => {
     let filtered = news;
-    if (selectedCatalysts.length > 0) {
+    const cats = selectedCatalysts || [];
+    if (cats.length > 0) {
       filtered = filtered.filter((article) =>
-        article.catalysts?.some((cat) => selectedCatalysts.includes(cat))
+        article.catalysts?.some((cat) => cats.includes(cat))
       );
     }
     if (searchQuery) {
@@ -1049,16 +1055,16 @@ function FinancialCommandCenter() {
 
         <div style={{ marginBottom: '32px' }}>
           <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '16px', color: theme.text }}>
-            Sectors ({SECTORS.length + (customSectors || []).length})
+            Sectors ({allSectorsList.length})
           </div>
-          {[...SECTORS, ...(customSectors || [])].slice(0, 5).map((sector) => (
+          {allSectorsList.slice(0, 5).map((sector) => (
             <label key={sector.id} style={{ display: 'block', marginBottom: '12px', fontSize: '14px', cursor: 'pointer' }}>
               <input
                 type="checkbox"
-                checked={selectedSectors.includes(sector.id)}
+                checked={(selectedSectors || []).includes(sector.id)}
                 onChange={(e) => {
-                  if (e.target.checked) setSelectedSectors((prev) => [...prev, sector.id]);
-                  else setSelectedSectors((prev) => prev.filter((s) => s !== sector.id));
+                  if (e.target.checked) setSelectedSectors((prev) => [...(prev || []), sector.id]);
+                  else setSelectedSectors((prev) => (prev || []).filter((s) => s !== sector.id));
                 }}
                 style={{ marginRight: '10px' }}
               />
@@ -1066,25 +1072,23 @@ function FinancialCommandCenter() {
               {sector.custom && <span style={{ fontSize: '11px', color: '#6366f1', marginLeft: '6px' }}>(Custom)</span>}
             </label>
           ))}
-          {(() => {
-            const totalSectors = (customSectors || []).length + (SECTORS || []).length;
-            return totalSectors > 5 ? (
-              <button
-                onClick={() => setActiveView('sectors')}
-                style={{
-                  marginTop: '12px',
-                  fontSize: '13px',
-                  color: '#6366f1',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontWeight: '500',
-                }}
-              >
-                View All ({totalSectors})
-              </button>
-            ) : null;
-          })()}
+          {allSectorsList.length > 5 && (
+            <button
+              type="button"
+              onClick={() => setActiveView('sectors')}
+              style={{
+                marginTop: '12px',
+                fontSize: '13px',
+                color: '#6366f1',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: '500',
+              }}
+            >
+              View All ({allSectorsList.length})
+            </button>
+          )}
         </div>
 
         <div>
@@ -1095,10 +1099,10 @@ function FinancialCommandCenter() {
             <label key={catalyst.id} style={{ display: 'block', marginBottom: '12px', fontSize: '14px', cursor: 'pointer' }}>
               <input
                 type="checkbox"
-                checked={selectedCatalysts.includes(catalyst.id)}
+                checked={(selectedCatalysts || []).includes(catalyst.id)}
                 onChange={(e) => {
-                  if (e.target.checked) setSelectedCatalysts((prev) => [...prev, catalyst.id]);
-                  else setSelectedCatalysts((prev) => prev.filter((c) => c !== catalyst.id));
+                  if (e.target.checked) setSelectedCatalysts((prev) => [...(prev || []), catalyst.id]);
+                  else setSelectedCatalysts((prev) => (prev || []).filter((c) => c !== catalyst.id));
                 }}
                 style={{ marginRight: '10px' }}
               />
@@ -2459,7 +2463,24 @@ function FinancialCommandCenter() {
         {activeView === 'sectors' && (
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontSize: '24px', fontWeight: '600' }}>Sectors</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <button
+                  type="button"
+                  onClick={() => setActiveView('dashboard')}
+                  style={{
+                    padding: '8px 14px',
+                    backgroundColor: 'transparent',
+                    color: theme.text,
+                    border: `1px solid ${theme.border}`,
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                  }}
+                >
+                  â† Back
+                </button>
+                <h2 style={{ fontSize: '24px', fontWeight: '600', margin: 0 }}>Sectors</h2>
+              </div>
             </div>
 
             <div
@@ -2529,7 +2550,7 @@ function FinancialCommandCenter() {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '16px' }}>
-              {[...(SECTORS || []), ...(customSectors || [])].map((sector) => (
+              {allSectorsList.map((sector) => (
                 <div
                   key={sector.id}
                   style={{
@@ -2550,6 +2571,7 @@ function FinancialCommandCenter() {
                     </div>
                     {sector.custom && (
                       <button
+                        type="button"
                         onClick={() => {
                           if (typeof window !== 'undefined' && window.confirm && window.confirm(`Delete sector "${sector.name}"?`)) {
                             deleteCustomSector(sector.id);
@@ -2574,8 +2596,8 @@ function FinancialCommandCenter() {
                       type="checkbox"
                       checked={(selectedSectors || []).includes(sector.id)}
                       onChange={(e) => {
-                        if (e.target.checked) setSelectedSectors([...(selectedSectors || []), sector.id]);
-                        else setSelectedSectors((selectedSectors || []).filter((s) => s !== sector.id));
+                        if (e.target.checked) setSelectedSectors((prev) => [...(prev || []), sector.id]);
+                        else setSelectedSectors((prev) => (prev || []).filter((s) => s !== sector.id));
                       }}
                       style={{ marginRight: '8px' }}
                     />
