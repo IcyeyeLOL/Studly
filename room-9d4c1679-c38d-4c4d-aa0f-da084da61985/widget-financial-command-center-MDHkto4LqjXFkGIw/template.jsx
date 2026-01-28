@@ -281,6 +281,9 @@ function FinancialCommandCenter() {
   const [portfolioSearchError, setPortfolioSearchError] = useState(null);
   const [portfolioHasSearched, setPortfolioHasSearched] = useState(false);
   const [emailLoading, setEmailLoading] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailInput, setEmailInput] = useState('');
+  const [emailError, setEmailError] = useState(null);
 
   useEffect(() => {
     const t = THEMES[themeMode] ?? THEMES.light;
@@ -814,19 +817,49 @@ function FinancialCommandCenter() {
     }));
   };
 
-  const emailDigest = async () => {
+  const openEmailModal = () => {
     if (!digest) return;
+    setShowEmailModal(true);
+    setEmailInput('');
+    setEmailError(null);
+  };
+
+  const sendDigestEmail = async () => {
+    if (!digest) return;
+    const email = (emailInput || '').trim();
+    if (!email) {
+      setEmailError('Please enter your email address.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailError('Please enter a valid email address.');
+      return;
+    }
+    setEmailError(null);
     setEmailLoading(true);
     try {
-      await miyagiAPI.post('/send-email', {
-        to: 'user@example.com',
-        subject: `Daily Market Digest - ${digest.date}`,
-        html: `<h1>Daily Market Digest</h1><p><strong>Date:</strong> ${digest.date}</p><div style="white-space: pre-wrap;">${digest.content}</div>`,
+      const payload = {
+        email: email.toLowerCase(),
+        digest: {
+          date: digest.date,
+          content: digest.content,
+          articles: (digest.articles || []).map((a) => ({ title: a.title || '', url: a.url || '' })),
+        },
+      };
+      const { ok, data, error } = await _request('/api/email/digest', {
+        method: 'POST',
+        body: JSON.stringify(payload),
       });
-      alert('Digest sent to email!');
-    } catch (error) {
-      console.error('Error sending email:', error);
-      alert('Error sending email. Please try again.');
+      if (ok) {
+        setShowEmailModal(false);
+        setEmailInput('');
+        alert('Digest sent! Check your inbox.');
+      } else {
+        setEmailError((data && (data.error || data.message)) || error || 'Failed to send. Add RESEND_API_KEY to .env for email.');
+      }
+    } catch (err) {
+      console.error('Send digest email:', err);
+      setEmailError('Failed to send. Please try again.');
     } finally {
       setEmailLoading(false);
     }
@@ -1634,7 +1667,7 @@ function FinancialCommandCenter() {
                 {digest && (
                   <>
                     <button
-                      onClick={emailDigest}
+                      onClick={openEmailModal}
                       disabled={emailLoading}
                       style={{
                         padding: '10px 20px',
@@ -2555,6 +2588,94 @@ function FinancialCommandCenter() {
           #digest-content { position: absolute; left: 0; top: 0; width: 100%; }
         }
       `}</style>
+
+      {showEmailModal && digest && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+          }}
+          onClick={() => !emailLoading && setShowEmailModal(false)}
+        >
+          <div
+            style={{
+              padding: '24px',
+              minWidth: '320px',
+              maxWidth: '90vw',
+              backgroundColor: theme.surface,
+              color: theme.text,
+              border: `1px solid ${theme.border}`,
+              borderRadius: '12px',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>Send digest to your email</h3>
+            <p style={{ fontSize: '14px', color: theme.textMuted, marginBottom: '16px' }}>
+              Enter your email and we'll send you today's digest (including key articles).
+            </p>
+            <input
+              type="email"
+              placeholder="you@example.com"
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 14px',
+                marginBottom: '12px',
+                border: `1px solid ${theme.border}`,
+                borderRadius: '8px',
+                fontSize: '15px',
+                backgroundColor: theme.surface,
+                color: theme.text,
+                outline: 'none',
+              }}
+            />
+            {emailError && (
+              <p style={{ fontSize: '13px', color: theme.errorText, marginBottom: '12px' }}>{emailError}</p>
+            )}
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => !emailLoading && setShowEmailModal(false)}
+                style={{
+                  padding: '10px 18px',
+                  backgroundColor: theme.secondaryBgAlt,
+                  color: theme.text,
+                  border: `1px solid ${theme.border}`,
+                  borderRadius: '8px',
+                  cursor: emailLoading ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={sendDigestEmail}
+                disabled={emailLoading}
+                style={{
+                  padding: '10px 18px',
+                  backgroundColor: '#6366f1',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: emailLoading ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                }}
+              >
+                {emailLoading ? 'Sending...' : 'Send'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     </div>
   );
