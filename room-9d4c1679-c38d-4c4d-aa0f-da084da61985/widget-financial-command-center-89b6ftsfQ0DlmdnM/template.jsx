@@ -907,21 +907,21 @@ function FinancialCommandCenter() {
       <div style={styles.sidebar}>
         <div style={{ marginBottom: '40px' }}>
           <h1 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '8px', letterSpacing: '-0.02em' }}>
-            ðŸ“Š Command Center
+            Command Center
           </h1>
           <p style={{ fontSize: '14px', color: '#666', marginTop: '4px' }}>Financial market intelligence</p>
         </div>
 
         <nav style={{ marginBottom: '32px' }}>
           {[
-            { id: 'dashboard', label: 'ðŸ“Š Dashboard' },
-            { id: 'watchlist', label: 'â­ Watchlist' },
-            { id: 'alerts', label: 'ðŸ”” Alerts' },
-            { id: 'ticker', label: 'ðŸ“° Ticker Detail' },
-            { id: 'digest', label: 'ðŸ“‹ Digest' },
-            { id: 'social', label: 'ðŸŒ Social' },
-            { id: 'portfolio', label: 'ðŸ’¼ Portfolio' },
-            { id: 'sectors', label: 'ðŸ¢ Sectors' },
+            { id: 'dashboard', label: 'Dashboard' },
+            { id: 'watchlist', label: 'Watchlist' },
+            { id: 'alerts', label: 'Alerts' },
+            { id: 'ticker', label: 'Ticker Detail' },
+            { id: 'digest', label: 'Digest' },
+            { id: 'social', label: 'Social' },
+            { id: 'portfolio', label: 'Portfolio' },
+            { id: 'sectors', label: 'Sectors' },
           ].map((item) => (
             <button
               key={item.id}
@@ -1039,7 +1039,7 @@ function FinancialCommandCenter() {
                   fontWeight: '500',
                 }}
               >
-                {loading ? 'Loading...' : 'ðŸ”„ Refresh'}
+                {loading ? 'Loading...' : 'Refresh'}
               </button>
             </div>
 
@@ -1355,7 +1355,7 @@ function FinancialCommandCenter() {
                         marginTop: '8px',
                       }}
                     >
-                      {loading && selectedTicker === ticker ? 'Loading...' : 'âœ¨ Brief Me'}
+                      {loading && selectedTicker === ticker ? 'Loading...' : 'Brief Me'}
                     </button>
                   </div>
                 ))}
@@ -1387,7 +1387,7 @@ function FinancialCommandCenter() {
                 marginBottom: '24px',
               }}
             >
-              {loading ? 'Checking...' : 'ðŸ”„ Check Alerts'}
+              {loading ? 'Checking...' : 'Check Alerts'}
             </button>
 
             {(watchlist || []).length === 0 ? (
@@ -1568,7 +1568,7 @@ function FinancialCommandCenter() {
                     fontWeight: '500',
                   }}
                 >
-                  {loading ? 'Generating...' : 'ðŸ“‹ Generate Digest'}
+                  {loading ? 'Generating...' : 'Generate Digest'}
                 </button>
                 {digest && (
                   <>
@@ -1586,7 +1586,7 @@ function FinancialCommandCenter() {
                         fontWeight: '500',
                       }}
                     >
-                      {emailLoading ? 'Sending...' : 'ðŸ“§ Email'}
+                      {emailLoading ? 'Sending...' : 'Email'}
                     </button>
                     <button
                       onClick={exportToPDF}
@@ -1601,7 +1601,7 @@ function FinancialCommandCenter() {
                         fontWeight: '500',
                       }}
                     >
-                      ðŸ“„ Export PDF
+                      Export PDF
                     </button>
                   </>
                 )}
@@ -1865,11 +1865,11 @@ function FinancialCommandCenter() {
                             {isLinkedIn ? result.headline : (result.snippet && result.snippet.channelTitle) || (result.snippet && result.snippet.description)}
                           </div>
                           {isLinkedIn && result.location && (
-                            <div style={{ fontSize: '11px', color: '#999' }}>ðŸ“ {result.location}</div>
+                            <div style={{ fontSize: '11px', color: '#999' }}>{result.location}</div>
                           )}
                           {!isLinkedIn && result.snippet && result.snippet.publishedAt && (
                             <div style={{ fontSize: '11px', color: '#999' }}>
-                              ðŸ“… {new Date(result.snippet.publishedAt).toLocaleDateString()}
+                              {new Date(result.snippet.publishedAt).toLocaleDateString()}
                             </div>
                           )}
                           <span
@@ -1901,7 +1901,7 @@ function FinancialCommandCenter() {
                             fontWeight: '500',
                           }}
                         >
-                          {isFollowing ? 'âœ“ Following' : '+ Follow'}
+                          {isFollowing ? 'Following' : '+ Follow'}
                         </button>
                       </div>
                     );
