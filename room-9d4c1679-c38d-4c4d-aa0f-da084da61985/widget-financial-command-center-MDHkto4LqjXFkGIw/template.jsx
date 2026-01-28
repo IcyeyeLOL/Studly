@@ -360,9 +360,9 @@ function FinancialCommandCenter() {
         });
         
         if (response.success && response.data && response.data.profiles) {
-          setSocialResults(response.data.profiles.map(profile => ({
+          setSocialResults(response.data.profiles.map((profile, idx) => ({
             ...profile,
-            id: profile.link || `${profile.name}-${idx}`,
+            id: profile.link || `linkedin-${profile.name}-${idx}`,
             platform: 'linkedin',
           })));
         } else {
