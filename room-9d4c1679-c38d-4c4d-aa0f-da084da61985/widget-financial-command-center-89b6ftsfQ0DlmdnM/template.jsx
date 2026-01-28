@@ -268,6 +268,16 @@ function FinancialCommandCenter() {
     checkAlerts();
   }, []);
 
+  // Clean up any hardcoded/default tickers on mount
+  useEffect(() => {
+    if (watchlist && watchlist.length > 0) {
+      const cleaned = watchlist.filter(t => t && t.trim() && t !== '500.PAR');
+      if (cleaned.length !== watchlist.length) {
+        setWatchlist(cleaned);
+      }
+    }
+  }, []); // Run once on mount
+
   useEffect(() => {
     if (selectedSectors.length > 0) loadNews();
   }, [selectedSectors]);
