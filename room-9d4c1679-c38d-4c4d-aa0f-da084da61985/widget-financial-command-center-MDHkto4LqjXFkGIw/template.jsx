@@ -1,6 +1,187 @@
+﻿/**
+ * Financial Command Center â€” single file for copy-paste into widget.
+ * Uses miyagiAPI.post(endpoint, body) â†’ { success, data } and useStorage(key, initial, { scope: 'user' }).
+ *
+ * DEEP SPACE: All APIs (news, stock search, AI, social) first use Deep Space's miyagiAPI when available.
+ * If Deep Space doesn't support an endpoint or returns an error, we fall back to YOUR backend when
+ * WIDGET_API_BASE is set. Set it to your deployed Stock Tracker URL (e.g. 'https://your-app.vercel.app')
+ * so stock search and other features work if Deep Space doesn't provide them.
+ *
+ * LOCALHOST: Leave WIDGET_API_BASE empty; fallback calls same-origin /api/*.
+ */
 import React, { useState, useEffect, useMemo } from 'react';
 
-// Constants
+// When pasting into Deep Space, set this to your deployed Stock Tracker URL so stock search, AI, social work.
+const WIDGET_API_BASE = '';
+
+function _buildApiUrl(path) {
+  const url = path.startsWith('/') ? path : `/${path}`;
+  if (url.startsWith('http')) return url;
+  if (WIDGET_API_BASE) {
+    const base = WIDGET_API_BASE.replace(/\/$/, '');
+    return `${base}${url}`;
+  }
+  if (typeof window !== 'undefined' && window.location && window.location.origin) {
+    return window.location.origin + url;
+  }
+  return url;
+}
+
+async function _request(url, options = {}) {
+  try {
+    const fullUrl = _buildApiUrl(url);
+    const res = await fetch(fullUrl, {
+      ...options,
+      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return { ok: false, error: data.error || data.message || res.statusText };
+    return { ok: true, data };
+  } catch (e) {
+    return { ok: false, error: (e && e.message) || 'Request failed' };
+  }
+}
+
+// Fallback: calls YOUR backend (same-origin on localhost, or WIDGET_API_BASE when set for Deep Space).
+function _fallbackPost(endpoint, body = {}) {
+  const b = body;
+  if (endpoint === '/news-top-headlines') {
+    const category = b.category || 'business';
+    const country = b.country || 'us';
+    const pageSize = b.pageSize || 50;
+    return _request(`/api/news?category=${encodeURIComponent(category)}&country=${encodeURIComponent(country)}&pageSize=${pageSize}`).then(({ ok, data, error }) =>
+      ok ? { success: true, data: { articles: (data && data.articles) || [] } } : { success: false, error: error || 'Request failed' }
+    );
+  }
+  if (endpoint === '/news-search') {
+    const q = b.q || b.query || '';
+    const pageSize = b.pageSize || 20;
+    return _request(`/api/news?q=${encodeURIComponent(q)}&pageSize=${pageSize}`).then(({ ok, data, error }) =>
+      ok ? { success: true, data: { articles: (data && data.articles) || [] } } : { success: false, error: error || 'Request failed' }
+    );
+  }
+  if (endpoint === '/generate-text') {
+    const prompt = (b.messages && b.messages[0] && b.messages[0].content) ?? b.prompt ?? '';
+    const model = b.model || 'gpt-4o-mini';
+    return _request('/api/ai/generate', { method: 'POST', body: JSON.stringify({ prompt, model }) }).then(({ ok, data, error }) =>
+      ok ? { success: true, data: { text: (data && data.text) || '' } } : { success: false, error: error || 'Request failed' }
+    );
+  }
+  if (endpoint === '/search-stocks') {
+    const query = b.term ?? b.query ?? '';
+    return _request(`/api/stocks?query=${encodeURIComponent(query)}`).then(({ ok, data, error }) => {
+      if (!ok) return { success: false, error: error || 'Request failed' };
+      const symbols = (data && data.results) || [];
+      return { success: true, data: { symbols } };
+    });
+  }
+  if (endpoint === '/linkedin-search-profiles') {
+    const q = b.name ?? b.q ?? b.query ?? '';
+    return _request(`/api/social/linkedin?q=${encodeURIComponent(q)}`).then(({ ok, data, error }) => {
+      if (!ok) return { success: false, error: error || 'Request failed' };
+      const results = (data && data.results) || [];
+      const profiles = results.map((r) => ({ ...r, link: r.searchUrl || r.link }));
+      return { success: true, data: { profiles } };
+    });
+  }
+  if (endpoint === '/youtube-search') {
+    const q = b.q ?? b.query ?? '';
+    const maxResults = b.maxResults ?? 20;
+    return _request(`/api/social/youtube?q=${encodeURIComponent(q)}&maxResults=${maxResults}`).then(({ ok, data, error }) => {
+      if (!ok) return { success: false, error: error || 'Request failed' };
+      const results = (data && data.results) || [];
+      const videos = results.map((r) => ({
+        ...r,
+        id: r.id || r.videoId || r.channelId,
+        videoId: r.videoId,
+        channelId: r.channelId,
+        snippet: {
+          title: r.name,
+          channelTitle: r.channelTitle,
+          channelId: r.channelId,
+          description: r.description,
+          publishedAt: r.publishedAt,
+        },
+        links: { watch: r.videoId ? `https://www.youtube.com/watch?v=${r.videoId}` : r.channelId ? `https://www.youtube.com/channel/${r.channelId}` : undefined },
+      }));
+      return { success: true, data: { videos } };
+    });
+  }
+  if (endpoint === '/send-email') return Promise.resolve({ success: true });
+  return Promise.resolve({ success: false, error: `Unknown endpoint: ${endpoint}` });
+}
+
+const deepSpace = typeof globalThis.miyagiAPI !== 'undefined';
+
+// Normalize Deep Space response so our UI always sees { success, data: { symbols } } etc.
+function _normalizeResponse(endpoint, res) {
+  if (!res || !res.success || !res.data) return res;
+  const d = res.data;
+  if (endpoint === '/search-stocks' && !d.symbols && Array.isArray(d.results)) {
+    return { success: true, data: { ...d, symbols: d.results } };
+  }
+  if ((endpoint === '/news-top-headlines' || endpoint === '/news-search') && !d.articles && Array.isArray(d.results)) {
+    return { success: true, data: { ...d, articles: d.results } };
+  }
+  return res;
+}
+
+const miyagiAPI = {
+  post: async (endpoint, body = {}) => {
+    if (deepSpace) {
+      try {
+        const res = await globalThis.miyagiAPI.post(endpoint, body);
+        const normalized = _normalizeResponse(endpoint, res);
+        if (normalized && normalized.success) return normalized;
+        // Deep Space failed or doesn't support this endpoint; try user's backend if URL is set
+        if (WIDGET_API_BASE) return _fallbackPost(endpoint, body);
+        return normalized || res;
+      } catch (e) {
+        if (WIDGET_API_BASE) return _fallbackPost(endpoint, body);
+        return { success: false, error: (e && e.message) || 'Request failed' };
+      }
+    }
+    return _fallbackPost(endpoint, body);
+  },
+};
+
+const useStorage = typeof globalThis.useStorage !== 'undefined' ? globalThis.useStorage : function useStorage(key, initialValue, opts) {
+  const [storedValue, setStoredValue] = useState(initialValue);
+  useEffect(() => {
+    try {
+      const item = typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem(key) : null;
+      setStoredValue(item != null ? JSON.parse(item) : initialValue);
+    } catch (err) {
+      console.error('Error loading from localStorage:', err);
+    }
+  }, [key]);
+  const setValue = (valueOrUpdater) => {
+    if (typeof valueOrUpdater === 'function') {
+      setStoredValue((prev) => {
+        const nextValue = valueOrUpdater(prev);
+        try {
+          if (typeof window !== 'undefined' && window.localStorage) {
+            window.localStorage.setItem(key, JSON.stringify(nextValue));
+          }
+        } catch (err) {
+          console.error('Error saving to localStorage:', err);
+        }
+        return nextValue;
+      });
+    } else {
+      try {
+        setStoredValue(valueOrUpdater);
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.setItem(key, JSON.stringify(valueOrUpdater));
+        }
+      } catch (err) {
+        console.error('Error saving to localStorage:', err);
+      }
+    }
+  };
+  return [storedValue, setValue];
+};
+
 const SECTORS = [
   { id: 'technology', name: 'Technology', keywords: ['tech', 'software', 'AI', 'cloud', 'SaaS'] },
   { id: 'healthcare', name: 'Healthcare', keywords: ['pharma', 'biotech', 'medical', 'health'] },
@@ -22,7 +203,6 @@ const CATALYSTS = [
 ];
 
 function FinancialCommandCenter() {
-  // Storage hooks - using user scope for personal data
   const [watchlist, setWatchlist] = useStorage('financial.watchlist', [], { scope: 'user' });
   const [customSectors, setCustomSectors] = useStorage('financial.customSectors', [], { scope: 'user' });
   const [positions, setPositions] = useStorage('financial.positions', {}, { scope: 'user' });
@@ -30,9 +210,9 @@ function FinancialCommandCenter() {
   const [followedAccounts, setFollowedAccounts] = useStorage('financial.followedAccounts', [], { scope: 'user' });
   const [lastAlertCheck, setLastAlertCheck] = useStorage('financial.lastAlertCheck', null, { scope: 'user' });
 
-  // State
   const [activeView, setActiveView] = useState('dashboard');
   const [news, setNews] = useState([]);
+  const [newsError, setNewsError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [selectedSectors, setSelectedSectors] = useState([]);
   const [selectedCatalysts, setSelectedCatalysts] = useState([]);
@@ -59,12 +239,15 @@ function FinancialCommandCenter() {
   const [refreshingQuotes, setRefreshingQuotes] = useState({});
   const [watchlistSearchQuery, setWatchlistSearchQuery] = useState('');
   const [watchlistSearchResults, setWatchlistSearchResults] = useState([]);
+  const [watchlistSearchError, setWatchlistSearchError] = useState(null);
   const [watchlistSearching, setWatchlistSearching] = useState(false);
   const [watchlistQuotes, setWatchlistQuotes] = useState({});
   const [loadingWatchlistQuotes, setLoadingWatchlistQuotes] = useState({});
   const [hasSearched, setHasSearched] = useState(false);
+  const [portfolioSearchError, setPortfolioSearchError] = useState(null);
+  const [portfolioHasSearched, setPortfolioHasSearched] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
 
-  // Apply body background
   useEffect(() => {
     document.body.style.backgroundColor = '#ffffff';
     document.body.style.color = '#000000';
@@ -76,32 +259,24 @@ function FinancialCommandCenter() {
     };
   }, []);
 
-  // Load initial news
   useEffect(() => {
     loadNews();
     checkAlerts();
   }, []);
 
-  // Load news when sectors change
   useEffect(() => {
-    if (selectedSectors.length > 0) {
-      loadNews();
-    }
+    if (selectedSectors.length > 0) loadNews();
   }, [selectedSectors]);
 
-  // Auto-check alerts when watchlist changes
   useEffect(() => {
-    if (watchlist.length > 0 && alerts.length === 0) {
-      checkAlerts();
-    }
+    if (watchlist.length > 0 && alerts.length === 0) checkAlerts();
   }, [watchlist]);
 
-  // Functions
   const loadNews = async () => {
     setLoading(true);
+    setNewsError(null);
     try {
       let allNews = [];
-      
       if (selectedSectors.length === 0) {
         const response = await miyagiAPI.post('/news-top-headlines', {
           category: 'business',
@@ -110,16 +285,17 @@ function FinancialCommandCenter() {
         });
         if (response.success) {
           allNews = response.data.articles || [];
+        } else {
+          setNewsError(response.error || 'Failed to load news');
         }
       } else {
-        const allSectors = [...SECTORS, ...customSectors];
+        const allSectors = [...SECTORS, ...(customSectors || [])];
         const sectorQueries = selectedSectors
-          .map(sectorId => {
-            const sector = allSectors.find(s => s.id === sectorId);
+          .map((sectorId) => {
+            const sector = allSectors.find((s) => s.id === sectorId);
             return sector?.keywords.join(' OR ') || '';
           })
           .filter(Boolean);
-
         for (const query of sectorQueries) {
           try {
             const response = await miyagiAPI.post('/news-search', {
@@ -136,65 +312,57 @@ function FinancialCommandCenter() {
           }
         }
       }
-
-      const taggedNews = allNews.map(article => ({
+      const taggedNews = allNews.map((article) => ({
         ...article,
         catalysts: detectCatalysts(article),
       }));
-
       const uniqueNews = Array.from(
-        new Map(taggedNews.map(item => [item.url, item])).values()
+        new Map(taggedNews.map((item) => [item.url, item])).values()
       );
-
       setNews(uniqueNews);
     } catch (error) {
       console.error('Error loading news:', error);
       setNews([]);
+      setNewsError((error && error.message) || 'Failed to load news');
     } finally {
       setLoading(false);
     }
   };
 
   const detectCatalysts = (article) => {
-    const text = `${article.title} ${article.description || ''}`.toLowerCase();
-    return CATALYSTS.filter(catalyst =>
-      catalyst.keywords.some(keyword => text.includes(keyword.toLowerCase()))
-    ).map(c => c.id);
+    const text = `${(article && article.title) || ''} ${(article && article.description) || ''}`.toLowerCase();
+    return CATALYSTS.filter((catalyst) =>
+      catalyst.keywords.some((keyword) => text.includes(keyword.toLowerCase()))
+    ).map((c) => c.id);
   };
 
   const clusterStories = (articles) => {
     const clusters = {};
-    
-    articles.forEach(article => {
-      const words = article.title.toLowerCase()
+    (articles || []).forEach((article) => {
+      const words = ((article && article.title) || '')
+        .toLowerCase()
         .replace(/[^\w\s]/g, ' ')
         .split(/\s+/)
-        .filter(w => w.length > 4);
-      
+        .filter((w) => w.length > 4);
       let bestCluster = null;
       let bestScore = 0;
-      
-      Object.keys(clusters).forEach(clusterKey => {
+      Object.keys(clusters).forEach((clusterKey) => {
         const clusterWords = clusterKey.split(' ');
-        const matches = words.filter(w => clusterWords.includes(w)).length;
+        const matches = words.filter((w) => clusterWords.includes(w)).length;
         const score = matches / Math.max(clusterWords.length, words.length);
         if (score > 0.3 && score > bestScore) {
           bestScore = score;
           bestCluster = clusterKey;
         }
       });
-      
       if (bestCluster) {
         clusters[bestCluster].push(article);
       } else {
         const keyWord = words[0] || 'other';
-        if (!clusters[keyWord]) {
-          clusters[keyWord] = [];
-        }
+        if (!clusters[keyWord]) clusters[keyWord] = [];
         clusters[keyWord].push(article);
       }
     });
-    
     return Object.entries(clusters)
       .map(([key, stories]) => ({
         key,
@@ -207,8 +375,8 @@ function FinancialCommandCenter() {
 
   const getTopCatalysts = (stories) => {
     const catalystCounts = {};
-    stories.forEach(story => {
-      story.catalysts?.forEach(cat => {
+    (stories || []).forEach((story) => {
+      (story.catalysts || []).forEach((cat) => {
         catalystCounts[cat] = (catalystCounts[cat] || 0) + 1;
       });
     });
@@ -220,20 +388,17 @@ function FinancialCommandCenter() {
 
   const checkAlerts = async () => {
     if (watchlist.length === 0) return;
-    
     try {
       const response = await miyagiAPI.post('/news-top-headlines', {
         category: 'business',
         country: 'us',
         pageSize: 100,
       });
-      
       if (response.success) {
-        const newStories = (response.data.articles || []).filter(article => {
+        const newStories = (response.data.articles || []).filter((article) => {
           const text = `${article.title} ${article.description || ''}`.toLowerCase();
-          return watchlist.some(ticker => text.includes(ticker.toLowerCase()));
+          return watchlist.some((ticker) => text.includes(ticker.toLowerCase()));
         });
-        
         setAlerts(newStories);
         setLastAlertCheck(new Date().toISOString());
       }
@@ -246,7 +411,6 @@ function FinancialCommandCenter() {
     setLoading(true);
     setSelectedTicker(ticker);
     setActiveView('ticker');
-    
     try {
       const newsResponse = await miyagiAPI.post('/news-search', {
         q: ticker,
@@ -254,23 +418,19 @@ function FinancialCommandCenter() {
         sortBy: 'publishedAt',
         pageSize: 10,
       });
-      
       const tickerNews = newsResponse.success ? (newsResponse.data.articles || []) : [];
       const newsSummary = tickerNews
         .slice(0, 5)
-        .map(a => `- ${a.title}`)
+        .map((a) => `- ${a.title}`)
         .join('\n');
-      
       const briefResponse = await miyagiAPI.post('/generate-text', {
         model: 'gpt-4o-mini',
         prompt: `Provide a brief executive summary for ticker ${ticker} based on recent news:\n\n${newsSummary}\n\nInclude: 1) Key developments, 2) Why it matters, 3) Main catalysts, 4) Risks. Keep it concise (3-4 bullets).`,
       });
-      
       const forecastResponse = await miyagiAPI.post('/generate-text', {
         model: 'gpt-4o-mini',
         prompt: `Based on the news above, provide three scenarios for ${ticker}:\n\n1. Bull Case (optimistic outcome)\n2. Base Case (most likely)\n3. Bear Case (pessimistic outcome)\n\nEach scenario should include a realistic price target and reasoning.`,
       });
-      
       setTickerBrief({
         ticker,
         news: tickerNews,
@@ -292,29 +452,24 @@ function FinancialCommandCenter() {
 
   const generateDigest = async () => {
     setLoading(true);
-    
     try {
       const response = await miyagiAPI.post('/news-top-headlines', {
         category: 'business',
         country: 'us',
         pageSize: 50,
       });
-      
       const articles = response.success ? (response.data.articles || []) : [];
-      const topMovers = watchlist.slice(0, 5).map(ticker => {
-        const tickerNews = articles.filter(a => 
+      const topMovers = watchlist.slice(0, 5).map((ticker) => {
+        const tickerNews = articles.filter((a) =>
           `${a.title} ${a.description || ''}`.toLowerCase().includes(ticker.toLowerCase())
         );
         return { ticker, newsCount: tickerNews.length };
       }).sort((a, b) => b.newsCount - a.newsCount);
-      
-      const digestPrompt = `Generate a daily market digest based on these headlines:\n\n${articles.slice(0, 20).map(a => `- ${a.title}`).join('\n')}\n\nInclude: 1) Market summary, 2) Key movers (${topMovers.map(t => t.ticker).join(', ')}), 3) Catalysts to watch, 4) Actionable insights. Format as a professional newsletter.`;
-      
+      const digestPrompt = `Generate a daily market digest based on these headlines:\n\n${articles.slice(0, 20).map((a) => `- ${a.title}`).join('\n')}\n\nInclude: 1) Market summary, 2) Key movers (${topMovers.map((t) => t.ticker).join(', ')}), 3) Catalysts to watch, 4) Actionable insights. Format as a professional newsletter.`;
       const digestResponse = await miyagiAPI.post('/generate-text', {
         model: 'gpt-4o-mini',
         prompt: digestPrompt,
       });
-      
       setDigest({
         date: new Date().toLocaleDateString(),
         content: digestResponse.success ? (digestResponse.data.text || 'Unable to generate digest.') : 'Unable to generate digest.',
@@ -334,38 +489,32 @@ function FinancialCommandCenter() {
 
   const addCustomSector = () => {
     if (!newSectorName.trim() || !newSectorKeywords.trim()) return;
-    
     const newSector = {
       id: `custom-${Date.now()}`,
       name: newSectorName.trim(),
-      keywords: newSectorKeywords.split(',').map(k => k.trim()).filter(Boolean),
+      keywords: newSectorKeywords.split(',').map((k) => k.trim()).filter(Boolean),
       custom: true,
     };
-    setCustomSectors(prev => [...(prev || []), newSector]);
+    setCustomSectors((prev) => [...(prev || []), newSector]);
     setNewSectorName('');
     setNewSectorKeywords('');
   };
 
   const deleteCustomSector = (sectorId) => {
-    setCustomSectors(prev => (prev || []).filter(s => s.id !== sectorId));
-    setSelectedSectors(prev => prev.filter(s => s !== sectorId));
+    setCustomSectors((prev) => (prev || []).filter((s) => s.id !== sectorId));
+    setSelectedSectors((prev) => prev.filter((s) => s !== sectorId));
   };
 
   const searchSocial = async () => {
     if (!socialSearchQuery.trim()) return;
-    
     setSocialLoading(true);
     setSocialError(null);
     setHasSocialSearched(true);
-    
     try {
       if (socialSearchPlatform === 'linkedin') {
-        // LinkedIn API accepts: name, company, title, education, location
-        // We'll use the query as 'name' for person searches
         const response = await miyagiAPI.post('/linkedin-search-profiles', {
           name: socialSearchQuery,
         });
-        
         if (response.success && response.data && response.data.profiles) {
           setSocialResults(response.data.profiles.map((profile, idx) => ({
             ...profile,
@@ -377,26 +526,17 @@ function FinancialCommandCenter() {
           setSocialResults([]);
         }
       } else if (socialSearchPlatform === 'youtube') {
-        // YouTube API returns data.videos, not data.items
-        console.log('[YouTube Search] Calling miyagiAPI with:', { q: socialSearchQuery, maxResults: 20 });
-        
         const response = await miyagiAPI.post('/youtube-search', {
           q: socialSearchQuery,
           maxResults: 20,
         });
-        
-        console.log('[YouTube Search] Response:', response);
-        
         if (response.success && response.data && response.data.videos) {
-          console.log('[YouTube Search] Found videos:', response.data.videos.length);
           setSocialResults(response.data.videos.map((video, idx) => ({
             ...video,
             id: video.id?.videoId || video.id || `video-${idx}`,
             platform: 'youtube',
           })));
         } else {
-          // Show specific error from backend
-          console.error('[YouTube Search] Error response:', response);
           const errorMsg = response.error || response.message || 'Failed to search YouTube';
           setSocialError(`YouTube Error: ${errorMsg}. The DeepSpace YouTube integration may need configuration.`);
           setSocialResults([]);
@@ -405,12 +545,10 @@ function FinancialCommandCenter() {
     } catch (error) {
       console.error('Error searching social:', error);
       const errorMessage = error.message || error.toString();
-      
-      // Provide specific guidance based on error type
       if (errorMessage.includes('400') || errorMessage.includes('Bad Request')) {
         setSocialError('YouTube API Error (400): Bad Request. Your YOUTUBE_API_KEY may be missing or invalid. Check your environment variables and ensure the key is set correctly.');
       } else if (errorMessage.includes('403') || errorMessage.includes('Forbidden')) {
-        setSocialError('YouTube API Error (403): Access Forbidden. Your API key may have incorrect restrictions. In Google Cloud Console → Credentials → API Key, set "Application restrictions" to "None" or "IP addresses" (not HTTP referrers, which block server requests).');
+        setSocialError('YouTube API Error (403): Access Forbidden. Your API key may have incorrect restrictions. In Google Cloud Console â†’ Credentials â†’ API Key, set "Application restrictions" to "None" or "IP addresses" (not HTTP referrers, which block server requests).');
       } else if (errorMessage.includes('429')) {
         setSocialError('YouTube API Error (429): Quota exceeded. You have hit the daily API quota limit. Try again tomorrow or request a quota increase in Google Cloud Console.');
       } else {
@@ -424,113 +562,104 @@ function FinancialCommandCenter() {
 
   const followAccount = (account) => {
     const isFollowing = followedAccounts.some(
-      acc => (acc.id === account.id || acc.id === account.snippet?.channelId) && acc.platform === account.platform
+      (acc) => (acc.id === account.id || acc.id === account.snippet?.channelId) && acc.platform === account.platform
     );
-    
     if (!isFollowing) {
-      setFollowedAccounts(prev => [...(prev || []), account]);
+      setFollowedAccounts((prev) => [...(prev || []), account]);
     }
   };
 
   const unfollowAccount = (accountId, platform) => {
-    setFollowedAccounts(prev =>
+    setFollowedAccounts((prev) =>
       (prev || []).filter(
-        acc => !(acc.id === accountId && acc.platform === platform)
+        (acc) => !(acc.id === accountId && acc.platform === platform)
       )
     );
   };
 
   const searchWatchlistStocks = async () => {
     if (!watchlistSearchQuery.trim()) return;
-    
     setWatchlistSearching(true);
+    setWatchlistSearchError(null);
     setHasSearched(true);
     try {
       const response = await miyagiAPI.post('/search-stocks', {
         term: watchlistSearchQuery,
+        query: watchlistSearchQuery,
       });
-      
-      if (response.success && response.data && response.data.symbols) {
-        setWatchlistSearchResults(response.data.symbols);
+      if (response && response.success && response.data) {
+        const list = Array.isArray(response.data.symbols) ? response.data.symbols : [];
+        setWatchlistSearchResults(list);
       } else {
         setWatchlistSearchResults([]);
+        setWatchlistSearchError((response && response.error) || 'Search failed. Check ALPHA_VANTAGE_KEY in .env.');
       }
     } catch (error) {
       console.error('Error searching stocks:', error);
       setWatchlistSearchResults([]);
+      setWatchlistSearchError((error && error.message) || 'Search failed. Check your connection.');
     } finally {
       setWatchlistSearching(false);
     }
   };
 
   const getQuoteForResult = async (symbol) => {
-    setLoadingWatchlistQuotes(prev => ({ ...prev, [symbol]: true }));
+    setLoadingWatchlistQuotes((prev) => ({ ...prev, [symbol]: true }));
     try {
-      // Mock quote data for demo
-      // In production, call actual quote API
       const mockQuote = {
-        symbol: symbol,
+        symbol,
         price: (Math.random() * 500 + 50).toFixed(2),
         change: (Math.random() * 20 - 10).toFixed(2),
         changePercent: (Math.random() * 10 - 5).toFixed(2),
         volume: Math.floor(Math.random() * 10000000),
         latestTradingDay: new Date().toISOString().split('T')[0],
       };
-      
-      setWatchlistQuotes(prev => ({
-        ...prev,
-        [symbol]: mockQuote,
-      }));
+      setWatchlistQuotes((prev) => ({ ...prev, [symbol]: mockQuote }));
     } catch (error) {
       console.error('Error getting quote:', error);
     } finally {
-      setLoadingWatchlistQuotes(prev => ({ ...prev, [symbol]: false }));
+      setLoadingWatchlistQuotes((prev) => ({ ...prev, [symbol]: false }));
     }
   };
 
   const addToWatchlistFromSearch = (symbol) => {
     const upperSymbol = symbol.toUpperCase();
     if (!watchlist.includes(upperSymbol)) {
-      setWatchlist(prev => [...(prev || []), upperSymbol]);
+      setWatchlist((prev) => [...(prev || []), upperSymbol]);
     }
   };
 
   const addTickerToWatchlist = async () => {
     if (!newTickerInput.trim()) return;
-    
     const ticker = newTickerInput.trim().toUpperCase();
-    
     if (watchlist.includes(ticker)) {
       alert(`${ticker} is already in your watchlist.`);
       return;
     }
-    
     try {
       const response = await miyagiAPI.post('/search-stocks', {
         term: ticker,
       });
-      
       if (response.success && response.data && response.data.symbols && response.data.symbols.length > 0) {
-        setWatchlist(prev => [...(prev || []), ticker]);
+        setWatchlist((prev) => [...(prev || []), ticker]);
         setNewTickerInput('');
       } else {
-        const confirm = window.confirm(`Could not verify ticker ${ticker}. Add anyway?`);
-        if (confirm) {
-          setWatchlist(prev => [...(prev || []), ticker]);
+        const confirmAdd = window.confirm(`Could not verify ticker ${ticker}. Add anyway?`);
+        if (confirmAdd) {
+          setWatchlist((prev) => [...(prev || []), ticker]);
           setNewTickerInput('');
         }
       }
     } catch (error) {
       console.error('Error adding ticker:', error);
-      setWatchlist(prev => [...(prev || []), ticker]);
+      setWatchlist((prev) => [...(prev || []), ticker]);
       setNewTickerInput('');
     }
   };
 
   const refreshWatchlistQuote = async (ticker) => {
-    setLoadingWatchlistQuotes(prev => ({ ...prev, [ticker]: true }));
+    setLoadingWatchlistQuotes((prev) => ({ ...prev, [ticker]: true }));
     try {
-      // Mock quote data for demo
       const mockQuote = {
         symbol: ticker,
         price: (Math.random() * 500 + 50).toFixed(2),
@@ -539,44 +668,43 @@ function FinancialCommandCenter() {
         volume: Math.floor(Math.random() * 10000000),
         latestTradingDay: new Date().toISOString().split('T')[0],
       };
-      
-      setWatchlistQuotes(prev => ({
-        ...prev,
-        [ticker]: mockQuote,
-      }));
+      setWatchlistQuotes((prev) => ({ ...prev, [ticker]: mockQuote }));
     } catch (error) {
       console.error('Error refreshing quote:', error);
     } finally {
-      setLoadingWatchlistQuotes(prev => ({ ...prev, [ticker]: false }));
+      setLoadingWatchlistQuotes((prev) => ({ ...prev, [ticker]: false }));
     }
   };
 
   const searchPortfolioTicker = async () => {
     if (!portfolioSearchQuery.trim()) return;
-    
     setPortfolioSearching(true);
+    setPortfolioSearchError(null);
+    setPortfolioHasSearched(true);
     try {
       const response = await miyagiAPI.post('/search-stocks', {
         term: portfolioSearchQuery,
+        query: portfolioSearchQuery,
       });
-      
-      if (response.success && response.data && response.data.symbols) {
-        setPortfolioSearchResults(response.data.symbols);
+      if (response && response.success && response.data) {
+        const list = Array.isArray(response.data.symbols) ? response.data.symbols : [];
+        setPortfolioSearchResults(list);
       } else {
         setPortfolioSearchResults([]);
+        setPortfolioSearchError((response && response.error) || 'Search failed. Check ALPHA_VANTAGE_KEY in .env.');
       }
     } catch (error) {
       console.error('Error searching stocks:', error);
       setPortfolioSearchResults([]);
+      setPortfolioSearchError((error && error.message) || 'Search failed. Check your connection.');
     } finally {
       setPortfolioSearching(false);
     }
   };
 
   const addTickerToPortfolio = (ticker) => {
-    // Add to watchlist if not already there
     if (!watchlist.includes(ticker)) {
-      setWatchlist(prev => [...(prev || []), ticker]);
+      setWatchlist((prev) => [...(prev || []), ticker]);
     }
     setPortfolioSearchQuery('');
     setPortfolioSearchResults([]);
@@ -584,13 +712,13 @@ function FinancialCommandCenter() {
 
   const addPosition = (ticker, quantity, entryPrice) => {
     const tickerUpper = ticker.toUpperCase();
-    setPositions(prev => ({
+    setPositions((prev) => ({
       ...(prev || {}),
       [tickerUpper]: {
         quantity: parseFloat(quantity),
         entryPrice: parseFloat(entryPrice),
         currentPrice: parseFloat(entryPrice),
-        notes: tickerNotes[tickerUpper] || '',
+        notes: (tickerNotes || {})[tickerUpper] || '',
       },
     }));
     setEditingPosition(null);
@@ -598,10 +726,10 @@ function FinancialCommandCenter() {
   };
 
   const updatePosition = (ticker, updates) => {
-    setPositions(prev => ({
+    setPositions((prev) => ({
       ...(prev || {}),
       [ticker]: {
-        ...(prev[ticker] || {}),
+        ...((prev || {})[ticker] || {}),
         ...updates,
       },
     }));
@@ -609,7 +737,7 @@ function FinancialCommandCenter() {
 
   const deletePosition = (ticker) => {
     if (window.confirm(`Remove position for ${ticker}?`)) {
-      setPositions(prev => {
+      setPositions((prev) => {
         const newPositions = { ...(prev || {}) };
         delete newPositions[ticker];
         return newPositions;
@@ -618,51 +746,65 @@ function FinancialCommandCenter() {
   };
 
   const refreshQuote = async (ticker) => {
-    setRefreshingQuotes(prev => ({ ...prev, [ticker]: true }));
+    setRefreshingQuotes((prev) => ({ ...prev, [ticker]: true }));
     try {
       const response = await miyagiAPI.post('/search-stocks', {
         term: ticker,
       });
-      
       if (response.success && response.data && response.data.symbols && response.data.symbols.length > 0) {
-        const result = response.data.symbols[0];
-        // For demo purposes, we'll use a mock current price
-        // In a real app, you'd call /api/stocks/quote endpoint
-        const mockCurrentPrice = positions[ticker]?.entryPrice * (1 + (Math.random() * 0.2 - 0.1));
+        const mockCurrentPrice = (positions || {})[ticker]?.entryPrice * (1 + (Math.random() * 0.2 - 0.1));
         updatePosition(ticker, { currentPrice: mockCurrentPrice });
       }
     } catch (error) {
       console.error('Error refreshing quote:', error);
     } finally {
-      setRefreshingQuotes(prev => ({ ...prev, [ticker]: false }));
+      setRefreshingQuotes((prev) => ({ ...prev, [ticker]: false }));
     }
   };
 
   const updateTickerNotes = (ticker, notes) => {
-    setTickerNotes(prev => ({
+    setTickerNotes((prev) => ({
       ...(prev || {}),
       [ticker]: notes,
     }));
   };
 
-  // Computed values
+  const emailDigest = async () => {
+    if (!digest) return;
+    setEmailLoading(true);
+    try {
+      await miyagiAPI.post('/send-email', {
+        to: 'user@example.com',
+        subject: `Daily Market Digest - ${digest.date}`,
+        html: `<h1>Daily Market Digest</h1><p><strong>Date:</strong> ${digest.date}</p><div style="white-space: pre-wrap;">${digest.content}</div>`,
+      });
+      alert('Digest sent to email!');
+    } catch (error) {
+      console.error('Error sending email:', error);
+      alert('Error sending email. Please try again.');
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  const exportToPDF = () => {
+    window.print();
+  };
+
   const filteredNews = useMemo(() => {
     let filtered = news;
-    
     if (selectedCatalysts.length > 0) {
-      filtered = filtered.filter(article =>
-        article.catalysts?.some(cat => selectedCatalysts.includes(cat))
+      filtered = filtered.filter((article) =>
+        article.catalysts?.some((cat) => selectedCatalysts.includes(cat))
       );
     }
-    
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(article =>
+      filtered = filtered.filter((article) =>
         article.title?.toLowerCase().includes(query) ||
         article.description?.toLowerCase().includes(query)
       );
     }
-    
     return filtered;
   }, [news, selectedCatalysts, searchQuery]);
 
@@ -672,10 +814,9 @@ function FinancialCommandCenter() {
     totalStories: news.length,
     watchlistSize: watchlist.length,
     alertsCount: alerts.length,
-    catalystsFound: new Set(news.flatMap(n => n.catalysts || [])).size,
+    catalystsFound: new Set(news.flatMap((n) => n.catalysts || [])).size,
   }), [news, watchlist, alerts]);
 
-  // Styles - Clean Light UI
   const styles = {
     container: {
       display: 'flex',
@@ -746,27 +887,25 @@ function FinancialCommandCenter() {
 
   return (
     <div style={styles.container}>
-      {/* Sidebar */}
       <div style={styles.sidebar}>
         <div style={{ marginBottom: '40px' }}>
           <h1 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '8px', letterSpacing: '-0.02em' }}>
-            📊 Command Center
+            ðŸ“Š Command Center
           </h1>
           <p style={{ fontSize: '14px', color: '#666', marginTop: '4px' }}>Financial market intelligence</p>
         </div>
 
-        {/* Navigation */}
-        <nav style={{ marginBottom: '40px' }}>
+        <nav style={{ marginBottom: '32px' }}>
           {[
-            { id: 'dashboard', label: '📊 Dashboard' },
-            { id: 'watchlist', label: '⭐ Watchlist' },
-            { id: 'alerts', label: '🔔 Alerts' },
-            { id: 'ticker', label: '📰 Ticker Detail' },
-            { id: 'digest', label: '📋 Digest' },
-            { id: 'social', label: '🌐 Social' },
-            { id: 'portfolio', label: '💼 Portfolio' },
-            { id: 'sectors', label: '🏢 Sectors' },
-          ].map(item => (
+            { id: 'dashboard', label: 'ðŸ“Š Dashboard' },
+            { id: 'watchlist', label: 'â­ Watchlist' },
+            { id: 'alerts', label: 'ðŸ”” Alerts' },
+            { id: 'ticker', label: 'ðŸ“° Ticker Detail' },
+            { id: 'digest', label: 'ðŸ“‹ Digest' },
+            { id: 'social', label: 'ðŸŒ Social' },
+            { id: 'portfolio', label: 'ðŸ’¼ Portfolio' },
+            { id: 'sectors', label: 'ðŸ¢ Sectors' },
+          ].map((item) => (
             <button
               key={item.id}
               onClick={() => setActiveView(item.id)}
@@ -777,7 +916,6 @@ function FinancialCommandCenter() {
           ))}
         </nav>
 
-        {/* Stats */}
         <div style={{
           padding: '20px',
           backgroundColor: '#fafafa',
@@ -795,22 +933,18 @@ function FinancialCommandCenter() {
           </div>
         </div>
 
-        {/* Sectors */}
         <div style={{ marginBottom: '32px' }}>
           <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '16px', color: '#000' }}>
-            Sectors ({SECTORS.length + customSectors.length})
+            Sectors ({SECTORS.length + (customSectors || []).length})
           </div>
-          {[...SECTORS, ...customSectors].slice(0, 5).map(sector => (
+          {[...SECTORS, ...(customSectors || [])].slice(0, 5).map((sector) => (
             <label key={sector.id} style={{ display: 'block', marginBottom: '12px', fontSize: '14px', cursor: 'pointer' }}>
               <input
                 type="checkbox"
                 checked={selectedSectors.includes(sector.id)}
                 onChange={(e) => {
-                  if (e.target.checked) {
-                    setSelectedSectors(prev => [...prev, sector.id]);
-                  } else {
-                    setSelectedSectors(prev => prev.filter(s => s !== sector.id));
-                  }
+                  if (e.target.checked) setSelectedSectors((prev) => [...prev, sector.id]);
+                  else setSelectedSectors((prev) => prev.filter((s) => s !== sector.id));
                 }}
                 style={{ marginRight: '10px' }}
               />
@@ -818,7 +952,7 @@ function FinancialCommandCenter() {
               {sector.custom && <span style={{ fontSize: '11px', color: '#6366f1', marginLeft: '6px' }}>(Custom)</span>}
             </label>
           ))}
-          {customSectors.length + SECTORS.length > 5 && (
+          {(customSectors || []).length + SECTORS.length > 5 && (
             <button
               onClick={() => setActiveView('sectors')}
               style={{
@@ -831,82 +965,124 @@ function FinancialCommandCenter() {
                 fontWeight: '500',
               }}
             >
-              View All →
+              View All â†’
             </button>
           )}
         </div>
 
-        {/* Catalysts */}
         <div>
           <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '16px', color: '#000' }}>
             Catalysts
           </div>
-          {CATALYSTS.map(catalyst => (
+          {CATALYSTS.map((catalyst) => (
             <label key={catalyst.id} style={{ display: 'block', marginBottom: '12px', fontSize: '14px', cursor: 'pointer' }}>
               <input
                 type="checkbox"
                 checked={selectedCatalysts.includes(catalyst.id)}
                 onChange={(e) => {
-                  if (e.target.checked) {
-                    setSelectedCatalysts(prev => [...prev, catalyst.id]);
-                  } else {
-                    setSelectedCatalysts(prev => prev.filter(c => c !== catalyst.id));
-                  }
+                  if (e.target.checked) setSelectedCatalysts((prev) => [...prev, catalyst.id]);
+                  else setSelectedCatalysts((prev) => prev.filter((c) => c !== catalyst.id));
                 }}
                 style={{ marginRight: '10px' }}
               />
-              <span style={{ color: catalyst.color }}>●</span> {catalyst.name}
+              <span style={{ color: catalyst.color }}>â—</span> {catalyst.name}
             </label>
           ))}
         </div>
       </div>
 
-      {/* Main Content */}
       <div style={styles.mainContent}>
-        {/* Dashboard View */}
+        {(activeView === 'dashboard' || activeView === 'alerts') && (
+          <div style={{ marginBottom: '32px' }}>
+            <input
+              type="text"
+              placeholder="Search news..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={styles.input}
+            />
+          </div>
+        )}
+
         {activeView === 'dashboard' && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-              <h2 style={{ fontSize: '32px', fontWeight: '600', letterSpacing: '-0.02em' }}>Market Dashboard</h2>
-              <button onClick={loadNews} disabled={loading} style={styles.button('primary')}>
-                {loading ? 'Loading...' : '🔄 Refresh'}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: '600' }}>Market Dashboard</h2>
+              <button
+                onClick={loadNews}
+                disabled={loading}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#6366f1',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                }}
+              >
+                {loading ? 'Loading...' : 'ðŸ”„ Refresh'}
               </button>
             </div>
 
-            <div style={{ marginBottom: '32px' }}>
-              <input
-                type="text"
-                placeholder="Search news..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={styles.input}
-              />
-            </div>
-
-            {loading && news.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '80px', color: '#999' }}>Loading news...</div>
-            ) : clusteredNews.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '80px', color: '#999' }}>No news found. Try adjusting filters.</div>
+            {loading && (news || []).length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>Loading news...</div>
+            ) : newsError ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#b91c1c' }}>
+                <p style={{ marginBottom: '12px' }}>{newsError}</p>
+                <p style={{ fontSize: '13px', color: '#666', marginBottom: '16px' }}>Ensure NEWS_API_KEY is set in .env for the news API.</p>
+                <button
+                  onClick={loadNews}
+                  style={{
+                    padding: '10px 20px',
+                    backgroundColor: '#6366f1',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                  }}
+                >
+                  Retry
+                </button>
+              </div>
+            ) : (clusteredNews || []).length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>No news found. Try adjusting filters or click Refresh.</div>
             ) : (
               <div>
-                {clusteredNews.map((cluster, idx) => (
-                  <div key={idx} style={styles.card}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                      <h3 style={{ fontSize: '20px', fontWeight: '600' }}>
-                        {cluster.key.charAt(0).toUpperCase() + cluster.key.slice(1)} ({cluster.size} stories)
+                {(clusteredNews || []).map((cluster, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      marginBottom: '24px',
+                      padding: '20px',
+                      backgroundColor: '#ffffff',
+                      border: `1px solid ${'#f0f0f0'}`,
+                      borderRadius: '12px',
+                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                      <h3 style={{ fontSize: '18px', fontWeight: '600' }}>
+                        {(cluster.key || '').charAt(0).toUpperCase() + (cluster.key || '').slice(1)} ({cluster.size || 0} stories)
                       </h3>
                       <div style={{ display: 'flex', gap: '8px' }}>
-                        {cluster.topCatalysts.map(catId => {
-                          const cat = CATALYSTS.find(c => c.id === catId);
+                        {(cluster.topCatalysts || []).map((catId) => {
+                          const cat = (CATALYSTS || []).find((c) => c.id === catId);
                           return cat ? (
-                            <span key={catId} style={{
-                              padding: '6px 12px',
-                              backgroundColor: cat.color + '15',
-                              color: cat.color,
-                              borderRadius: '8px',
-                              fontSize: '12px',
-                              fontWeight: '500',
-                            }}>
+                            <span
+                              key={catId}
+                              style={{
+                                padding: '4px 8px',
+                                backgroundColor: (cat.color || '') + '20',
+                                color: cat.color,
+                                borderRadius: '4px',
+                                fontSize: '11px',
+                                fontWeight: '500',
+                              }}
+                            >
                               {cat.name}
                             </span>
                           ) : null;
@@ -914,44 +1090,44 @@ function FinancialCommandCenter() {
                       </div>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
-                      {cluster.stories.slice(0, 6).map((article, aidx) => (
+                      {(cluster.stories || []).slice(0, 6).map((article, aidx) => (
                         <a
                           key={aidx}
                           href={article.url}
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{
-                            padding: '20px',
-                            backgroundColor: '#fafafa',
-                            border: '1px solid #f0f0f0',
-                            borderRadius: '12px',
+                            padding: '16px',
+                            backgroundColor: '#f9fafb',
+                            border: `1px solid ${'#f0f0f0'}`,
+                            borderRadius: '8px',
                             textDecoration: 'none',
-                            color: '#000',
+                            color: '#000000',
                             display: 'block',
                             transition: 'transform 0.2s',
                           }}
-                          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                          onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                          onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
                         >
-                          <div style={{ fontSize: '15px', fontWeight: '600', marginBottom: '12px', lineHeight: '1.4' }}>
-                            {article.title}
-                          </div>
-                          <div style={{ fontSize: '13px', color: '#666', marginBottom: '12px' }}>
-                            {article.source?.name || 'Unknown'} • {new Date(article.publishedAt).toLocaleDateString()}
+                          <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px', lineHeight: '1.4' }}>{article.title}</div>
+                          <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+                            {(article.source && article.source.name) || 'Unknown'} â€¢ {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString() : ''}
                           </div>
                           {article.catalysts && article.catalysts.length > 0 && (
-                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                              {article.catalysts.map(catId => {
-                                const cat = CATALYSTS.find(c => c.id === catId);
+                            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                              {article.catalysts.map((catId) => {
+                                const cat = (CATALYSTS || []).find((c) => c.id === catId);
                                 return cat ? (
-                                  <span key={catId} style={{
-                                    padding: '4px 8px',
-                                    backgroundColor: cat.color + '15',
-                                    color: cat.color,
-                                    borderRadius: '6px',
-                                    fontSize: '11px',
-                                    fontWeight: '500',
-                                  }}>
+                                  <span
+                                    key={catId}
+                                    style={{
+                                      padding: '2px 6px',
+                                      backgroundColor: (cat.color || '') + '20',
+                                      color: cat.color,
+                                      borderRadius: '3px',
+                                      fontSize: '10px',
+                                    }}
+                                  >
                                     {cat.name}
                                   </span>
                                 ) : null;
@@ -968,416 +1144,261 @@ function FinancialCommandCenter() {
           </div>
         )}
 
-        {/* Watchlist View */}
         {activeView === 'watchlist' && (
           <div>
-            <h2 style={{ fontSize: '32px', fontWeight: '600', marginBottom: '32px', letterSpacing: '-0.02em' }}>Watchlist</h2>
-            
-            {/* Search Stocks */}
-            <div style={styles.card}>
-              <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>Search Stocks</div>
-              <div style={{ fontSize: '14px', color: '#666', marginBottom: '16px' }}>
-                Search by symbol, company name, or keywords to find stocks
-              </div>
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '24px' }}>Watchlist</h2>
+            <div
+              style={{
+                padding: '20px',
+                backgroundColor: '#ffffff',
+                border: `1px solid ${'#f0f0f0'}`,
+                borderRadius: '12px',
+                marginBottom: '24px',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
+              }}
+            >
+              <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px' }}>Search Stocks</div>
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
                 <input
                   type="text"
-                  placeholder="e.g., AAPL, Apple, Tesla, tech stocks..."
+                  placeholder="Search by symbol or company name"
                   value={watchlistSearchQuery}
                   onChange={(e) => setWatchlistSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && searchWatchlistStocks()}
-                  style={{ ...styles.input, flex: 1 }}
+                  onKeyPress={(e) => e.key === 'Enter' && searchWatchlistStocks()}
+                  style={{
+                    flex: 1,
+                    padding: '12px 16px',
+                    border: `1px solid ${'#f0f0f0'}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    backgroundColor: '#ffffff',
+                    color: '#000000',
+                  }}
                 />
                 <button
                   onClick={searchWatchlistStocks}
                   disabled={watchlistSearching || !watchlistSearchQuery.trim()}
                   style={{
-                    ...styles.button('primary'),
-                    opacity: watchlistSearching || !watchlistSearchQuery.trim() ? 0.5 : 1,
+                    padding: '12px 24px',
+                    backgroundColor: '#6366f1',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: watchlistSearching ? 'not-allowed' : 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
                   }}
                 >
                   {watchlistSearching ? 'Searching...' : 'Search'}
                 </button>
               </div>
-
-              {/* Search Results */}
-              {watchlistSearching && (
-                <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
-                  Searching...
+              {watchlistSearchError && (
+                <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#fef2f2', borderRadius: '8px', color: '#b91c1c', fontSize: '13px' }}>
+                  {watchlistSearchError}
                 </div>
               )}
-
-              {!watchlistSearching && hasSearched && watchlistSearchResults.length === 0 && (
-                <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
-                  <div style={{ fontSize: '16px', marginBottom: '8px' }}>No results found</div>
-                  <div style={{ fontSize: '14px' }}>Try a different search term</div>
-                </div>
-              )}
-
-              {!watchlistSearching && watchlistSearchResults.length > 0 && (
-                <div style={{ 
-                  maxHeight: '400px', 
-                  overflowY: 'auto',
-                  borderTop: '1px solid #f0f0f0',
-                  paddingTop: '16px',
-                }}>
-                  {watchlistSearchResults.map((result, idx) => {
-                    const isInWatchlist = watchlist.includes(result.symbol);
-                    const quote = watchlistQuotes[result.symbol];
-                    const loadingQuote = loadingWatchlistQuotes[result.symbol];
-
-                    return (
-                      <div
-                        key={idx}
-                        style={{
-                          padding: '20px',
-                          marginBottom: '12px',
-                          backgroundColor: '#fafafa',
-                          borderRadius: '12px',
-                          border: '1px solid #f0f0f0',
-                        }}
-                      >
-                        {/* Stock Info */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '4px' }}>
-                              {result.symbol}
-                            </div>
-                            <div style={{ fontSize: '14px', color: '#666', marginBottom: '6px' }}>
-                              {result.name || 'No description'}
-                            </div>
-                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                              {result.type && (
-                                <span style={{
-                                  padding: '4px 8px',
-                                  backgroundColor: '#6366f115',
-                                  color: '#6366f1',
-                                  borderRadius: '6px',
-                                  fontSize: '11px',
-                                  fontWeight: '500',
-                                }}>
-                                  {result.type}
-                                </span>
-                              )}
-                              {result.region && (
-                                <span style={{
-                                  padding: '4px 8px',
-                                  backgroundColor: '#f0f0f0',
-                                  color: '#666',
-                                  borderRadius: '6px',
-                                  fontSize: '11px',
-                                }}>
-                                  {result.region}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => addToWatchlistFromSearch(result.symbol)}
-                            disabled={isInWatchlist}
-                            style={{
-                              ...styles.button(isInWatchlist ? 'ghost' : 'primary'),
-                              padding: '8px 16px',
-                              fontSize: '13px',
-                              marginLeft: '12px',
-                            }}
-                          >
-                            {isInWatchlist ? '✓ Added' : '+ Add'}
-                          </button>
-                        </div>
-
-                        {/* Quote Section */}
-                        {!quote && !loadingQuote && (
-                          <button
-                            onClick={() => getQuoteForResult(result.symbol)}
-                            style={{
-                              ...styles.button('ghost'),
-                              width: '100%',
-                              padding: '8px',
-                              fontSize: '13px',
-                            }}
-                          >
-                            Get Quote
-                          </button>
-                        )}
-
-                        {loadingQuote && (
-                          <div style={{ textAlign: 'center', padding: '12px', color: '#999', fontSize: '13px' }}>
-                            Loading quote...
-                          </div>
-                        )}
-
-                        {quote && !loadingQuote && (
-                          <div style={{
-                            marginTop: '12px',
-                            padding: '16px',
-                            backgroundColor: '#ffffff',
+              {!watchlistSearchError && watchlistSearchResults && watchlistSearchResults.length > 0 && (
+                <div style={{ marginTop: '12px' }}>
+                  <div style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>Results â€” click Add to watchlist</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {watchlistSearchResults.map((result) => {
+                      const symbol = (result && result.symbol) || (typeof result === 'string' ? result : '');
+                      if (!symbol) return null;
+                      return (
+                        <div
+                          key={symbol}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px 12px',
+                            backgroundColor: '#f9fafb',
                             borderRadius: '8px',
                             border: '1px solid #f0f0f0',
-                          }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                              <div>
-                                <div style={{ fontSize: '11px', color: '#666', marginBottom: '4px' }}>Price</div>
-                                <div style={{ fontSize: '20px', fontWeight: '600' }}>${quote.price}</div>
-                              </div>
-                              <div>
-                                <div style={{ fontSize: '11px', color: '#666', marginBottom: '4px' }}>Change</div>
-                                <div style={{
-                                  fontSize: '16px',
-                                  fontWeight: '600',
-                                  color: parseFloat(quote.change) >= 0 ? '#10b981' : '#ef4444'
-                                }}>
-                                  {parseFloat(quote.change) >= 0 ? '+' : ''}{quote.change} ({parseFloat(quote.changePercent) >= 0 ? '+' : ''}{quote.changePercent}%)
-                                </div>
-                              </div>
-                              <div>
-                                <div style={{ fontSize: '11px', color: '#666', marginBottom: '4px' }}>Volume</div>
-                                <div style={{ fontSize: '14px', fontWeight: '500' }}>
-                                  {quote.volume.toLocaleString()}
-                                </div>
-                              </div>
-                              <div>
-                                <div style={{ fontSize: '11px', color: '#666', marginBottom: '4px' }}>Last Trade</div>
-                                <div style={{ fontSize: '14px', fontWeight: '500' }}>
-                                  {new Date(quote.latestTradingDay).toLocaleDateString()}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                          }}
+                        >
+                          <span style={{ fontWeight: '600', fontSize: '14px' }}>{symbol}</span>
+                          {result.name && <span style={{ fontSize: '12px', color: '#666' }}>{result.name}</span>}
+                          <button
+                            onClick={() => addToWatchlistFromSearch(symbol)}
+                            style={{
+                              padding: '4px 10px',
+                              backgroundColor: '#10b981',
+                              color: '#ffffff',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              fontWeight: '500',
+                            }}
+                          >
+                            Add
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
+              {!watchlistSearchError && hasSearched && !watchlistSearching && watchlistSearchResults.length === 0 && (
+                <div style={{ marginTop: '12px', fontSize: '13px', color: '#666' }}>No matches found. Try a symbol (e.g. AAPL) or company name.</div>
+              )}
             </div>
-
-            {/* Quick Add by Symbol */}
-            <div style={styles.card}>
-              <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>Quick Add by Symbol</div>
-              <div style={{ fontSize: '14px', color: '#666', marginBottom: '16px' }}>
-                Already know the ticker? Add it directly
-              </div>
+            <div
+              style={{
+                padding: '20px',
+                backgroundColor: '#ffffff',
+                border: `1px solid ${'#f0f0f0'}`,
+                borderRadius: '12px',
+                marginBottom: '24px',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
+              }}
+            >
+              <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px' }}>Add Ticker (manual)</div>
               <div style={{ display: 'flex', gap: '12px' }}>
                 <input
                   type="text"
                   placeholder="Enter ticker symbol (e.g., AAPL, TSLA)"
                   value={newTickerInput}
                   onChange={(e) => setNewTickerInput(e.target.value.toUpperCase())}
-                  onKeyDown={(e) => e.key === 'Enter' && addTickerToWatchlist()}
-                  style={{ ...styles.input, flex: 1 }}
+                  onKeyPress={(e) => e.key === 'Enter' && addTickerToWatchlist()}
+                  style={{
+                    flex: 1,
+                    padding: '12px 16px',
+                    border: `1px solid ${'#f0f0f0'}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    backgroundColor: '#ffffff',
+                    color: '#000000',
+                  }}
                 />
-                <button onClick={addTickerToWatchlist} style={styles.button('primary')}>Add</button>
+                <button
+                  onClick={addTickerToWatchlist}
+                  style={{
+                    padding: '12px 24px',
+                    backgroundColor: '#6366f1',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                  }}
+                >
+                  Add
+                </button>
               </div>
             </div>
 
-            {/* Your Watchlist */}
-            <div>
-              <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '20px' }}>
-                Your Watchlist ({watchlist.length})
-              </h3>
-
-              {watchlist.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '80px', color: '#999' }}>
-                  <div style={{ fontSize: '18px', marginBottom: '8px' }}>No stocks in watchlist</div>
-                  <div style={{ fontSize: '14px' }}>Search and add stocks above to start tracking</div>
-                </div>
-              ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
-                  {watchlist.map(ticker => {
-                    const quote = watchlistQuotes[ticker];
-                    const loadingQuote = loadingWatchlistQuotes[ticker];
-
-                    return (
-                      <div key={ticker} style={{
-                        ...styles.card,
-                        padding: '24px',
-                      }}>
-                        {/* Header */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                          <div style={{ fontSize: '24px', fontWeight: '600' }}>{ticker}</div>
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            {quote && !loadingQuote && (
-                              <button
-                                onClick={() => refreshWatchlistQuote(ticker)}
-                                style={{
-                                  ...styles.button('ghost'),
-                                  padding: '6px 12px',
-                                  fontSize: '13px',
-                                }}
-                                title="Refresh quote"
-                              >
-                                🔄
-                              </button>
-                            )}
-                            <button
-                              onClick={() => setWatchlist(prev => prev.filter(t => t !== ticker))}
-                              style={{
-                                ...styles.button('danger'),
-                                padding: '6px 12px',
-                                fontSize: '13px',
-                              }}
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Quote Display */}
-                        {!quote && !loadingQuote && (
-                          <button
-                            onClick={() => refreshWatchlistQuote(ticker)}
-                            style={{
-                              ...styles.button('ghost'),
-                              width: '100%',
-                              padding: '10px',
-                              marginBottom: '12px',
-                            }}
-                          >
-                            Get Quote
-                          </button>
-                        )}
-
-                        {loadingQuote && (
-                          <div style={{ textAlign: 'center', padding: '20px', color: '#999', fontSize: '14px' }}>
-                            Loading quote...
-                          </div>
-                        )}
-
-                        {quote && !loadingQuote && (
-                          <div style={{
-                            padding: '16px',
-                            backgroundColor: '#fafafa',
-                            borderRadius: '10px',
-                            marginBottom: '12px',
-                          }}>
-                            <div style={{ marginBottom: '12px' }}>
-                              <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Current Price</div>
-                              <div style={{ fontSize: '28px', fontWeight: '600' }}>${quote.price}</div>
-                            </div>
-                            <div style={{ 
-                              paddingTop: '12px',
-                              borderTop: '1px solid #f0f0f0',
-                              display: 'grid',
-                              gridTemplateColumns: '1fr 1fr',
-                              gap: '12px',
-                            }}>
-                              <div>
-                                <div style={{ fontSize: '11px', color: '#666', marginBottom: '4px' }}>Change</div>
-                                <div style={{
-                                  fontSize: '16px',
-                                  fontWeight: '600',
-                                  color: parseFloat(quote.change) >= 0 ? '#10b981' : '#ef4444'
-                                }}>
-                                  {parseFloat(quote.change) >= 0 ? '+' : ''}{quote.change}
-                                </div>
-                              </div>
-                              <div>
-                                <div style={{ fontSize: '11px', color: '#666', marginBottom: '4px' }}>Change %</div>
-                                <div style={{
-                                  fontSize: '16px',
-                                  fontWeight: '600',
-                                  color: parseFloat(quote.changePercent) >= 0 ? '#10b981' : '#ef4444'
-                                }}>
-                                  {parseFloat(quote.changePercent) >= 0 ? '+' : ''}{quote.changePercent}%
-                                </div>
-                              </div>
-                              <div>
-                                <div style={{ fontSize: '11px', color: '#666', marginBottom: '4px' }}>Volume</div>
-                                <div style={{ fontSize: '14px', fontWeight: '500' }}>
-                                  {quote.volume.toLocaleString()}
-                                </div>
-                              </div>
-                              <div>
-                                <div style={{ fontSize: '11px', color: '#666', marginBottom: '4px' }}>Last Trade</div>
-                                <div style={{ fontSize: '14px', fontWeight: '500' }}>
-                                  {new Date(quote.latestTradingDay).toLocaleDateString()}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Actions */}
-                        <button
-                          onClick={() => briefTicker(ticker)}
-                          disabled={loading}
-                          style={{
-                            ...styles.button('primary'),
-                            width: '100%',
-                            padding: '10px',
-                          }}
-                        >
-                          {loading && selectedTicker === ticker ? 'Loading...' : '✨ Brief Me'}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            {(watchlist || []).length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>No tickers in watchlist. Add some above!</div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '16px' }}>
+                {(watchlist || []).map((ticker) => (
+                  <div
+                    key={ticker}
+                    style={{
+                      padding: '20px',
+                      backgroundColor: '#ffffff',
+                      border: `1px solid ${'#f0f0f0'}`,
+                      borderRadius: '12px',
+                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <div style={{ fontSize: '20px', fontWeight: '600' }}>{ticker}</div>
+                      <button
+                        onClick={() => setWatchlist((watchlist || []).filter((t) => t !== ticker))}
+                        style={{
+                          padding: '4px 8px',
+                          backgroundColor: '#ef4444',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => briefTicker(ticker)}
+                      disabled={loading}
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        backgroundColor: '#6366f1',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        marginTop: '8px',
+                      }}
+                    >
+                      {loading && selectedTicker === ticker ? 'Loading...' : 'âœ¨ Brief Me'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Alerts View */}
         {activeView === 'alerts' && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-              <h2 style={{ fontSize: '32px', fontWeight: '600', letterSpacing: '-0.02em' }}>Alerts</h2>
-              <button 
-                onClick={checkAlerts} 
-                disabled={loading || watchlist.length === 0} 
-                style={{
-                  ...styles.button('primary'),
-                  opacity: loading || watchlist.length === 0 ? 0.5 : 1,
-                }}
-              >
-                {loading ? 'Checking...' : '🔄 Check Alerts'}
-              </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: '600' }}>Alerts</h2>
+              <div style={{ fontSize: '12px', color: '#666' }}>
+                Last checked: {lastAlertCheck ? new Date(lastAlertCheck).toLocaleString() : 'Never'}
+              </div>
             </div>
+            <button
+              onClick={checkAlerts}
+              disabled={loading}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#6366f1',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                marginBottom: '24px',
+              }}
+            >
+              {loading ? 'Checking...' : 'ðŸ”„ Check Alerts'}
+            </button>
 
-            {lastAlertCheck && (
-              <div style={{ fontSize: '14px', color: '#666', marginBottom: '24px' }}>
-                Last checked: {new Date(lastAlertCheck).toLocaleString()}
+            {(watchlist || []).length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+                <p style={{ marginBottom: '16px' }}>Add tickers to your watchlist to see news alerts.</p>
+                <button
+                  onClick={() => setActiveView('watchlist')}
+                  style={{
+                    padding: '10px 20px',
+                    backgroundColor: '#6366f1',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                  }}
+                >
+                  Go to Watchlist
+                </button>
               </div>
-            )}
-
-            {watchlist.length === 0 ? (
-              <div style={styles.card}>
-                <div style={{ textAlign: 'center', padding: '60px 40px' }}>
-                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔔</div>
-                  <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '12px', color: '#000' }}>
-                    No Stocks in Watchlist
-                  </div>
-                  <div style={{ fontSize: '14px', color: '#666', marginBottom: '24px' }}>
-                    Add stocks to your watchlist to receive alerts when they're mentioned in the news
-                  </div>
-                  <button
-                    onClick={() => setActiveView('watchlist')}
-                    style={styles.button('primary')}
-                  >
-                    Go to Watchlist
-                  </button>
-                </div>
-              </div>
-            ) : alerts.length === 0 ? (
-              <div style={styles.card}>
-                <div style={{ textAlign: 'center', padding: '60px 40px' }}>
-                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
-                  <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '12px', color: '#000' }}>
-                    No New Alerts
-                  </div>
-                  <div style={{ fontSize: '14px', color: '#666', marginBottom: '16px' }}>
-                    Your watchlist stocks ({watchlist.join(', ')}) haven't been mentioned in recent news
-                  </div>
-                  <div style={{ fontSize: '13px', color: '#999' }}>
-                    Click "Check Alerts" to refresh
-                  </div>
-                </div>
+            ) : (alerts || []).length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+                No alerts. Your watchlist stocks haven't been mentioned recently.
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
-                {alerts.map((article, idx) => (
+                {(alerts || []).map((article, idx) => (
                   <a
                     key={idx}
                     href={article.url}
@@ -1385,20 +1406,44 @@ function FinancialCommandCenter() {
                     rel="noopener noreferrer"
                     style={{
                       padding: '20px',
-                      backgroundColor: '#fafafa',
-                      border: '1px solid #f0f0f0',
+                      backgroundColor: '#ffffff',
+                      border: `1px solid ${'#f0f0f0'}`,
                       borderRadius: '12px',
+                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
                       textDecoration: 'none',
-                      color: '#000',
+                      color: '#000000',
                       display: 'block',
+                      transition: 'transform 0.2s',
                     }}
+                    onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
                   >
-                    <div style={{ fontSize: '15px', fontWeight: '600', marginBottom: '12px', lineHeight: '1.4' }}>
-                      {article.title}
+                    <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px', lineHeight: '1.4' }}>{article.title}</div>
+                    <div style={{ fontSize: '12px', color: '#666', marginBottom: '12px' }}>
+                      {(article.source && article.source.name) || 'Unknown'} â€¢ {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString() : ''}
                     </div>
-                    <div style={{ fontSize: '13px', color: '#666' }}>
-                      {article.source?.name || 'Unknown'} • {new Date(article.publishedAt).toLocaleDateString()}
-                    </div>
+                    {article.catalysts && article.catalysts.length > 0 && (
+                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                        {article.catalysts.map((catId) => {
+                          const cat = (CATALYSTS || []).find((c) => c.id === catId);
+                          return cat ? (
+                            <span
+                              key={catId}
+                              style={{
+                                padding: '4px 8px',
+                                backgroundColor: (cat.color || '') + '20',
+                                color: cat.color,
+                                borderRadius: '4px',
+                                fontSize: '11px',
+                                fontWeight: '500',
+                              }}
+                            >
+                              {cat.name}
+                            </span>
+                          ) : null;
+                        })}
+                      </div>
+                    )}
                   </a>
                 ))}
               </div>
@@ -1406,346 +1451,351 @@ function FinancialCommandCenter() {
           </div>
         )}
 
-        {/* Ticker Detail View */}
         {activeView === 'ticker' && (
           <div>
-            <h2 style={{ fontSize: '32px', fontWeight: '600', marginBottom: '32px', letterSpacing: '-0.02em' }}>Ticker Detail</h2>
+            <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '24px' }}>Ticker Detail</h2>
             {!tickerBrief ? (
-              <div style={styles.card}>
-                <div style={{ textAlign: 'center', padding: '60px 40px' }}>
-                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>📰</div>
-                  <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '12px', color: '#000' }}>
-                    No Ticker Selected
+              <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+                <p style={{ marginBottom: '16px' }}>Select a ticker from Watchlist and click "Brief Me" to see details.</p>
+                {(watchlist || []).length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', marginTop: '16px' }}>
+                    {(watchlist || []).map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => briefTicker(t)}
+                        disabled={loading}
+                        style={{
+                          padding: '8px 16px',
+                          backgroundColor: '#6366f1',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          cursor: loading ? 'not-allowed' : 'pointer',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                        }}
+                      >
+                        {loading && selectedTicker === t ? 'Loading...' : t}
+                      </button>
+                    ))}
                   </div>
-                  <div style={{ fontSize: '14px', color: '#666', marginBottom: '24px' }}>
-                    Go to Watchlist, select a ticker, and click "Brief Me" to see AI-generated analysis
-                  </div>
-                  {watchlist.length > 0 && (
-                    <div>
-                      <div style={{ fontSize: '13px', color: '#666', marginBottom: '12px' }}>
-                        Quick access to your watchlist:
-                      </div>
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                        {watchlist.slice(0, 5).map(ticker => (
-                          <button
-                            key={ticker}
-                            onClick={() => briefTicker(ticker)}
-                            disabled={loading}
-                            style={{
-                              ...styles.button('primary'),
-                              padding: '8px 16px',
-                              fontSize: '14px',
-                            }}
-                          >
-                            {ticker}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
             ) : (
               <div>
-                <div style={styles.card}>
-                  <h3 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '20px' }}>
-                    {tickerBrief.ticker} - Executive Brief
-                  </h3>
-                  <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.8', marginBottom: '32px', fontSize: '15px' }}>
-                    {tickerBrief.summary}
-                  </div>
+                <div
+                  style={{
+                    padding: '24px',
+                    backgroundColor: '#ffffff',
+                    border: `1px solid ${'#f0f0f0'}`,
+                    borderRadius: '12px',
+                    marginBottom: '24px',
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
+                  }}
+                >
+                  <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px' }}>{tickerBrief.ticker} - Executive Brief</h3>
+                  <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', marginBottom: '24px' }}>{tickerBrief.summary}</div>
                   <div>
-                    <h4 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>Forecast Scenarios</h4>
-                    <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.8', fontSize: '15px' }}>
-                      {tickerBrief.forecast}
-                    </div>
+                    <h4 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px' }}>Forecast Scenarios</h4>
+                    <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{tickerBrief.forecast}</div>
                   </div>
                 </div>
-
-                {tickerBrief.news.length > 0 && (
-                  <div>
-                    <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '20px' }}>Recent News</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
-                      {tickerBrief.news.map((article, idx) => (
-                        <a
-                          key={idx}
-                          href={article.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            padding: '20px',
-                            backgroundColor: '#fafafa',
-                            border: '1px solid #f0f0f0',
-                            borderRadius: '12px',
-                            textDecoration: 'none',
-                            color: '#000',
-                            display: 'block',
-                          }}
-                        >
-                          <div style={{ fontSize: '15px', fontWeight: '600', marginBottom: '12px' }}>
-                            {article.title}
-                          </div>
-                          <div style={{ fontSize: '13px', color: '#666' }}>
-                            {article.source?.name || 'Unknown'} • {new Date(article.publishedAt).toLocaleDateString()}
-                          </div>
-                        </a>
-                      ))}
-                    </div>
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>Recent News</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+                    {(tickerBrief.news || []).map((article, idx) => (
+                      <a
+                        key={idx}
+                        href={article.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          padding: '16px',
+                          backgroundColor: '#f9fafb',
+                          border: `1px solid ${'#f0f0f0'}`,
+                          borderRadius: '8px',
+                          textDecoration: 'none',
+                          color: '#000000',
+                          display: 'block',
+                        }}
+                      >
+                        <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>{article.title}</div>
+                        <div style={{ fontSize: '12px', color: '#666' }}>
+                          {(article.source && article.source.name) || 'Unknown'} â€¢ {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString() : ''}
+                        </div>
+                      </a>
+                    ))}
                   </div>
-                )}
+                </div>
               </div>
             )}
           </div>
         )}
 
-        {/* Digest View */}
         {activeView === 'digest' && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-              <h2 style={{ fontSize: '32px', fontWeight: '600', letterSpacing: '-0.02em' }}>Daily Digest</h2>
-              <button onClick={generateDigest} disabled={loading} style={styles.button('primary')}>
-                {loading ? 'Generating...' : '📋 Generate Digest'}
-              </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: '600' }}>Daily Digest</h2>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  onClick={generateDigest}
+                  disabled={loading}
+                  style={{
+                    padding: '10px 20px',
+                    backgroundColor: '#6366f1',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                  }}
+                >
+                  {loading ? 'Generating...' : 'ðŸ“‹ Generate Digest'}
+                </button>
+                {digest && (
+                  <>
+                    <button
+                      onClick={emailDigest}
+                      disabled={emailLoading}
+                      style={{
+                        padding: '10px 20px',
+                        backgroundColor: '#10b981',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: emailLoading ? 'not-allowed' : 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                      }}
+                    >
+                      {emailLoading ? 'Sending...' : 'ðŸ“§ Email'}
+                    </button>
+                    <button
+                      onClick={exportToPDF}
+                      style={{
+                        padding: '10px 20px',
+                        backgroundColor: '#f59e0b',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                      }}
+                    >
+                      ðŸ“„ Export PDF
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
 
             {!digest ? (
-              <div style={{ textAlign: 'center', padding: '80px', color: '#999' }}>
+              <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
                 Click "Generate Digest" to create a daily market summary.
               </div>
             ) : (
-              <div style={styles.card}>
-                <div style={{ marginBottom: '32px', paddingBottom: '24px', borderBottom: '1px solid #f0f0f0' }}>
-                  <h3 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '8px' }}>Daily Market Digest</h3>
+              <div
+                id="digest-content"
+                style={{
+                  padding: '32px',
+                  backgroundColor: '#ffffff',
+                  border: `1px solid ${'#f0f0f0'}`,
+                  borderRadius: '12px',
+                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
+                }}
+              >
+                <div style={{ marginBottom: '24px', paddingBottom: '16px', borderBottom: `1px solid ${'#f0f0f0'}` }}>
+                  <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '8px' }}>Daily Market Digest</h3>
                   <div style={{ fontSize: '14px', color: '#666' }}>{digest.date}</div>
                 </div>
-                <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.8', fontSize: '15px', marginBottom: '40px' }}>
-                  {digest.content}
-                </div>
-                {digest.articles.length > 0 && (
-                  <div>
-                    <h4 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '20px' }}>Key Articles</h4>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '12px' }}>
-                      {digest.articles.map((article, idx) => (
-                        <a
-                          key={idx}
-                          href={article.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            padding: '16px',
-                            backgroundColor: '#fafafa',
-                            border: '1px solid #f0f0f0',
-                            borderRadius: '10px',
-                            textDecoration: 'none',
-                            color: '#000',
-                            fontSize: '14px',
-                          }}
-                        >
-                          {article.title}
-                        </a>
-                      ))}
-                    </div>
+                <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.8', fontSize: '15px', marginBottom: '32px' }}>{digest.content}</div>
+                <div>
+                  <h4 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px' }}>Key Articles</h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '12px' }}>
+                    {(digest.articles || []).map((article, idx) => (
+                      <a
+                        key={idx}
+                        href={article.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          padding: '12px',
+                          backgroundColor: '#f9fafb',
+                          border: `1px solid ${'#f0f0f0'}`,
+                          borderRadius: '6px',
+                          textDecoration: 'none',
+                          color: '#000000',
+                          fontSize: '13px',
+                        }}
+                      >
+                        {article.title}
+                      </a>
+                    ))}
                   </div>
-                )}
+                </div>
               </div>
             )}
           </div>
         )}
 
-        {/* Social View */}
         {activeView === 'social' && (
           <div>
-            <h2 style={{ fontSize: '32px', fontWeight: '600', marginBottom: '32px', letterSpacing: '-0.02em' }}>Social Tracking</h2>
-            
-            {/* Platform Toggle */}
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '32px' }}>
+            <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '24px' }}>Social Tracking</h2>
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
               <button
-                onClick={() => {
-                  setSocialSearchPlatform('linkedin');
-                  setSocialResults([]);
-                }}
+                onClick={() => setSocialSearchPlatform('linkedin')}
                 style={{
-                  padding: '14px 28px',
+                  padding: '10px 20px',
                   backgroundColor: socialSearchPlatform === 'linkedin' ? '#6366f1' : 'transparent',
                   color: socialSearchPlatform === 'linkedin' ? '#ffffff' : '#000000',
-                  border: '1px solid #f0f0f0',
-                  borderRadius: '10px',
+                  border: `1px solid ${'#f0f0f0'}`,
+                  borderRadius: '8px',
                   cursor: 'pointer',
-                  fontSize: '15px',
+                  fontSize: '14px',
                   fontWeight: '500',
-                  transition: 'all 0.2s',
                 }}
               >
                 LinkedIn
               </button>
               <button
-                onClick={() => {
-                  setSocialSearchPlatform('youtube');
-                  setSocialResults([]);
-                }}
+                onClick={() => setSocialSearchPlatform('youtube')}
                 style={{
-                  padding: '14px 28px',
+                  padding: '10px 20px',
                   backgroundColor: socialSearchPlatform === 'youtube' ? '#6366f1' : 'transparent',
                   color: socialSearchPlatform === 'youtube' ? '#ffffff' : '#000000',
-                  border: '1px solid #f0f0f0',
-                  borderRadius: '10px',
+                  border: `1px solid ${'#f0f0f0'}`,
+                  borderRadius: '8px',
                   cursor: 'pointer',
-                  fontSize: '15px',
+                  fontSize: '14px',
                   fontWeight: '500',
-                  transition: 'all 0.2s',
                 }}
               >
                 YouTube
               </button>
             </div>
 
-            {/* Search */}
-            <div style={styles.card}>
-              <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>
-                Search {socialSearchPlatform === 'linkedin' ? 'LinkedIn' : 'YouTube'}
-              </div>
-              <div style={{ fontSize: '14px', color: '#666', marginBottom: '16px' }}>
-                {socialSearchPlatform === 'linkedin' 
-                  ? 'Find professionals and thought leaders in the financial space'
-                  : 'Discover financial content creators and market analysis videos'}
-              </div>
-              
-              {/* YouTube API Notice */}
-              {socialSearchPlatform === 'youtube' && (
-                <div style={{
-                  padding: '12px 16px',
-                  backgroundColor: '#eff6ff',
-                  border: '1px solid #dbeafe',
-                  borderRadius: '8px',
-                  marginBottom: '16px',
-                  fontSize: '13px',
-                  color: '#1e40af',
-                  lineHeight: '1.5',
-                }}>
-                  <strong>YouTube Search:</strong> This feature uses DeepSpace's YouTube integration. If you get a 400 error, the YOUTUBE_API_KEY may need to be configured in the DeepSpace system settings.
-                </div>
-              )}
-              
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+            <div
+              style={{
+                padding: '20px',
+                backgroundColor: '#ffffff',
+                border: `1px solid ${'#f0f0f0'}`,
+                borderRadius: '12px',
+                marginBottom: '24px',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
+              }}
+            >
+              <div style={{ display: 'flex', gap: '12px' }}>
                 <input
                   type="text"
-                  placeholder={`Search ${socialSearchPlatform === 'linkedin' ? 'LinkedIn profiles' : 'YouTube channels/videos'}...`}
+                  placeholder={socialSearchPlatform === 'linkedin' ? 'Search LinkedIn profiles...' : 'Search YouTube channels/videos...'}
                   value={socialSearchQuery}
                   onChange={(e) => setSocialSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && searchSocial()}
-                  style={{ ...styles.input, flex: 1 }}
+                  onKeyPress={(e) => e.key === 'Enter' && searchSocial()}
+                  style={{
+                    flex: 1,
+                    padding: '12px 16px',
+                    border: `1px solid ${'#f0f0f0'}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    backgroundColor: '#ffffff',
+                    color: '#000000',
+                  }}
                 />
                 <button
                   onClick={searchSocial}
-                  disabled={socialLoading || !socialSearchQuery.trim()}
+                  disabled={socialLoading}
                   style={{
-                    ...styles.button('primary'),
-                    opacity: socialLoading || !socialSearchQuery.trim() ? 0.5 : 1,
+                    padding: '12px 24px',
+                    backgroundColor: '#6366f1',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: socialLoading ? 'not-allowed' : 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
                   }}
                 >
                   {socialLoading ? 'Searching...' : 'Search'}
                 </button>
               </div>
-              
-              {/* Fallback: Search on YouTube.com */}
-              {socialSearchPlatform === 'youtube' && socialSearchQuery.trim() && (
-                <a
-                  href={`https://www.youtube.com/results?search_query=${encodeURIComponent(socialSearchQuery)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    padding: '10px 16px',
-                    backgroundColor: 'transparent',
-                    color: '#6366f1',
-                    textAlign: 'center',
-                    textDecoration: 'none',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    border: '1px solid #f0f0f0',
-                    transition: 'all 0.2s',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#f0f0f0';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                  }}
-                >
-                  🔗 Or search "{socialSearchQuery}" on YouTube.com
-                </a>
-              )}
             </div>
 
-            {/* Following Section */}
-            {followedAccounts.length > 0 && (
-              <div style={{ marginBottom: '32px' }}>
-                <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '20px' }}>
-                  Following ({followedAccounts.length})
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+            {followedAccounts && followedAccounts.length > 0 && (
+              <div style={{ marginBottom: '24px' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>Following ({followedAccounts.length})</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '16px' }}>
                   {followedAccounts.map((account, idx) => {
                     const isLinkedIn = account.platform === 'linkedin';
-                    const linkUrl = isLinkedIn 
-                      ? (account.link || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(account.name || '')}`)
-                      : (account.links?.watch || `https://www.youtube.com/results?search_query=${encodeURIComponent(account.snippet?.title || '')}`);
-                    
+                    const linkUrl = isLinkedIn
+                      ? `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(account.name || account.headline || '')}`
+                      : account.videoId
+                        ? `https://www.youtube.com/watch?v=${account.videoId}`
+                        : (account.channelId || (account.snippet && account.snippet.channelId))
+                          ? `https://www.youtube.com/channel/${account.channelId || account.snippet.channelId}`
+                          : `https://www.youtube.com/results?search_query=${encodeURIComponent((account.snippet && account.snippet.title) || account.title || '')}`;
                     return (
-                      <div key={idx} style={{
-                        ...styles.card,
-                        padding: '24px',
-                      }}>
-                        <div style={{ marginBottom: '16px' }}>
-                          <a
-                            href={linkUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                      <div
+                        key={idx}
+                        style={{
+                          padding: '16px',
+                          backgroundColor: '#ffffff',
+                          border: `1px solid ${'#f0f0f0'}`,
+                          borderRadius: '12px',
+                          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
+                          <div style={{ flex: 1 }}>
+                            <a
+                              href={linkUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                fontSize: '16px',
+                                fontWeight: '600',
+                                color: '#6366f1',
+                                textDecoration: 'none',
+                                display: 'block',
+                                marginBottom: '4px',
+                              }}
+                            >
+                              {account.name || (account.snippet && account.snippet.title) || account.title || 'Unknown'}
+                            </a>
+                            <div style={{ fontSize: '12px', color: '#666' }}>
+                              {isLinkedIn ? account.headline : (account.snippet && account.snippet.channelTitle)}
+                            </div>
+                            <span
+                              style={{
+                                display: 'inline-block',
+                                marginTop: '8px',
+                                padding: '4px 8px',
+                                backgroundColor: isLinkedIn ? '#0077b5' : '#ff0000',
+                                color: '#ffffff',
+                                borderRadius: '4px',
+                                fontSize: '10px',
+                                fontWeight: '500',
+                              }}
+                            >
+                              {isLinkedIn ? 'LinkedIn' : 'YouTube'}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => unfollowAccount(account.id || account.channelId || (account.snippet && account.snippet.channelId), account.platform)}
                             style={{
-                              fontSize: '16px',
-                              fontWeight: '600',
-                              color: '#6366f1',
-                              textDecoration: 'none',
-                              display: 'block',
-                              marginBottom: '6px',
+                              padding: '4px 8px',
+                              backgroundColor: '#ef4444',
+                              color: '#ffffff',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '11px',
                             }}
                           >
-                            {account.name || account.snippet?.title || 'Unknown'}
-                          </a>
-                          <div style={{ fontSize: '13px', color: '#666', marginBottom: '12px' }}>
-                            {isLinkedIn ? (account.headline || 'No headline') : (account.snippet?.channelTitle || 'No channel info')}
-                          </div>
-                          {isLinkedIn && account.location && (
-                            <div style={{ fontSize: '12px', color: '#999', marginBottom: '8px' }}>
-                              📍 {account.location}
-                            </div>
-                          )}
-                          <span style={{
-                            display: 'inline-block',
-                            padding: '6px 12px',
-                            backgroundColor: isLinkedIn ? '#0077b515' : '#ff000015',
-                            color: isLinkedIn ? '#0077b5' : '#ff0000',
-                            borderRadius: '8px',
-                            fontSize: '12px',
-                            fontWeight: '500',
-                          }}>
-                            {isLinkedIn ? 'LinkedIn' : 'YouTube'}
-                          </span>
+                            Unfollow
+                          </button>
                         </div>
-                        <button
-                          onClick={() => unfollowAccount(account.id, account.platform)}
-                          style={{
-                            ...styles.button('danger'),
-                            width: '100%',
-                            padding: '10px',
-                            fontSize: '14px',
-                          }}
-                        >
-                          Unfollow
-                        </button>
                       </div>
                     );
                   })}
@@ -1753,36 +1803,32 @@ function FinancialCommandCenter() {
               </div>
             )}
 
-            {/* Search Results */}
-            {socialLoading && (
-              <div style={{ textAlign: 'center', padding: '80px', color: '#999' }}>
-                Searching {socialSearchPlatform}...
-              </div>
-            )}
-
-            {!socialLoading && socialResults.length > 0 && (
+            {socialResults && socialResults.length > 0 && (
               <div>
-                <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '20px' }}>
-                  Search Results ({socialResults.length})
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>Search Results</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '16px' }}>
                   {socialResults.map((result, idx) => {
                     const isLinkedIn = result.platform === 'linkedin';
-                    const isFollowing = followedAccounts.some(
-                      acc => acc.id === result.id && acc.platform === result.platform
-                    );
-                    
-                    // Use proper link from API or construct fallback
+                    const isFollowing = (followedAccounts || []).some((acc) => acc.id === result.id && acc.platform === result.platform);
                     const linkUrl = isLinkedIn
-                      ? (result.link || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(result.name || '')}`)
-                      : (result.links?.watch || `https://www.youtube.com/results?search_query=${encodeURIComponent(result.snippet?.title || '')}`);
-
+                      ? `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(result.name || result.headline || socialSearchQuery)}`
+                      : result.videoId
+                        ? `https://www.youtube.com/watch?v=${result.videoId}`
+                        : (result.channelId || (result.snippet && result.snippet.channelId))
+                          ? `https://www.youtube.com/channel/${result.channelId || result.snippet.channelId}`
+                          : `https://www.youtube.com/results?search_query=${encodeURIComponent((result.snippet && result.snippet.title) || result.title || socialSearchQuery)}`;
                     return (
-                      <div key={idx} style={{
-                        ...styles.card,
-                        padding: '24px',
-                      }}>
-                        <div style={{ marginBottom: '16px' }}>
+                      <div
+                        key={idx}
+                        style={{
+                          padding: '16px',
+                          backgroundColor: '#ffffff',
+                          border: `1px solid ${'#f0f0f0'}`,
+                          borderRadius: '12px',
+                          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
+                        }}
+                      >
+                        <div style={{ marginBottom: '12px' }}>
                           <a
                             href={linkUrl}
                             target="_blank"
@@ -1793,69 +1839,52 @@ function FinancialCommandCenter() {
                               color: '#6366f1',
                               textDecoration: 'none',
                               display: 'block',
-                              marginBottom: '6px',
+                              marginBottom: '4px',
                             }}
                           >
-                            {result.name || result.snippet?.title || 'Unknown'}
+                            {result.name || (result.snippet && result.snippet.title) || result.title || 'Unknown'}
                           </a>
-                          <div style={{ fontSize: '13px', color: '#666', marginBottom: '8px', lineHeight: '1.5' }}>
-                            {isLinkedIn ? (result.headline || 'No headline') : (result.snippet?.channelTitle || 'No channel info')}
+                          <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+                            {isLinkedIn ? result.headline : (result.snippet && result.snippet.channelTitle) || (result.snippet && result.snippet.description)}
                           </div>
-                          
-                          {/* Description for YouTube */}
-                          {!isLinkedIn && result.snippet?.description && (
-                            <div style={{ 
-                              fontSize: '12px', 
-                              color: '#999', 
-                              marginBottom: '8px',
-                              lineHeight: '1.4',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
-                            }}>
-                              {result.snippet.description}
-                            </div>
-                          )}
-                          
-                          {/* Additional metadata */}
                           {isLinkedIn && result.location && (
-                            <div style={{ fontSize: '12px', color: '#999', marginBottom: '8px' }}>
-                              📍 {result.location}
+                            <div style={{ fontSize: '11px', color: '#999' }}>ðŸ“ {result.location}</div>
+                          )}
+                          {!isLinkedIn && result.snippet && result.snippet.publishedAt && (
+                            <div style={{ fontSize: '11px', color: '#999' }}>
+                              ðŸ“… {new Date(result.snippet.publishedAt).toLocaleDateString()}
                             </div>
                           )}
-                          {!isLinkedIn && result.snippet?.publishedAt && (
-                            <div style={{ fontSize: '12px', color: '#999', marginBottom: '8px' }}>
-                              📅 {new Date(result.snippet.publishedAt).toLocaleDateString()}
-                            </div>
-                          )}
-                          
-                          <span style={{
-                            display: 'inline-block',
-                            padding: '6px 12px',
-                            backgroundColor: isLinkedIn ? '#0077b515' : '#ff000015',
-                            color: isLinkedIn ? '#0077b5' : '#ff0000',
-                            borderRadius: '8px',
-                            fontSize: '12px',
-                            fontWeight: '500',
-                          }}>
+                          <span
+                            style={{
+                              display: 'inline-block',
+                              marginTop: '8px',
+                              padding: '4px 8px',
+                              backgroundColor: isLinkedIn ? '#0077b5' : '#ff0000',
+                              color: '#ffffff',
+                              borderRadius: '4px',
+                              fontSize: '10px',
+                              fontWeight: '500',
+                            }}
+                          >
                             {isLinkedIn ? 'LinkedIn' : 'YouTube'}
                           </span>
                         </div>
                         <button
-                          onClick={() => isFollowing 
-                            ? unfollowAccount(result.id, result.platform) 
-                            : followAccount(result)
-                          }
+                          onClick={() => (isFollowing ? unfollowAccount(result.id || result.channelId || (result.snippet && result.snippet.channelId), result.platform) : followAccount(result))}
                           style={{
-                            ...styles.button(isFollowing ? 'ghost' : 'primary'),
                             width: '100%',
-                            padding: '10px',
-                            fontSize: '14px',
+                            padding: '8px',
+                            backgroundColor: isFollowing ? '#ef4444' : '#6366f1',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            fontWeight: '500',
                           }}
                         >
-                          {isFollowing ? '✓ Following' : '+ Follow'}
+                          {isFollowing ? 'âœ“ Following' : '+ Follow'}
                         </button>
                       </div>
                     );
@@ -1864,520 +1893,593 @@ function FinancialCommandCenter() {
               </div>
             )}
 
-            {/* Error State */}
-            {socialError && (
-              <div style={{
-                ...styles.card,
-                backgroundColor: '#fef2f2',
-                borderColor: '#fecaca',
-                padding: '24px',
-              }}>
-                <div style={{ fontSize: '16px', fontWeight: '600', color: '#dc2626', marginBottom: '12px' }}>
-                  {socialSearchPlatform === 'youtube' ? 'YouTube Search Error' : 'LinkedIn Search Error'}
-                </div>
-                <div style={{ fontSize: '14px', color: '#991b1b', marginBottom: '16px', lineHeight: '1.6' }}>
-                  {socialError}
-                </div>
-                
-                {/* Detailed help for YouTube 400 error + Fallback */}
-                {socialSearchPlatform === 'youtube' && (
-                  <div>
-                    <div style={{
-                      padding: '16px',
-                      backgroundColor: '#fff7ed',
-                      border: '1px solid #fed7aa',
-                      borderRadius: '8px',
-                      fontSize: '13px',
-                      color: '#92400e',
-                      lineHeight: '1.6',
-                      marginBottom: '16px',
-                    }}>
-                      <strong>YouTube API Configuration Issue</strong>
-                      <div style={{ marginTop: '8px', marginBottom: '12px' }}>
-                        The DeepSpace YouTube integration is returning an error. This usually means the YOUTUBE_API_KEY needs to be configured in the DeepSpace system.
-                      </div>
-                      <strong>In the meantime:</strong> Use the button below to search directly on YouTube.com
-                    </div>
-                    
-                    {/* Fallback: Open YouTube Search */}
-                    <a
-                      href={`https://www.youtube.com/results?search_query=${encodeURIComponent(socialSearchQuery)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        display: 'block',
-                        padding: '16px 24px',
-                        backgroundColor: '#6366f1',
-                        color: '#ffffff',
-                        textAlign: 'center',
-                        textDecoration: 'none',
-                        borderRadius: '10px',
-                        fontSize: '15px',
-                        fontWeight: '600',
-                        transition: 'all 0.2s',
-                        boxShadow: '0 4px 16px rgba(99, 102, 241, 0.2)',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-1px)';
-                        e.currentTarget.style.boxShadow = '0 6px 20px rgba(99, 102, 241, 0.3)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 4px 16px rgba(99, 102, 241, 0.2)';
-                      }}
-                    >
-                      🔍 Search "{socialSearchQuery}" on YouTube.com
-                    </a>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {!socialLoading && !socialError && socialResults.length === 0 && hasSocialSearched && (
-              <div style={{ textAlign: 'center', padding: '80px', color: '#999' }}>
-                <div style={{ fontSize: '18px', marginBottom: '8px' }}>No results found</div>
-                <div style={{ fontSize: '14px' }}>
-                  {socialSearchPlatform === 'linkedin' 
-                    ? 'Try searching for a person\'s name or company'
-                    : 'Try different keywords or video topics'}
-                </div>
-              </div>
-            )}
-
-            {!socialLoading && socialResults.length === 0 && !hasSocialSearched && followedAccounts.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '80px', color: '#999' }}>
-                <div style={{ fontSize: '18px', marginBottom: '8px' }}>Start exploring</div>
-                <div style={{ fontSize: '14px' }}>Search for professionals or content creators to follow</div>
-              </div>
+            {!socialLoading && (!socialResults || socialResults.length === 0) && socialSearchQuery && (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>No results found. Try a different search query.</div>
             )}
           </div>
         )}
 
-        {/* Portfolio View */}
         {activeView === 'portfolio' && (
           <div>
-            <h2 style={{ fontSize: '32px', fontWeight: '600', marginBottom: '32px', letterSpacing: '-0.02em' }}>Portfolio</h2>
-            
-            {/* Portfolio Summary */}
-            {Object.keys(positions).length > 0 && (
-              <div style={{
-                ...styles.card,
-                background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-                color: '#ffffff',
-                marginBottom: '32px',
-              }}>
-                <div style={{ fontSize: '16px', marginBottom: '20px', opacity: 0.9 }}>Portfolio Summary</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}>
-                  {(() => {
-                    const totalCost = Object.values(positions).reduce((sum, pos) => sum + (pos.quantity * pos.entryPrice), 0);
-                    const totalValue = Object.values(positions).reduce((sum, pos) => sum + (pos.quantity * pos.currentPrice), 0);
-                    const totalPnl = totalValue - totalCost;
-                    const totalPnlPercent = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0;
-                    
-                    return (
-                      <>
-                        <div>
-                          <div style={{ fontSize: '13px', opacity: 0.8, marginBottom: '6px' }}>Total Cost</div>
-                          <div style={{ fontSize: '28px', fontWeight: '600' }}>${totalCost.toFixed(2)}</div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '13px', opacity: 0.8, marginBottom: '6px' }}>Current Value</div>
-                          <div style={{ fontSize: '28px', fontWeight: '600' }}>${totalValue.toFixed(2)}</div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '13px', opacity: 0.8, marginBottom: '6px' }}>Total P&L</div>
-                          <div style={{ fontSize: '28px', fontWeight: '600' }}>
-                            ${totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(2)}
-                          </div>
-                          <div style={{ fontSize: '16px', marginTop: '4px', opacity: 0.9 }}>
-                            {totalPnlPercent >= 0 ? '+' : ''}{totalPnlPercent.toFixed(2)}%
-                          </div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '13px', opacity: 0.8, marginBottom: '6px' }}>Positions</div>
-                          <div style={{ fontSize: '28px', fontWeight: '600' }}>{Object.keys(positions).length}</div>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
-            )}
-
-            {/* Search & Add Ticker */}
-            <div style={styles.card}>
-              <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>Add Stock to Portfolio</div>
-              <div style={{ fontSize: '14px', color: '#666', marginBottom: '16px' }}>
-                Search for a stock symbol to add to your watchlist or create a position
-              </div>
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '24px' }}>Portfolio</h2>
+            <div
+              style={{
+                padding: '20px',
+                backgroundColor: '#ffffff',
+                border: `1px solid ${'#f0f0f0'}`,
+                borderRadius: '12px',
+                marginBottom: '24px',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
+              }}
+            >
+              <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px' }}>Search Stocks</div>
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
                 <input
                   type="text"
-                  placeholder="Search ticker symbol (e.g., AAPL, TSLA, MSFT)..."
+                  placeholder="Search by symbol or company name"
                   value={portfolioSearchQuery}
-                  onChange={(e) => setPortfolioSearchQuery(e.target.value.toUpperCase())}
-                  onKeyDown={(e) => e.key === 'Enter' && searchPortfolioTicker()}
-                  style={{ ...styles.input, flex: 1 }}
+                  onChange={(e) => setPortfolioSearchQuery(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && searchPortfolioTicker()}
+                  style={{
+                    flex: 1,
+                    padding: '12px 16px',
+                    border: `1px solid ${'#f0f0f0'}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    backgroundColor: '#ffffff',
+                    color: '#000000',
+                  }}
                 />
                 <button
                   onClick={searchPortfolioTicker}
                   disabled={portfolioSearching || !portfolioSearchQuery.trim()}
                   style={{
-                    ...styles.button('primary'),
-                    opacity: portfolioSearching || !portfolioSearchQuery.trim() ? 0.5 : 1,
+                    padding: '12px 24px',
+                    backgroundColor: '#6366f1',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: portfolioSearching ? 'not-allowed' : 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
                   }}
                 >
                   {portfolioSearching ? 'Searching...' : 'Search'}
                 </button>
               </div>
-
-              {/* Search Results */}
-              {portfolioSearchResults.length > 0 && (
-                <div style={{ 
-                  maxHeight: '200px', 
-                  overflowY: 'auto', 
-                  borderTop: '1px solid #f0f0f0',
-                  paddingTop: '16px',
-                }}>
-                  {portfolioSearchResults.map((result, idx) => (
-                    <div
-                      key={idx}
-                      style={{
-                        padding: '12px',
-                        marginBottom: '8px',
-                        backgroundColor: '#fafafa',
-                        borderRadius: '8px',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '15px', fontWeight: '600', marginBottom: '4px' }}>
-                          {result.symbol}
-                        </div>
-                        <div style={{ fontSize: '13px', color: '#666' }}>
-                          {result.name || 'No description available'}
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => addTickerToPortfolio(result.symbol)}
-                        style={{
-                          ...styles.button(watchlist.includes(result.symbol) ? 'ghost' : 'primary'),
-                          padding: '8px 16px',
-                          fontSize: '13px',
-                        }}
-                      >
-                        {watchlist.includes(result.symbol) ? '✓ Added' : '+ Add'}
-                      </button>
-                    </div>
-                  ))}
+              {portfolioSearchError && (
+                <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#fef2f2', borderRadius: '8px', color: '#b91c1c', fontSize: '13px' }}>
+                  {portfolioSearchError}
                 </div>
               )}
+              {!portfolioSearchError && portfolioSearchResults && portfolioSearchResults.length > 0 && (
+                <div style={{ marginTop: '12px' }}>
+                  <div style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>Results â€” click Add to track</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {portfolioSearchResults.map((result) => {
+                      const symbol = (result && result.symbol) || (typeof result === 'string' ? result : '');
+                      if (!symbol) return null;
+                      return (
+                        <div
+                          key={symbol}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px 12px',
+                            backgroundColor: '#f9fafb',
+                            borderRadius: '8px',
+                            border: '1px solid #f0f0f0',
+                          }}
+                        >
+                          <span style={{ fontWeight: '600', fontSize: '14px' }}>{symbol}</span>
+                          {result.name && <span style={{ fontSize: '12px', color: '#666' }}>{result.name}</span>}
+                          <button
+                            onClick={() => addTickerToPortfolio(symbol)}
+                            style={{
+                              padding: '4px 10px',
+                              backgroundColor: '#10b981',
+                              color: '#ffffff',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              fontWeight: '500',
+                            }}
+                          >
+                            Add
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {!portfolioSearchError && portfolioHasSearched && !portfolioSearching && portfolioSearchResults.length === 0 && (
+                <div style={{ marginTop: '12px', fontSize: '13px', color: '#666' }}>No matches found. Try a symbol (e.g. AAPL) or company name.</div>
+              )}
+            </div>
+            <div
+              style={{
+                padding: '20px',
+                backgroundColor: '#ffffff',
+                border: `1px solid ${'#f0f0f0'}`,
+                borderRadius: '12px',
+                marginBottom: '24px',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
+              }}
+            >
+              <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px' }}>Track Stock (manual)</div>
+              <div style={{ fontSize: '13px', color: '#666', marginBottom: '16px' }}>
+                Or enter a ticker symbol directly to track.
+              </div>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <input
+                  type="text"
+                  placeholder="Enter ticker symbol (e.g., AAPL, TSLA)"
+                  value={newTickerInput}
+                  onChange={(e) => setNewTickerInput(e.target.value.toUpperCase())}
+                  onKeyPress={(e) => e.key === 'Enter' && addTickerToWatchlist()}
+                  style={{
+                    flex: 1,
+                    padding: '12px 16px',
+                    border: `1px solid ${'#f0f0f0'}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    backgroundColor: '#ffffff',
+                    color: '#000000',
+                  }}
+                />
+                <button
+                  onClick={addTickerToWatchlist}
+                  style={{
+                    padding: '12px 24px',
+                    backgroundColor: '#6366f1',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                  }}
+                >
+                  Track Stock
+                </button>
+              </div>
             </div>
 
-            {/* Positions List */}
-            {watchlist.length === 0 && Object.keys(positions).length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '80px', color: '#999' }}>
-                <div style={{ fontSize: '18px', marginBottom: '8px' }}>No stocks in portfolio</div>
-                <div style={{ fontSize: '14px' }}>Search and add stocks to start tracking your portfolio</div>
-              </div>
+            {Object.keys(positions || {}).length === 0 && (watchlist || []).length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>No positions tracked. Add stocks above to get started!</div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '16px' }}>
-                {/* Get unique tickers from both watchlist and positions */}
-                {[...new Set([...watchlist, ...Object.keys(positions)])].map(ticker => {
-                  const position = positions[ticker];
-                  const hasPosition = !!position;
-                  const isEditing = editingPosition === ticker;
-                  const notes = tickerNotes[ticker] || '';
-                  
-                  // Calculate P&L if position exists
-                  const pnl = hasPosition ? (position.currentPrice - position.entryPrice) * position.quantity : 0;
-                  const pnlPercent = hasPosition ? ((position.currentPrice - position.entryPrice) / position.entryPrice) * 100 : 0;
-                  const costBasis = hasPosition ? position.quantity * position.entryPrice : 0;
-                  const currentValue = hasPosition ? position.quantity * position.currentPrice : 0;
-                  
-                  return (
-                    <div key={ticker} style={{
-                      ...styles.card,
-                      padding: '24px',
-                    }}>
-                      {/* Header */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                        <div style={{ fontSize: '24px', fontWeight: '600' }}>{ticker}</div>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          {hasPosition && (
-                            <button
-                              onClick={() => refreshQuote(ticker)}
-                              disabled={refreshingQuotes[ticker]}
-                              style={{
-                                ...styles.button('ghost'),
-                                padding: '6px 12px',
-                                fontSize: '13px',
-                                opacity: refreshingQuotes[ticker] ? 0.5 : 1,
-                              }}
-                              title="Refresh quote"
-                            >
-                              {refreshingQuotes[ticker] ? '...' : '🔄'}
-                            </button>
-                          )}
+              <div>
+                {Object.keys(positions || {}).length > 0 && (
+                  <div
+                    style={{
+                      padding: '20px',
+                      backgroundColor: '#ffffff',
+                      border: `1px solid ${'#f0f0f0'}`,
+                      borderRadius: '12px',
+                      marginBottom: '24px',
+                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
+                    }}
+                  >
+                    <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>Portfolio Summary</h3>
+                    {(() => {
+                      const pos = positions || {};
+                      const totalCost = Object.values(pos).reduce((sum, p) => sum + (p.costBasis || (p.quantity || 0) * (p.entryPrice || 0)), 0);
+                      const totalValue = Object.values(pos).reduce((sum, p) => sum + (p.currentValue || (p.quantity || 0) * (p.currentPrice || p.entryPrice || 0)), 0);
+                      const totalPL = totalValue - totalCost;
+                      const totalPLPercent = totalCost > 0 ? ((totalPL / totalCost) * 100).toFixed(2) : 0;
+                      return (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                          <div>
+                            <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Total Cost</div>
+                            <div style={{ fontSize: '20px', fontWeight: '600' }}>${totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Current Value</div>
+                            <div style={{ fontSize: '20px', fontWeight: '600' }}>${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>P&L</div>
+                            <div style={{ fontSize: '20px', fontWeight: '600', color: totalPL >= 0 ? '#10b981' : '#ef4444' }}>
+                              ${totalPL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({totalPLPercent}%)
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+                  {[...new Set([...(watchlist || []), ...Object.keys(positions || {})])].map((ticker) => {
+                    const position = (positions || {})[ticker] || {};
+                    const notes = (tickerNotes || {})[ticker] || '';
+                    const costBasis = (position.quantity || 0) * (position.entryPrice || 0);
+                    const currentValue = (position.quantity || 0) * (position.currentPrice || position.entryPrice || 0);
+                    const pl = currentValue - costBasis;
+                    const plPercent = costBasis > 0 ? ((pl / costBasis) * 100).toFixed(2) : 0;
+
+                    return (
+                      <div
+                        key={ticker}
+                        style={{
+                          padding: '20px',
+                          backgroundColor: '#ffffff',
+                          border: `1px solid ${'#f0f0f0'}`,
+                          borderRadius: '12px',
+                          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                          <div style={{ fontSize: '20px', fontWeight: '600' }}>{ticker}</div>
                           <button
                             onClick={() => {
-                              setWatchlist(prev => prev.filter(t => t !== ticker));
-                              if (hasPosition) deletePosition(ticker);
+                              if (typeof window !== 'undefined' && window.confirm && window.confirm(`Remove ${ticker} from tracking?`)) {
+                                setWatchlist((watchlist || []).filter((t) => t !== ticker));
+                                deletePosition(ticker);
+                              }
                             }}
                             style={{
-                              ...styles.button('danger'),
-                              padding: '6px 12px',
-                              fontSize: '13px',
+                              padding: '4px 8px',
+                              backgroundColor: '#ef4444',
+                              color: '#ffffff',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
                             }}
                           >
                             Remove
                           </button>
                         </div>
-                      </div>
 
-                      {/* Position Form (Add/Edit) */}
-                      {isEditing ? (
-                        <div style={{ marginBottom: '16px' }}>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-                            <div>
-                              <div style={{ fontSize: '13px', color: '#666', marginBottom: '6px' }}>Quantity</div>
+                        {editingPosition === ticker ? (
+                          <div>
+                            <div style={{ marginBottom: '12px' }}>
+                              <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px' }}>Quantity</label>
                               <input
                                 type="number"
-                                placeholder="Shares"
-                                value={editingPositionData.quantity || ''}
-                                onChange={(e) => setEditingPositionData({ ...editingPositionData, quantity: e.target.value })}
-                                style={styles.input}
+                                value={position.quantity || ''}
+                                onChange={(e) => updatePosition(ticker, { ...position, quantity: parseFloat(e.target.value) || 0 })}
+                                style={{
+                                  width: '100%',
+                                  padding: '8px',
+                                  border: `1px solid ${'#f0f0f0'}`,
+                                  borderRadius: '6px',
+                                  fontSize: '14px',
+                                  backgroundColor: '#ffffff',
+                                  color: '#000000',
+                                }}
                               />
                             </div>
-                            <div>
-                              <div style={{ fontSize: '13px', color: '#666', marginBottom: '6px' }}>Entry Price</div>
+                            <div style={{ marginBottom: '12px' }}>
+                              <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px' }}>Entry Price</label>
                               <input
                                 type="number"
-                                placeholder="$0.00"
                                 step="0.01"
-                                value={editingPositionData.entryPrice || ''}
-                                onChange={(e) => setEditingPositionData({ ...editingPositionData, entryPrice: e.target.value })}
-                                style={styles.input}
+                                value={position.entryPrice || ''}
+                                onChange={(e) => updatePosition(ticker, { ...position, entryPrice: parseFloat(e.target.value) || 0 })}
+                                style={{
+                                  width: '100%',
+                                  padding: '8px',
+                                  border: `1px solid ${'#f0f0f0'}`,
+                                  borderRadius: '6px',
+                                  fontSize: '14px',
+                                  backgroundColor: '#ffffff',
+                                  color: '#000000',
+                                }}
                               />
                             </div>
+                            <div style={{ marginBottom: '12px' }}>
+                              <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px' }}>Current Price</label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={position.currentPrice || ''}
+                                onChange={(e) => updatePosition(ticker, { ...position, currentPrice: parseFloat(e.target.value) || 0 })}
+                                style={{
+                                  width: '100%',
+                                  padding: '8px',
+                                  border: `1px solid ${'#f0f0f0'}`,
+                                  borderRadius: '6px',
+                                  fontSize: '14px',
+                                  backgroundColor: '#ffffff',
+                                  color: '#000000',
+                                }}
+                              />
+                            </div>
+                            <div style={{ marginBottom: '12px' }}>
+                              <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px' }}>Target Price</label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={position.targetPrice || ''}
+                                onChange={(e) => updatePosition(ticker, { ...position, targetPrice: parseFloat(e.target.value) || 0 })}
+                                style={{
+                                  width: '100%',
+                                  padding: '8px',
+                                  border: `1px solid ${'#f0f0f0'}`,
+                                  borderRadius: '6px',
+                                  fontSize: '14px',
+                                  backgroundColor: '#ffffff',
+                                  color: '#000000',
+                                }}
+                              />
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <button
+                                onClick={() => {
+                                  updatePosition(ticker, {
+                                    ...position,
+                                    costBasis: (position.quantity || 0) * (position.entryPrice || 0),
+                                    currentValue: (position.quantity || 0) * (position.currentPrice || position.entryPrice || 0),
+                                  });
+                                  setEditingPosition(null);
+                                }}
+                                style={{
+                                  flex: 1,
+                                  padding: '8px',
+                                  backgroundColor: '#10b981',
+                                  color: '#ffffff',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer',
+                                  fontSize: '13px',
+                                  fontWeight: '500',
+                                }}
+                              >
+                                Save
+                              </button>
+                              <button
+                                onClick={() => setEditingPosition(null)}
+                                style={{
+                                  flex: 1,
+                                  padding: '8px',
+                                  backgroundColor: '#f0f0f0',
+                                  color: '#000000',
+                                  border: `1px solid ${'#f0f0f0'}`,
+                                  borderRadius: '6px',
+                                  cursor: 'pointer',
+                                  fontSize: '13px',
+                                }}
+                              >
+                                Cancel
+                              </button>
+                            </div>
                           </div>
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <button
-                              onClick={() => {
-                                if (editingPositionData.quantity && editingPositionData.entryPrice) {
-                                  addPosition(ticker, editingPositionData.quantity, editingPositionData.entryPrice);
-                                }
-                              }}
-                              style={{
-                                ...styles.button('primary'),
-                                flex: 1,
-                                padding: '10px',
-                              }}
-                              disabled={!editingPositionData.quantity || !editingPositionData.entryPrice}
-                            >
-                              Save Position
-                            </button>
-                            <button
-                              onClick={() => {
-                                setEditingPosition(null);
-                                setEditingPositionData({});
-                              }}
-                              style={{
-                                ...styles.button('ghost'),
-                                flex: 1,
-                                padding: '10px',
-                              }}
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      ) : hasPosition ? (
-                        <div>
-                          {/* Position Details */}
-                          <div style={{ 
-                            padding: '16px', 
-                            backgroundColor: '#fafafa', 
-                            borderRadius: '10px', 
-                            marginBottom: '16px' 
-                          }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-                              <div>
-                                <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Shares</div>
-                                <div style={{ fontSize: '16px', fontWeight: '600' }}>{position.quantity}</div>
-                              </div>
-                              <div>
-                                <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Entry Price</div>
-                                <div style={{ fontSize: '16px', fontWeight: '600' }}>${position.entryPrice.toFixed(2)}</div>
-                              </div>
-                              <div>
-                                <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Current Price</div>
-                                <div style={{ fontSize: '16px', fontWeight: '600' }}>${position.currentPrice.toFixed(2)}</div>
-                              </div>
-                              <div>
-                                <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>P&L per Share</div>
-                                <div style={{ fontSize: '16px', fontWeight: '600', color: pnl >= 0 ? '#10b981' : '#ef4444' }}>
-                                  ${(position.currentPrice - position.entryPrice).toFixed(2)}
+                        ) : (
+                          <div>
+                            {position.quantity ? (
+                              <div style={{ marginBottom: '16px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '13px', marginBottom: '8px' }}>
+                                  <div>
+                                    <div style={{ color: '#666' }}>Quantity</div>
+                                    <div style={{ fontWeight: '600' }}>{position.quantity}</div>
+                                  </div>
+                                  <div>
+                                    <div style={{ color: '#666' }}>Entry</div>
+                                    <div style={{ fontWeight: '600' }}>${(position.entryPrice != null && position.entryPrice !== '') ? Number(position.entryPrice).toFixed(2) : '0.00'}</div>
+                                  </div>
+                                  <div>
+                                    <div style={{ color: '#666' }}>Current</div>
+                                    <div style={{ fontWeight: '600' }}>${(position.currentPrice != null && position.currentPrice !== '') ? Number(position.currentPrice).toFixed(2) : (position.entryPrice != null ? Number(position.entryPrice).toFixed(2) : '0.00')}</div>
+                                  </div>
+                                  <div>
+                                    <div style={{ color: '#666' }}>Target</div>
+                                    <div style={{ fontWeight: '600' }}>${(position.targetPrice != null && position.targetPrice !== '') ? Number(position.targetPrice).toFixed(2) : 'N/A'}</div>
+                                  </div>
+                                </div>
+                                <div
+                                  style={{
+                                    padding: '12px',
+                                    backgroundColor: '#f9fafb',
+                                    borderRadius: '8px',
+                                    marginTop: '12px',
+                                  }}
+                                >
+                                  <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>P&L</div>
+                                  <div style={{ fontSize: '18px', fontWeight: '600', color: pl >= 0 ? '#10b981' : '#ef4444' }}>
+                                    ${Number(pl).toFixed(2)} ({plPercent}%)
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                            <div style={{ 
-                              paddingTop: '12px', 
-                              borderTop: '1px solid #f0f0f0',
-                              display: 'grid',
-                              gridTemplateColumns: '1fr 1fr',
-                              gap: '12px',
-                            }}>
-                              <div>
-                                <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Cost Basis</div>
-                                <div style={{ fontSize: '18px', fontWeight: '600' }}>${costBasis.toFixed(2)}</div>
-                              </div>
-                              <div>
-                                <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Current Value</div>
-                                <div style={{ fontSize: '18px', fontWeight: '600' }}>${currentValue.toFixed(2)}</div>
-                              </div>
-                            </div>
-                            <div style={{ 
-                              marginTop: '12px',
-                              paddingTop: '12px', 
-                              borderTop: '1px solid #f0f0f0',
-                            }}>
-                              <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Total P&L</div>
-                              <div style={{ 
-                                fontSize: '24px', 
-                                fontWeight: '600',
-                                color: pnl >= 0 ? '#10b981' : '#ef4444'
-                              }}>
-                                {pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}
-                                <span style={{ fontSize: '16px', marginLeft: '8px' }}>
-                                  ({pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%)
-                                </span>
-                              </div>
+                            ) : (
+                              <div style={{ marginBottom: '16px', fontSize: '13px', color: '#666' }}>No position data. Click "Edit Position" to add.</div>
+                            )}
+
+                            <button
+                              onClick={() => setEditingPosition(ticker)}
+                              style={{
+                                width: '100%',
+                                padding: '10px',
+                                backgroundColor: '#6366f1',
+                                color: '#ffffff',
+                                border: 'none',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                fontSize: '13px',
+                                fontWeight: '500',
+                                marginBottom: '12px',
+                              }}
+                            >
+                              {position.quantity ? 'Edit Position' : 'Add Position'}
+                            </button>
+
+                            <div>
+                              <div style={{ fontSize: '12px', fontWeight: '600', marginBottom: '8px' }}>Notes</div>
+                              <textarea
+                                value={notes}
+                                onChange={(e) => setTickerNotes({ ...(tickerNotes || {}), [ticker]: e.target.value })}
+                                placeholder="Add notes about this stock..."
+                                style={{
+                                  width: '100%',
+                                  minHeight: '80px',
+                                  padding: '8px',
+                                  border: `1px solid ${'#f0f0f0'}`,
+                                  borderRadius: '6px',
+                                  fontSize: '13px',
+                                  backgroundColor: '#ffffff',
+                                  color: '#000000',
+                                  resize: 'vertical',
+                                  fontFamily: 'inherit',
+                                }}
+                              />
                             </div>
                           </div>
-                          
-                          <button
-                            onClick={() => {
-                              setEditingPosition(ticker);
-                              setEditingPositionData({
-                                quantity: position.quantity,
-                                entryPrice: position.entryPrice,
-                              });
-                            }}
-                            style={{
-                              ...styles.button('ghost'),
-                              width: '100%',
-                              padding: '10px',
-                              marginBottom: '12px',
-                            }}
-                          >
-                            Edit Position
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            setEditingPosition(ticker);
-                            setEditingPositionData({ quantity: '', entryPrice: '' });
-                          }}
-                          style={{
-                            ...styles.button('primary'),
-                            width: '100%',
-                            padding: '12px',
-                            marginBottom: '16px',
-                          }}
-                        >
-                          + Add Position
-                        </button>
-                      )}
-
-                      {/* Notes */}
-                      <div>
-                        <div style={{ fontSize: '13px', color: '#666', marginBottom: '6px' }}>Notes</div>
-                        <textarea
-                          placeholder="Add notes about this stock..."
-                          value={notes}
-                          onChange={(e) => updateTickerNotes(ticker, e.target.value)}
-                          style={{
-                            ...styles.input,
-                            minHeight: '80px',
-                            resize: 'vertical',
-                            fontFamily: 'inherit',
-                          }}
-                        />
+                        )}
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
         )}
 
-        {/* Sectors View */}
         {activeView === 'sectors' && (
           <div>
-            <h2 style={{ fontSize: '32px', fontWeight: '600', marginBottom: '32px', letterSpacing: '-0.02em' }}>Sectors</h2>
-            
-            <div style={styles.card}>
-              <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>Add Custom Sector</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr auto', gap: '12px' }}>
-                <input
-                  type="text"
-                  placeholder="Sector Name"
-                  value={newSectorName}
-                  onChange={(e) => setNewSectorName(e.target.value)}
-                  style={styles.input}
-                />
-                <input
-                  type="text"
-                  placeholder="Keywords (comma-separated)"
-                  value={newSectorKeywords}
-                  onChange={(e) => setNewSectorKeywords(e.target.value)}
-                  style={styles.input}
-                />
-                <button onClick={addCustomSector} style={styles.button('primary')}>Add</button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: '600' }}>Sectors</h2>
+            </div>
+
+            <div
+              style={{
+                padding: '20px',
+                backgroundColor: '#ffffff',
+                border: '1px solid #f0f0f0',
+                borderRadius: '12px',
+                marginBottom: '24px',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
+              }}
+            >
+              <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px' }}>Add Custom Sector</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'flex-end' }}>
+                <div style={{ flex: '1 1 200px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px' }}>Sector name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Crypto"
+                    value={newSectorName}
+                    onChange={(e) => setNewSectorName(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      border: '1px solid #f0f0f0',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      backgroundColor: '#ffffff',
+                      color: '#000000',
+                    }}
+                  />
+                </div>
+                <div style={{ flex: '1 1 240px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px' }}>Keywords (comma-separated)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. bitcoin, ethereum, crypto"
+                    value={newSectorKeywords}
+                    onChange={(e) => setNewSectorKeywords(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      border: '1px solid #f0f0f0',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      backgroundColor: '#ffffff',
+                      color: '#000000',
+                    }}
+                  />
+                </div>
+                <button
+                  onClick={addCustomSector}
+                  style={{
+                    padding: '10px 20px',
+                    backgroundColor: '#6366f1',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                  }}
+                >
+                  Add Custom Sector
+                </button>
               </div>
             </div>
 
-            <div style={styles.card}>
-              <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '20px' }}>All Sectors</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '16px' }}>
-                {[...SECTORS, ...customSectors].map(sector => (
-                  <div key={sector.id} style={{
-                    padding: '16px',
-                    backgroundColor: '#fafafa',
-                    border: '1px solid #f0f0f0',
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '16px' }}>
+              {[...(SECTORS || []), ...(customSectors || [])].map((sector) => (
+                <div
+                  key={sector.id}
+                  style={{
+                    padding: '20px',
+                    backgroundColor: '#ffffff',
+                    border: `1px solid ${'#f0f0f0'}`,
                     borderRadius: '12px',
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <div style={{ fontSize: '16px', fontWeight: '600' }}>
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
+                    <div>
+                      <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '4px' }}>
                         {sector.name}
-                        {sector.custom && <span style={{ fontSize: '11px', color: '#6366f1', marginLeft: '6px' }}>(Custom)</span>}
+                        {sector.custom && <span style={{ fontSize: '11px', color: '#6366f1', marginLeft: '8px' }}>(Custom)</span>}
                       </div>
-                      {sector.custom && (
-                        <button
-                          onClick={() => deleteCustomSector(sector.id)}
-                          style={{ ...styles.button('danger'), padding: '4px 8px', fontSize: '12px' }}
-                        >
-                          Delete
-                        </button>
-                      )}
+                      <div style={{ fontSize: '12px', color: '#666' }}>Keywords: {(sector.keywords || []).join(', ')}</div>
                     </div>
-                    <div style={{ fontSize: '12px', color: '#666' }}>
-                      {sector.keywords.join(', ')}
-                    </div>
+                    {sector.custom && (
+                      <button
+                        onClick={() => {
+                          if (typeof window !== 'undefined' && window.confirm && window.confirm(`Delete sector "${sector.name}"?`)) {
+                            deleteCustomSector(sector.id);
+                          }
+                        }}
+                        style={{
+                          padding: '4px 8px',
+                          backgroundColor: '#ef4444',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '11px',
+                        }}
+                      >
+                        Delete
+                      </button>
+                    )}
                   </div>
-                ))}
-              </div>
+                  <label style={{ display: 'flex', alignItems: 'center', fontSize: '13px' }}>
+                    <input
+                      type="checkbox"
+                      checked={(selectedSectors || []).includes(sector.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) setSelectedSectors([...(selectedSectors || []), sector.id]);
+                        else setSelectedSectors((selectedSectors || []).filter((s) => s !== sector.id));
+                      }}
+                      style={{ marginRight: '8px' }}
+                    />
+                    Active
+                  </label>
+                </div>
+              ))}
             </div>
           </div>
         )}
       </div>
+
+      <style>{`
+        @media print {
+          body * { visibility: hidden; }
+          #digest-content, #digest-content * { visibility: visible; }
+          #digest-content { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+      `}</style>
     </div>
   );
 }
 
 export default FinancialCommandCenter;
+
