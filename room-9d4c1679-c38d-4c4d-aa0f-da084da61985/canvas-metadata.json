@@ -11,19 +11,9 @@
         "config": {
           "type": "dock",
           "name": "Dock Space",
-          "description": "Dock mode with macOS-style dock bar for widgets (zoom locked at 50% via DOCK_MODE_ZOOM constant)",
-          "canvasBounds": {
-            "x": 0,
-            "y": 0,
-            "w": 2261.286804798255,
-            "h": 1080
-          },
-          "canvasSize": {
-            "width": 2261.286804798255,
-            "height": 1080
-          }
+          "description": "Dock mode with macOS-style dock bar for widgets (zoom locked at 50% via DOCK_MODE_ZOOM constant)"
         },
-        "lastUpdated": 1769485028607
+        "lastUpdated": 1769569169271
       }
     },
     "id": "document:document",
@@ -36,7 +26,7 @@
       "name": "Page 1",
       "index": "a1",
       "typeName": "page",
-      "lastChangedClock": 305
+      "lastChangedClock": 768
     }
   ],
   "schema": {
@@ -81,11 +71,11 @@
       "com.tldraw.binding.arrow": 1
     }
   },
-  "generatedAt": "2026-01-27T03:40:22.185Z",
-  "clock": 354,
-  "documentClock": 354,
+  "generatedAt": "2026-01-28T03:00:43.710Z",
+  "clock": 797,
+  "documentClock": 794,
   "tombstones": {
-    "shape:social-media-tracker-ujEtVNtfwvhzIQNF4KFSj": 182
+    "shape:social-media-tracker-ujEtVNtfwvhzIQNF4KFSj": 768
   },
   "tombstoneHistoryStartsAtClock": 1
 }
