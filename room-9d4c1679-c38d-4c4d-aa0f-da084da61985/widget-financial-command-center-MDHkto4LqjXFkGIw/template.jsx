@@ -206,7 +206,37 @@ const CATALYSTS = [
   { id: 'm-a', name: 'M&A', color: '#ec4899', keywords: ['merger', 'acquisition', 'deal', 'buyout'] },
 ];
 
+const THEMES = {
+  light: {
+    bg: '#ffffff',
+    text: '#000000',
+    textMuted: '#666666',
+    textMutedLight: '#999999',
+    border: '#e5e5e5',
+    surface: '#ffffff',
+    secondaryBg: '#fafafa',
+    secondaryBgAlt: '#f9fafb',
+    errorBg: '#fef2f2',
+    errorText: '#b91c1c',
+  },
+  dark: {
+    bg: '#0f172a',
+    text: '#f1f5f9',
+    textMuted: '#94a3b8',
+    textMutedLight: '#64748b',
+    border: '#334155',
+    surface: '#1e293b',
+    secondaryBg: '#1e293b',
+    secondaryBgAlt: '#334155',
+    errorBg: '#450a0a',
+    errorText: '#fca5a5',
+  },
+};
+
 function FinancialCommandCenter() {
+  const [themeMode, setThemeMode] = useStorage('financial.widgetTheme', 'light', { scope: 'user' });
+  const theme = THEMES[themeMode] ?? THEMES.light;
+
   const [watchlist, setWatchlist] = useStorage('financial.watchlist', [], { scope: 'user' });
   const [customSectors, setCustomSectors] = useStorage('financial.customSectors', [], { scope: 'user' });
   const [positions, setPositions] = useStorage('financial.positions', {}, { scope: 'user' });
@@ -253,15 +283,16 @@ function FinancialCommandCenter() {
   const [emailLoading, setEmailLoading] = useState(false);
 
   useEffect(() => {
-    document.body.style.backgroundColor = '#ffffff';
-    document.body.style.color = '#000000';
+    const t = THEMES[themeMode] ?? THEMES.light;
+    document.body.style.backgroundColor = t.bg;
+    document.body.style.color = t.text;
     document.documentElement.style.minHeight = '100%';
     return () => {
       document.body.style.backgroundColor = '';
       document.body.style.color = '';
       document.documentElement.style.minHeight = '';
     };
-  }, []);
+  }, [themeMode]);
 
   useEffect(() => {
     loadNews();
@@ -831,10 +862,9 @@ function FinancialCommandCenter() {
     catalystsFound: new Set(news.flatMap((n) => n.catalysts || [])).size,
   }), [news, watchlist, alerts]);
 
-  // Force localhost look inside Deep Space: isolate from host theme and lock light styles
   const rootWrapStyle = {
-    backgroundColor: '#ffffff',
-    color: '#000000',
+    backgroundColor: theme.bg,
+    color: theme.text,
     fontFamily: '-apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", sans-serif',
     minHeight: '100%',
     width: '100%',
@@ -847,23 +877,23 @@ function FinancialCommandCenter() {
       display: 'flex',
       height: '100vh',
       minHeight: '600px',
-      backgroundColor: '#ffffff',
-      color: '#000000',
+      backgroundColor: theme.bg,
+      color: theme.text,
       fontFamily: '-apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", sans-serif',
       overflow: 'hidden',
     },
     sidebar: {
       width: '280px',
-      borderRight: '1px solid #f0f0f0',
+      borderRight: `1px solid ${theme.border}`,
       padding: '32px 24px',
       overflowY: 'auto',
-      backgroundColor: '#ffffff',
+      backgroundColor: theme.bg,
     },
     mainContent: {
       flex: 1,
       overflowY: 'auto',
       padding: '40px',
-      backgroundColor: '#ffffff',
+      backgroundColor: theme.bg,
     },
     navButton: (isActive) => ({
       width: '100%',
@@ -872,7 +902,7 @@ function FinancialCommandCenter() {
       border: 'none',
       borderRadius: '10px',
       backgroundColor: isActive ? '#6366f1' : 'transparent',
-      color: isActive ? '#ffffff' : '#000000',
+      color: isActive ? '#ffffff' : theme.text,
       cursor: 'pointer',
       textAlign: 'left',
       fontSize: '15px',
@@ -881,28 +911,28 @@ function FinancialCommandCenter() {
     }),
     card: {
       padding: '32px',
-      backgroundColor: '#ffffff',
-      border: '1px solid #f0f0f0',
+      backgroundColor: theme.surface,
+      border: `1px solid ${theme.border}`,
       borderRadius: '16px',
       marginBottom: '24px',
-      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
+      boxShadow: themeMode === 'dark' ? '0 8px 32px rgba(0, 0, 0, 0.3)' : '0 8px 32px rgba(0, 0, 0, 0.04)',
     },
     input: {
       width: '100%',
       padding: '14px 18px',
-      border: '1px solid #f0f0f0',
+      border: `1px solid ${theme.border}`,
       borderRadius: '12px',
       fontSize: '15px',
-      backgroundColor: '#ffffff',
-      color: '#000000',
+      backgroundColor: theme.surface,
+      color: theme.text,
       outline: 'none',
       transition: 'border-color 0.2s',
     },
     button: (variant = 'primary') => ({
       padding: '12px 24px',
       backgroundColor: variant === 'primary' ? '#6366f1' : variant === 'danger' ? '#ef4444' : 'transparent',
-      color: variant === 'primary' || variant === 'danger' ? '#ffffff' : '#000000',
-      border: variant === 'ghost' ? '1px solid #f0f0f0' : 'none',
+      color: variant === 'primary' || variant === 'danger' ? '#ffffff' : theme.text,
+      border: variant === 'ghost' ? `1px solid ${theme.border}` : 'none',
       borderRadius: '10px',
       cursor: 'pointer',
       fontSize: '15px',
@@ -915,15 +945,32 @@ function FinancialCommandCenter() {
     <div id="financial-command-center-root" style={rootWrapStyle}>
       <style>{`
         #financial-command-center-root, #financial-command-center-root * { box-sizing: border-box; }
-        #financial-command-center-root { background: #ffffff !important; color: #000000 !important; }
+        #financial-command-center-root { background: ${theme.bg} !important; color: ${theme.text} !important; }
       `}</style>
     <div style={styles.container}>
       <div style={styles.sidebar}>
         <div style={{ marginBottom: '40px' }}>
-          <h1 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '8px', letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '8px', letterSpacing: '-0.02em', color: theme.text }}>
             Command Center
           </h1>
-          <p style={{ fontSize: '14px', color: '#666', marginTop: '4px' }}>Financial market intelligence</p>
+          <p style={{ fontSize: '14px', color: theme.textMuted, marginTop: '4px' }}>Financial market intelligence</p>
+          <button
+            type="button"
+            onClick={() => setThemeMode((m) => (m === 'light' ? 'dark' : 'light'))}
+            style={{
+              marginTop: '12px',
+              padding: '8px 14px',
+              fontSize: '13px',
+              fontWeight: '500',
+              color: theme.text,
+              backgroundColor: theme.secondaryBg,
+              border: `1px solid ${theme.border}`,
+              borderRadius: '8px',
+              cursor: 'pointer',
+            }}
+          >
+            {themeMode === 'light' ? 'Dark mode' : 'Light mode'}
+          </button>
         </div>
 
         <nav style={{ marginBottom: '32px' }}>
@@ -949,11 +996,11 @@ function FinancialCommandCenter() {
 
         <div style={{
           padding: '20px',
-          backgroundColor: '#fafafa',
+          backgroundColor: theme.secondaryBg,
           borderRadius: '12px',
           marginBottom: '32px',
         }}>
-          <div style={{ fontSize: '13px', color: '#666', marginBottom: '16px', fontWeight: '500' }}>
+          <div style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '16px', fontWeight: '500' }}>
             Real-Time Stats
           </div>
           <div style={{ fontSize: '13px', lineHeight: '2' }}>
@@ -965,7 +1012,7 @@ function FinancialCommandCenter() {
         </div>
 
         <div style={{ marginBottom: '32px' }}>
-          <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '16px', color: '#000' }}>
+          <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '16px', color: theme.text }}>
             Sectors ({SECTORS.length + (customSectors || []).length})
           </div>
           {[...SECTORS, ...(customSectors || [])].slice(0, 5).map((sector) => (
@@ -1002,7 +1049,7 @@ function FinancialCommandCenter() {
         </div>
 
         <div>
-          <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '16px', color: '#000' }}>
+          <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '16px', color: theme.text }}>
             Catalysts
           </div>
           {CATALYSTS.map((catalyst) => (
@@ -1058,11 +1105,11 @@ function FinancialCommandCenter() {
             </div>
 
             {loading && (news || []).length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>Loading news...</div>
+              <div style={{ textAlign: 'center', padding: '40px', color: theme.textMutedLight }}>Loading news...</div>
             ) : newsError ? (
-              <div style={{ textAlign: 'center', padding: '40px', color: '#b91c1c' }}>
+              <div style={{ textAlign: 'center', padding: '40px', color: theme.errorText }}>
                 <p style={{ marginBottom: '12px' }}>{newsError}</p>
-                <p style={{ fontSize: '13px', color: '#666', marginBottom: '16px' }}>Ensure NEWS_API_KEY is set in .env for the news API.</p>
+                <p style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '16px' }}>Ensure NEWS_API_KEY is set in .env for the news API.</p>
                 <button
                   onClick={loadNews}
                   style={{
@@ -1080,7 +1127,7 @@ function FinancialCommandCenter() {
                 </button>
               </div>
             ) : (clusteredNews || []).length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>No news found. Try adjusting filters or click Refresh.</div>
+              <div style={{ textAlign: 'center', padding: '40px', color: theme.textMutedLight }}>No news found. Try adjusting filters or click Refresh.</div>
             ) : (
               <div>
                 {(clusteredNews || []).map((cluster, idx) => (
@@ -1089,8 +1136,8 @@ function FinancialCommandCenter() {
                     style={{
                       marginBottom: '24px',
                       padding: '20px',
-                      backgroundColor: '#ffffff',
-                      border: `1px solid ${'#f0f0f0'}`,
+                      backgroundColor: theme.surface,
+                      border: `1px solid ${theme.border}`,
                       borderRadius: '12px',
                       boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
                     }}
@@ -1129,11 +1176,11 @@ function FinancialCommandCenter() {
                           rel="noopener noreferrer"
                           style={{
                             padding: '16px',
-                            backgroundColor: '#f9fafb',
-                            border: `1px solid ${'#f0f0f0'}`,
+                            backgroundColor: theme.secondaryBgAlt,
+                            border: `1px solid ${theme.border}`,
                             borderRadius: '8px',
                             textDecoration: 'none',
-                            color: '#000000',
+                            color: theme.text,
                             display: 'block',
                             transition: 'transform 0.2s',
                           }}
@@ -1141,7 +1188,7 @@ function FinancialCommandCenter() {
                           onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
                         >
                           <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px', lineHeight: '1.4' }}>{article.title}</div>
-                          <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+                          <div style={{ fontSize: '12px', color: theme.textMuted, marginBottom: '8px' }}>
                             {(article.source && article.source.name) || 'Unknown'} â€¢ {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString() : ''}
                           </div>
                           {article.catalysts && article.catalysts.length > 0 && (
@@ -1181,8 +1228,8 @@ function FinancialCommandCenter() {
             <div
               style={{
                 padding: '20px',
-                backgroundColor: '#ffffff',
-                border: `1px solid ${'#f0f0f0'}`,
+                backgroundColor: theme.surface,
+                border: `1px solid ${theme.border}`,
                 borderRadius: '12px',
                 marginBottom: '24px',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
@@ -1199,11 +1246,11 @@ function FinancialCommandCenter() {
                   style={{
                     flex: 1,
                     padding: '12px 16px',
-                    border: `1px solid ${'#f0f0f0'}`,
+                    border: `1px solid ${theme.border}`,
                     borderRadius: '8px',
                     fontSize: '14px',
-                    backgroundColor: '#ffffff',
-                    color: '#000000',
+                    backgroundColor: theme.surface,
+                    color: theme.text,
                   }}
                 />
                 <button
@@ -1224,13 +1271,13 @@ function FinancialCommandCenter() {
                 </button>
               </div>
               {watchlistSearchError && (
-                <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#fef2f2', borderRadius: '8px', color: '#b91c1c', fontSize: '13px' }}>
+                <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#fef2f2', borderRadius: '8px', color: theme.errorText, fontSize: '13px' }}>
                   {watchlistSearchError}
                 </div>
               )}
               {!watchlistSearchError && watchlistSearchResults && watchlistSearchResults.length > 0 && (
                 <div style={{ marginTop: '12px' }}>
-                  <div style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>Search results - click Add to add to watchlist</div>
+                  <div style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '8px' }}>Search results - click Add to add to watchlist</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                     {watchlistSearchResults.map((result) => {
                       const symbol = (result && result.symbol) || (typeof result === 'string' ? result : '');
@@ -1243,13 +1290,13 @@ function FinancialCommandCenter() {
                             alignItems: 'center',
                             gap: '8px',
                             padding: '8px 12px',
-                            backgroundColor: '#f9fafb',
+                            backgroundColor: theme.secondaryBgAlt,
                             borderRadius: '8px',
-                            border: '1px solid #f0f0f0',
+                            border: `1px solid ${theme.border}`,
                           }}
                         >
                           <span style={{ fontWeight: '600', fontSize: '14px' }}>{symbol}</span>
-                          {result.name && <span style={{ fontSize: '12px', color: '#666' }}>{result.name}</span>}
+                          {result.name && <span style={{ fontSize: '12px', color: theme.textMuted }}>{result.name}</span>}
                           <button
                             onClick={() => addToWatchlistFromSearch(symbol)}
                             style={{
@@ -1272,14 +1319,14 @@ function FinancialCommandCenter() {
                 </div>
               )}
               {!watchlistSearchError && hasSearched && !watchlistSearching && watchlistSearchResults.length === 0 && (
-                <div style={{ marginTop: '12px', fontSize: '13px', color: '#666' }}>No matches found. Try a symbol (e.g. AAPL) or company name.</div>
+                <div style={{ marginTop: '12px', fontSize: '13px', color: theme.textMuted }}>No matches found. Try a symbol (e.g. AAPL) or company name.</div>
               )}
             </div>
             <div
               style={{
                 padding: '20px',
-                backgroundColor: '#ffffff',
-                border: `1px solid ${'#f0f0f0'}`,
+                backgroundColor: theme.surface,
+                border: `1px solid ${theme.border}`,
                 borderRadius: '12px',
                 marginBottom: '24px',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
@@ -1296,11 +1343,11 @@ function FinancialCommandCenter() {
                   style={{
                     flex: 1,
                     padding: '12px 16px',
-                    border: `1px solid ${'#f0f0f0'}`,
+                    border: `1px solid ${theme.border}`,
                     borderRadius: '8px',
                     fontSize: '14px',
-                    backgroundColor: '#ffffff',
-                    color: '#000000',
+                    backgroundColor: theme.surface,
+                    color: theme.text,
                   }}
                 />
                 <button
@@ -1322,7 +1369,7 @@ function FinancialCommandCenter() {
             </div>
 
             {(watchlist || []).length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>No tickers in watchlist. Add some above!</div>
+              <div style={{ textAlign: 'center', padding: '40px', color: theme.textMutedLight }}>No tickers in watchlist. Add some above!</div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '16px' }}>
                 {(watchlist || []).map((ticker) => (
@@ -1330,8 +1377,8 @@ function FinancialCommandCenter() {
                     key={ticker}
                     style={{
                       padding: '20px',
-                      backgroundColor: '#ffffff',
-                      border: `1px solid ${'#f0f0f0'}`,
+                      backgroundColor: theme.surface,
+                      border: `1px solid ${theme.border}`,
                       borderRadius: '12px',
                       boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
                     }}
@@ -1382,7 +1429,7 @@ function FinancialCommandCenter() {
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '24px', fontWeight: '600' }}>Alerts</h2>
-              <div style={{ fontSize: '12px', color: '#666' }}>
+              <div style={{ fontSize: '12px', color: theme.textMuted }}>
                 Last checked: {lastAlertCheck ? new Date(lastAlertCheck).toLocaleString() : 'Never'}
               </div>
             </div>
@@ -1405,7 +1452,7 @@ function FinancialCommandCenter() {
             </button>
 
             {(watchlist || []).length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+              <div style={{ textAlign: 'center', padding: '40px', color: theme.textMutedLight }}>
                 <p style={{ marginBottom: '16px' }}>Add tickers to your watchlist to see news alerts.</p>
                 <button
                   onClick={() => setActiveView('watchlist')}
@@ -1424,7 +1471,7 @@ function FinancialCommandCenter() {
                 </button>
               </div>
             ) : (alerts || []).length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+              <div style={{ textAlign: 'center', padding: '40px', color: theme.textMutedLight }}>
                 No alerts. Your watchlist stocks haven't been mentioned recently.
               </div>
             ) : (
@@ -1437,12 +1484,12 @@ function FinancialCommandCenter() {
                     rel="noopener noreferrer"
                     style={{
                       padding: '20px',
-                      backgroundColor: '#ffffff',
-                      border: `1px solid ${'#f0f0f0'}`,
+                      backgroundColor: theme.surface,
+                      border: `1px solid ${theme.border}`,
                       borderRadius: '12px',
                       boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
                       textDecoration: 'none',
-                      color: '#000000',
+                      color: theme.text,
                       display: 'block',
                       transition: 'transform 0.2s',
                     }}
@@ -1450,7 +1497,7 @@ function FinancialCommandCenter() {
                     onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
                   >
                     <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px', lineHeight: '1.4' }}>{article.title}</div>
-                    <div style={{ fontSize: '12px', color: '#666', marginBottom: '12px' }}>
+                    <div style={{ fontSize: '12px', color: theme.textMuted, marginBottom: '12px' }}>
                       {(article.source && article.source.name) || 'Unknown'} â€¢ {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString() : ''}
                     </div>
                     {article.catalysts && article.catalysts.length > 0 && (
@@ -1486,7 +1533,7 @@ function FinancialCommandCenter() {
           <div>
             <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '24px' }}>Ticker Detail</h2>
             {!tickerBrief ? (
-              <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+              <div style={{ textAlign: 'center', padding: '40px', color: theme.textMutedLight }}>
                 <p style={{ marginBottom: '16px' }}>Select a ticker from Watchlist and click "Brief Me" to see details.</p>
                 {(watchlist || []).length > 0 && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', marginTop: '16px' }}>
@@ -1517,8 +1564,8 @@ function FinancialCommandCenter() {
                 <div
                   style={{
                     padding: '24px',
-                    backgroundColor: '#ffffff',
-                    border: `1px solid ${'#f0f0f0'}`,
+                    backgroundColor: theme.surface,
+                    border: `1px solid ${theme.border}`,
                     borderRadius: '12px',
                     marginBottom: '24px',
                     boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
@@ -1542,16 +1589,16 @@ function FinancialCommandCenter() {
                         rel="noopener noreferrer"
                         style={{
                           padding: '16px',
-                          backgroundColor: '#f9fafb',
-                          border: `1px solid ${'#f0f0f0'}`,
+                          backgroundColor: theme.secondaryBgAlt,
+                          border: `1px solid ${theme.border}`,
                           borderRadius: '8px',
                           textDecoration: 'none',
-                          color: '#000000',
+                          color: theme.text,
                           display: 'block',
                         }}
                       >
                         <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>{article.title}</div>
-                        <div style={{ fontSize: '12px', color: '#666' }}>
+                        <div style={{ fontSize: '12px', color: theme.textMuted }}>
                           {(article.source && article.source.name) || 'Unknown'} â€¢ {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString() : ''}
                         </div>
                       </a>
@@ -1623,7 +1670,7 @@ function FinancialCommandCenter() {
             </div>
 
             {!digest ? (
-              <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+              <div style={{ textAlign: 'center', padding: '40px', color: theme.textMutedLight }}>
                 Click "Generate Digest" to create a daily market summary.
               </div>
             ) : (
@@ -1631,15 +1678,15 @@ function FinancialCommandCenter() {
                 id="digest-content"
                 style={{
                   padding: '32px',
-                  backgroundColor: '#ffffff',
-                  border: `1px solid ${'#f0f0f0'}`,
+                  backgroundColor: theme.surface,
+                  border: `1px solid ${theme.border}`,
                   borderRadius: '12px',
                   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
                 }}
               >
-                <div style={{ marginBottom: '24px', paddingBottom: '16px', borderBottom: `1px solid ${'#f0f0f0'}` }}>
+                <div style={{ marginBottom: '24px', paddingBottom: '16px', borderBottom: `1px solid ${theme.border}` }}>
                   <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '8px' }}>Daily Market Digest</h3>
-                  <div style={{ fontSize: '14px', color: '#666' }}>{digest.date}</div>
+                  <div style={{ fontSize: '14px', color: theme.textMuted }}>{digest.date}</div>
                 </div>
                 <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.8', fontSize: '15px', marginBottom: '32px' }}>{digest.content}</div>
                 <div>
@@ -1653,11 +1700,11 @@ function FinancialCommandCenter() {
                         rel="noopener noreferrer"
                         style={{
                           padding: '12px',
-                          backgroundColor: '#f9fafb',
-                          border: `1px solid ${'#f0f0f0'}`,
+                          backgroundColor: theme.secondaryBgAlt,
+                          border: `1px solid ${theme.border}`,
                           borderRadius: '6px',
                           textDecoration: 'none',
-                          color: '#000000',
+                          color: theme.text,
                           fontSize: '13px',
                         }}
                       >
@@ -1681,7 +1728,7 @@ function FinancialCommandCenter() {
                   padding: '10px 20px',
                   backgroundColor: socialSearchPlatform === 'linkedin' ? '#6366f1' : 'transparent',
                   color: socialSearchPlatform === 'linkedin' ? '#ffffff' : '#000000',
-                  border: `1px solid ${'#f0f0f0'}`,
+                  border: `1px solid ${theme.border}`,
                   borderRadius: '8px',
                   cursor: 'pointer',
                   fontSize: '14px',
@@ -1696,7 +1743,7 @@ function FinancialCommandCenter() {
                   padding: '10px 20px',
                   backgroundColor: socialSearchPlatform === 'youtube' ? '#6366f1' : 'transparent',
                   color: socialSearchPlatform === 'youtube' ? '#ffffff' : '#000000',
-                  border: `1px solid ${'#f0f0f0'}`,
+                  border: `1px solid ${theme.border}`,
                   borderRadius: '8px',
                   cursor: 'pointer',
                   fontSize: '14px',
@@ -1710,8 +1757,8 @@ function FinancialCommandCenter() {
             <div
               style={{
                 padding: '20px',
-                backgroundColor: '#ffffff',
-                border: `1px solid ${'#f0f0f0'}`,
+                backgroundColor: theme.surface,
+                border: `1px solid ${theme.border}`,
                 borderRadius: '12px',
                 marginBottom: '24px',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
@@ -1727,11 +1774,11 @@ function FinancialCommandCenter() {
                   style={{
                     flex: 1,
                     padding: '12px 16px',
-                    border: `1px solid ${'#f0f0f0'}`,
+                    border: `1px solid ${theme.border}`,
                     borderRadius: '8px',
                     fontSize: '14px',
-                    backgroundColor: '#ffffff',
-                    color: '#000000',
+                    backgroundColor: theme.surface,
+                    color: theme.text,
                   }}
                 />
                 <button
@@ -1771,8 +1818,8 @@ function FinancialCommandCenter() {
                         key={idx}
                         style={{
                           padding: '16px',
-                          backgroundColor: '#ffffff',
-                          border: `1px solid ${'#f0f0f0'}`,
+                          backgroundColor: theme.surface,
+                          border: `1px solid ${theme.border}`,
                           borderRadius: '12px',
                           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
                         }}
@@ -1794,7 +1841,7 @@ function FinancialCommandCenter() {
                             >
                               {account.name || (account.snippet && account.snippet.title) || account.title || 'Unknown'}
                             </a>
-                            <div style={{ fontSize: '12px', color: '#666' }}>
+                            <div style={{ fontSize: '12px', color: theme.textMuted }}>
                               {isLinkedIn ? account.headline : (account.snippet && account.snippet.channelTitle)}
                             </div>
                             <span
@@ -1853,8 +1900,8 @@ function FinancialCommandCenter() {
                         key={idx}
                         style={{
                           padding: '16px',
-                          backgroundColor: '#ffffff',
-                          border: `1px solid ${'#f0f0f0'}`,
+                          backgroundColor: theme.surface,
+                          border: `1px solid ${theme.border}`,
                           borderRadius: '12px',
                           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
                         }}
@@ -1875,14 +1922,14 @@ function FinancialCommandCenter() {
                           >
                             {result.name || (result.snippet && result.snippet.title) || result.title || 'Unknown'}
                           </a>
-                          <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+                          <div style={{ fontSize: '12px', color: theme.textMuted, marginBottom: '8px' }}>
                             {isLinkedIn ? result.headline : (result.snippet && result.snippet.channelTitle) || (result.snippet && result.snippet.description)}
                           </div>
                           {isLinkedIn && result.location && (
-                            <div style={{ fontSize: '11px', color: '#999' }}>{result.location}</div>
+                            <div style={{ fontSize: '11px', color: theme.textMutedLight }}>{result.location}</div>
                           )}
                           {!isLinkedIn && result.snippet && result.snippet.publishedAt && (
-                            <div style={{ fontSize: '11px', color: '#999' }}>
+                            <div style={{ fontSize: '11px', color: theme.textMutedLight }}>
                               {new Date(result.snippet.publishedAt).toLocaleDateString()}
                             </div>
                           )}
@@ -1925,7 +1972,7 @@ function FinancialCommandCenter() {
             )}
 
             {!socialLoading && (!socialResults || socialResults.length === 0) && socialSearchQuery && (
-              <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>No results found. Try a different search query.</div>
+              <div style={{ textAlign: 'center', padding: '40px', color: theme.textMutedLight }}>No results found. Try a different search query.</div>
             )}
           </div>
         )}
@@ -1936,8 +1983,8 @@ function FinancialCommandCenter() {
             <div
               style={{
                 padding: '20px',
-                backgroundColor: '#ffffff',
-                border: `1px solid ${'#f0f0f0'}`,
+                backgroundColor: theme.surface,
+                border: `1px solid ${theme.border}`,
                 borderRadius: '12px',
                 marginBottom: '24px',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
@@ -1954,11 +2001,11 @@ function FinancialCommandCenter() {
                   style={{
                     flex: 1,
                     padding: '12px 16px',
-                    border: `1px solid ${'#f0f0f0'}`,
+                    border: `1px solid ${theme.border}`,
                     borderRadius: '8px',
                     fontSize: '14px',
-                    backgroundColor: '#ffffff',
-                    color: '#000000',
+                    backgroundColor: theme.surface,
+                    color: theme.text,
                   }}
                 />
                 <button
@@ -1979,13 +2026,13 @@ function FinancialCommandCenter() {
                 </button>
               </div>
               {portfolioSearchError && (
-                <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#fef2f2', borderRadius: '8px', color: '#b91c1c', fontSize: '13px' }}>
+                <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#fef2f2', borderRadius: '8px', color: theme.errorText, fontSize: '13px' }}>
                   {portfolioSearchError}
                 </div>
               )}
               {!portfolioSearchError && portfolioSearchResults && portfolioSearchResults.length > 0 && (
                 <div style={{ marginTop: '12px' }}>
-                  <div style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>Search results - click Add to add to portfolio</div>
+                  <div style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '8px' }}>Search results - click Add to add to portfolio</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                     {portfolioSearchResults.map((result) => {
                       const symbol = (result && result.symbol) || (typeof result === 'string' ? result : '');
@@ -1998,13 +2045,13 @@ function FinancialCommandCenter() {
                             alignItems: 'center',
                             gap: '8px',
                             padding: '8px 12px',
-                            backgroundColor: '#f9fafb',
+                            backgroundColor: theme.secondaryBgAlt,
                             borderRadius: '8px',
-                            border: '1px solid #f0f0f0',
+                            border: `1px solid ${theme.border}`,
                           }}
                         >
                           <span style={{ fontWeight: '600', fontSize: '14px' }}>{symbol}</span>
-                          {result.name && <span style={{ fontSize: '12px', color: '#666' }}>{result.name}</span>}
+                          {result.name && <span style={{ fontSize: '12px', color: theme.textMuted }}>{result.name}</span>}
                           <button
                             onClick={() => addTickerToPortfolio(symbol)}
                             style={{
@@ -2027,21 +2074,21 @@ function FinancialCommandCenter() {
                 </div>
               )}
               {!portfolioSearchError && portfolioHasSearched && !portfolioSearching && portfolioSearchResults.length === 0 && (
-                <div style={{ marginTop: '12px', fontSize: '13px', color: '#666' }}>No matches found. Try a symbol (e.g. AAPL) or company name.</div>
+                <div style={{ marginTop: '12px', fontSize: '13px', color: theme.textMuted }}>No matches found. Try a symbol (e.g. AAPL) or company name.</div>
               )}
             </div>
             <div
               style={{
                 padding: '20px',
-                backgroundColor: '#ffffff',
-                border: `1px solid ${'#f0f0f0'}`,
+                backgroundColor: theme.surface,
+                border: `1px solid ${theme.border}`,
                 borderRadius: '12px',
                 marginBottom: '24px',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
               }}
             >
               <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px' }}>Track Stock (manual)</div>
-              <div style={{ fontSize: '13px', color: '#666', marginBottom: '16px' }}>
+              <div style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '16px' }}>
                 Or enter a ticker symbol directly to track.
               </div>
               <div style={{ display: 'flex', gap: '12px' }}>
@@ -2054,11 +2101,11 @@ function FinancialCommandCenter() {
                   style={{
                     flex: 1,
                     padding: '12px 16px',
-                    border: `1px solid ${'#f0f0f0'}`,
+                    border: `1px solid ${theme.border}`,
                     borderRadius: '8px',
                     fontSize: '14px',
-                    backgroundColor: '#ffffff',
-                    color: '#000000',
+                    backgroundColor: theme.surface,
+                    color: theme.text,
                   }}
                 />
                 <button
@@ -2080,15 +2127,15 @@ function FinancialCommandCenter() {
             </div>
 
             {Object.keys(positions || {}).length === 0 && (watchlist || []).length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>No positions tracked. Add stocks above to get started!</div>
+              <div style={{ textAlign: 'center', padding: '40px', color: theme.textMutedLight }}>No positions tracked. Add stocks above to get started!</div>
             ) : (
               <div>
                 {Object.keys(positions || {}).length > 0 && (
                   <div
                     style={{
                       padding: '20px',
-                      backgroundColor: '#ffffff',
-                      border: `1px solid ${'#f0f0f0'}`,
+                      backgroundColor: theme.surface,
+                      border: `1px solid ${theme.border}`,
                       borderRadius: '12px',
                       marginBottom: '24px',
                       boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
@@ -2104,15 +2151,15 @@ function FinancialCommandCenter() {
                       return (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
                           <div>
-                            <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Total Cost</div>
+                            <div style={{ fontSize: '12px', color: theme.textMuted, marginBottom: '4px' }}>Total Cost</div>
                             <div style={{ fontSize: '20px', fontWeight: '600' }}>${totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                           </div>
                           <div>
-                            <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Current Value</div>
+                            <div style={{ fontSize: '12px', color: theme.textMuted, marginBottom: '4px' }}>Current Value</div>
                             <div style={{ fontSize: '20px', fontWeight: '600' }}>${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                           </div>
                           <div>
-                            <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>P&L</div>
+                            <div style={{ fontSize: '12px', color: theme.textMuted, marginBottom: '4px' }}>P&L</div>
                             <div style={{ fontSize: '20px', fontWeight: '600', color: totalPL >= 0 ? '#10b981' : '#ef4444' }}>
                               ${totalPL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({totalPLPercent}%)
                             </div>
@@ -2137,8 +2184,8 @@ function FinancialCommandCenter() {
                         key={ticker}
                         style={{
                           padding: '20px',
-                          backgroundColor: '#ffffff',
-                          border: `1px solid ${'#f0f0f0'}`,
+                          backgroundColor: theme.surface,
+                          border: `1px solid ${theme.border}`,
                           borderRadius: '12px',
                           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
                         }}
@@ -2177,11 +2224,11 @@ function FinancialCommandCenter() {
                                 style={{
                                   width: '100%',
                                   padding: '8px',
-                                  border: `1px solid ${'#f0f0f0'}`,
+                                  border: `1px solid ${theme.border}`,
                                   borderRadius: '6px',
                                   fontSize: '14px',
-                                  backgroundColor: '#ffffff',
-                                  color: '#000000',
+                                  backgroundColor: theme.surface,
+                                  color: theme.text,
                                 }}
                               />
                             </div>
@@ -2195,11 +2242,11 @@ function FinancialCommandCenter() {
                                 style={{
                                   width: '100%',
                                   padding: '8px',
-                                  border: `1px solid ${'#f0f0f0'}`,
+                                  border: `1px solid ${theme.border}`,
                                   borderRadius: '6px',
                                   fontSize: '14px',
-                                  backgroundColor: '#ffffff',
-                                  color: '#000000',
+                                  backgroundColor: theme.surface,
+                                  color: theme.text,
                                 }}
                               />
                             </div>
@@ -2213,11 +2260,11 @@ function FinancialCommandCenter() {
                                 style={{
                                   width: '100%',
                                   padding: '8px',
-                                  border: `1px solid ${'#f0f0f0'}`,
+                                  border: `1px solid ${theme.border}`,
                                   borderRadius: '6px',
                                   fontSize: '14px',
-                                  backgroundColor: '#ffffff',
-                                  color: '#000000',
+                                  backgroundColor: theme.surface,
+                                  color: theme.text,
                                 }}
                               />
                             </div>
@@ -2231,11 +2278,11 @@ function FinancialCommandCenter() {
                                 style={{
                                   width: '100%',
                                   padding: '8px',
-                                  border: `1px solid ${'#f0f0f0'}`,
+                                  border: `1px solid ${theme.border}`,
                                   borderRadius: '6px',
                                   fontSize: '14px',
-                                  backgroundColor: '#ffffff',
-                                  color: '#000000',
+                                  backgroundColor: theme.surface,
+                                  color: theme.text,
                                 }}
                               />
                             </div>
@@ -2268,9 +2315,9 @@ function FinancialCommandCenter() {
                                 style={{
                                   flex: 1,
                                   padding: '8px',
-                                  backgroundColor: '#f0f0f0',
-                                  color: '#000000',
-                                  border: `1px solid ${'#f0f0f0'}`,
+                                  backgroundColor: theme.secondaryBgAlt,
+                                  color: theme.text,
+                                  border: `1px solid ${theme.border}`,
                                   borderRadius: '6px',
                                   cursor: 'pointer',
                                   fontSize: '13px',
@@ -2286,38 +2333,38 @@ function FinancialCommandCenter() {
                               <div style={{ marginBottom: '16px' }}>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '13px', marginBottom: '8px' }}>
                                   <div>
-                                    <div style={{ color: '#666' }}>Quantity</div>
+                                    <div style={{ color: theme.textMuted }}>Quantity</div>
                                     <div style={{ fontWeight: '600' }}>{position.quantity}</div>
                                   </div>
                                   <div>
-                                    <div style={{ color: '#666' }}>Entry</div>
+                                    <div style={{ color: theme.textMuted }}>Entry</div>
                                     <div style={{ fontWeight: '600' }}>${(position.entryPrice != null && position.entryPrice !== '') ? Number(position.entryPrice).toFixed(2) : '0.00'}</div>
                                   </div>
                                   <div>
-                                    <div style={{ color: '#666' }}>Current</div>
+                                    <div style={{ color: theme.textMuted }}>Current</div>
                                     <div style={{ fontWeight: '600' }}>${(position.currentPrice != null && position.currentPrice !== '') ? Number(position.currentPrice).toFixed(2) : (position.entryPrice != null ? Number(position.entryPrice).toFixed(2) : '0.00')}</div>
                                   </div>
                                   <div>
-                                    <div style={{ color: '#666' }}>Target</div>
+                                    <div style={{ color: theme.textMuted }}>Target</div>
                                     <div style={{ fontWeight: '600' }}>${(position.targetPrice != null && position.targetPrice !== '') ? Number(position.targetPrice).toFixed(2) : 'N/A'}</div>
                                   </div>
                                 </div>
                                 <div
                                   style={{
                                     padding: '12px',
-                                    backgroundColor: '#f9fafb',
+                                    backgroundColor: theme.secondaryBgAlt,
                                     borderRadius: '8px',
                                     marginTop: '12px',
                                   }}
                                 >
-                                  <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>P&L</div>
+                                  <div style={{ fontSize: '12px', color: theme.textMuted, marginBottom: '4px' }}>P&L</div>
                                   <div style={{ fontSize: '18px', fontWeight: '600', color: pl >= 0 ? '#10b981' : '#ef4444' }}>
                                     ${Number(pl).toFixed(2)} ({plPercent}%)
                                   </div>
                                 </div>
                               </div>
                             ) : (
-                              <div style={{ marginBottom: '16px', fontSize: '13px', color: '#666' }}>No position data. Click "Edit Position" to add.</div>
+                              <div style={{ marginBottom: '16px', fontSize: '13px', color: theme.textMuted }}>No position data. Click "Edit Position" to add.</div>
                             )}
 
                             <button
@@ -2348,11 +2395,11 @@ function FinancialCommandCenter() {
                                   width: '100%',
                                   minHeight: '80px',
                                   padding: '8px',
-                                  border: `1px solid ${'#f0f0f0'}`,
+                                  border: `1px solid ${theme.border}`,
                                   borderRadius: '6px',
                                   fontSize: '13px',
-                                  backgroundColor: '#ffffff',
-                                  color: '#000000',
+                                  backgroundColor: theme.surface,
+                                  color: theme.text,
                                   resize: 'vertical',
                                   fontFamily: 'inherit',
                                 }}
@@ -2378,8 +2425,8 @@ function FinancialCommandCenter() {
             <div
               style={{
                 padding: '20px',
-                backgroundColor: '#ffffff',
-                border: '1px solid #f0f0f0',
+                backgroundColor: theme.surface,
+                border: `1px solid ${theme.border}`,
                 borderRadius: '12px',
                 marginBottom: '24px',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
@@ -2397,11 +2444,11 @@ function FinancialCommandCenter() {
                     style={{
                       width: '100%',
                       padding: '8px 12px',
-                      border: '1px solid #f0f0f0',
+                      border: `1px solid ${theme.border}`,
                       borderRadius: '6px',
                       fontSize: '14px',
-                      backgroundColor: '#ffffff',
-                      color: '#000000',
+                      backgroundColor: theme.surface,
+                      color: theme.text,
                     }}
                   />
                 </div>
@@ -2415,11 +2462,11 @@ function FinancialCommandCenter() {
                     style={{
                       width: '100%',
                       padding: '8px 12px',
-                      border: '1px solid #f0f0f0',
+                      border: `1px solid ${theme.border}`,
                       borderRadius: '6px',
                       fontSize: '14px',
-                      backgroundColor: '#ffffff',
-                      color: '#000000',
+                      backgroundColor: theme.surface,
+                      color: theme.text,
                     }}
                   />
                 </div>
@@ -2447,8 +2494,8 @@ function FinancialCommandCenter() {
                   key={sector.id}
                   style={{
                     padding: '20px',
-                    backgroundColor: '#ffffff',
-                    border: `1px solid ${'#f0f0f0'}`,
+                    backgroundColor: theme.surface,
+                    border: `1px solid ${theme.border}`,
                     borderRadius: '12px',
                     boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
                   }}
@@ -2459,7 +2506,7 @@ function FinancialCommandCenter() {
                         {sector.name}
                         {sector.custom && <span style={{ fontSize: '11px', color: '#6366f1', marginLeft: '8px' }}>(Custom)</span>}
                       </div>
-                      <div style={{ fontSize: '12px', color: '#666' }}>Keywords: {(sector.keywords || []).join(', ')}</div>
+                      <div style={{ fontSize: '12px', color: theme.textMuted }}>Keywords: {(sector.keywords || []).join(', ')}</div>
                     </div>
                     {sector.custom && (
                       <button
