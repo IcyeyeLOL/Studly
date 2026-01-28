@@ -1552,7 +1552,7 @@ function FinancialCommandCenter() {
                 </div>
               )}
               
-              <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
                 <input
                   type="text"
                   placeholder={`Search ${socialSearchPlatform === 'linkedin' ? 'LinkedIn profiles' : 'YouTube channels/videos'}...`}
@@ -1572,6 +1572,39 @@ function FinancialCommandCenter() {
                   {socialLoading ? 'Searching...' : 'Search'}
                 </button>
               </div>
+              
+              {/* Fallback: Search on YouTube.com */}
+              {socialSearchPlatform === 'youtube' && socialSearchQuery.trim() && (
+                <a
+                  href={`https://www.youtube.com/results?search_query=${encodeURIComponent(socialSearchQuery)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    padding: '10px 16px',
+                    backgroundColor: 'transparent',
+                    color: '#6366f1',
+                    textAlign: 'center',
+                    textDecoration: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    border: '1px solid #f0f0f0',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#f0f0f0';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  🔗 Or search "{socialSearchQuery}" on YouTube.com
+                </a>
+              )}
             </div>
 
             {/* Following Section */}
@@ -1772,25 +1805,49 @@ function FinancialCommandCenter() {
                   {socialError}
                 </div>
                 
-                {/* Detailed help for YouTube 400 error */}
-                {socialSearchPlatform === 'youtube' && socialError.includes('400') && (
-                  <div style={{
-                    padding: '16px',
-                    backgroundColor: '#fff7ed',
-                    border: '1px solid #fed7aa',
-                    borderRadius: '8px',
-                    fontSize: '13px',
-                    color: '#92400e',
-                    lineHeight: '1.6',
-                  }}>
-                    <strong>Troubleshooting YouTube 400 Error:</strong>
-                    <ul style={{ marginTop: '8px', marginBottom: '0', paddingLeft: '20px' }}>
-                      <li>DeepSpace's YouTube integration requires a valid YOUTUBE_API_KEY</li>
-                      <li>Check if the API key is configured in DeepSpace's system settings</li>
-                      <li>The key should have "YouTube Data API v3" enabled in Google Cloud Console</li>
-                      <li>API key restrictions should be set to "None" or "IP addresses" (not HTTP referrers)</li>
-                      <li>Contact DeepSpace support if the integration needs to be configured</li>
-                    </ul>
+                {/* Detailed help for YouTube 400 error + Fallback */}
+                {socialSearchPlatform === 'youtube' && (
+                  <div>
+                    <div style={{
+                      padding: '16px',
+                      backgroundColor: '#fff7ed',
+                      border: '1px solid #fed7aa',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      color: '#92400e',
+                      lineHeight: '1.6',
+                      marginBottom: '16px',
+                    }}>
+                      <strong>Troubleshooting YouTube 400 Error:</strong>
+                      <ul style={{ marginTop: '8px', marginBottom: '0', paddingLeft: '20px' }}>
+                        <li>DeepSpace's YouTube integration requires a valid YOUTUBE_API_KEY</li>
+                        <li>Check if the API key is configured in DeepSpace's system settings</li>
+                        <li>The key should have "YouTube Data API v3" enabled in Google Cloud Console</li>
+                        <li>API key restrictions should be set to "None" or "IP addresses" (not HTTP referrers)</li>
+                        <li>Contact DeepSpace support if the integration needs to be configured</li>
+                      </ul>
+                    </div>
+                    
+                    {/* Fallback: Open YouTube Search */}
+                    <a
+                      href={`https://www.youtube.com/results?search_query=${encodeURIComponent(socialSearchQuery)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'block',
+                        padding: '14px 20px',
+                        backgroundColor: '#6366f1',
+                        color: '#ffffff',
+                        textAlign: 'center',
+                        textDecoration: 'none',
+                        borderRadius: '10px',
+                        fontSize: '15px',
+                        fontWeight: '500',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      🔍 Search "{socialSearchQuery}" on YouTube.com
+                    </a>
                   </div>
                 )}
               </div>

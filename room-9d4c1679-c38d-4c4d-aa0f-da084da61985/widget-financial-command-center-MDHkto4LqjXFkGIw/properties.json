@@ -15,6 +15,7 @@
   "isLocked": false,
   "color": "black",
   "zoomScale": 1,
+  "isFullscreen": false,
   "savedJsxContentHash": "initial",
   "meta": {
     "initializationState": "ready",
@@ -25,5 +26,5 @@
   },
   "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
   "index": "aU",
-  "lastChangedClock": 947
+  "lastChangedClock": 956
 }
