@@ -16,7 +16,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 // Backend URL (optional).
 // - Leave empty for localhost (same-origin /api/*)
 // - For Deep Space: set to your deployed URL, e.g. const WIDGET_API_BASE = 'https://stock-tracker-xyz.vercel.app';
-const WIDGET_API_BASE = '';
+const WIDGET_API_BASE = 'https://stock-tracker-uo3z.vercel.app/';
 
 function getApiBase() {
   return WIDGET_API_BASE;
@@ -121,6 +121,29 @@ function _fallbackPost(endpoint, body = {}) {
 
 const deepSpace = typeof globalThis.miyagiAPI !== 'undefined';
 
+// Normalize a single YouTube item (miyagi or API shape) to UI shape: { id, videoId, channelId, snippet }
+function _normalizeYoutubeItem(item) {
+  if (!item) return null;
+  const videoId = item.videoId ?? item.id?.videoId;
+  const channelId = item.channelId ?? item.id?.channelId ?? item.snippet?.channelId;
+  const snippet = item.snippet ?? {};
+  return {
+    id: item.id?.videoId ?? item.id?.channelId ?? item.id ?? videoId ?? channelId ?? `yt-${Math.random().toString(36).slice(2)}`,
+    videoId,
+    channelId,
+    snippet: {
+      title: snippet.title ?? item.name ?? item.title ?? '',
+      channelTitle: snippet.channelTitle ?? item.channelTitle ?? '',
+      channelId: snippet.channelId ?? channelId,
+      description: snippet.description ?? item.description ?? '',
+      publishedAt: snippet.publishedAt ?? item.publishedAt ?? '',
+    },
+    links: {
+      watch: videoId ? `https://www.youtube.com/watch?v=${videoId}` : channelId ? `https://www.youtube.com/channel/${channelId}` : undefined,
+    },
+  };
+}
+
 // Normalize Deep Space response so our UI always sees { success, data: { symbols } } etc.
 function _normalizeResponse(endpoint, res) {
   if (!res || !res.success || !res.data) return res;
@@ -130,6 +153,12 @@ function _normalizeResponse(endpoint, res) {
   }
   if ((endpoint === '/news-top-headlines' || endpoint === '/news-search') && !d.articles && Array.isArray(d.results)) {
     return { success: true, data: { ...d, articles: d.results } };
+  }
+  // Miyagi /youtube-search: ensure data.videos exists and items match UI shape
+  if (endpoint === '/youtube-search') {
+    const raw = d.videos ?? d.results ?? d.items ?? [];
+    const videos = Array.isArray(raw) ? raw.map(_normalizeYoutubeItem).filter(Boolean) : [];
+    return { success: true, data: { ...d, videos } };
   }
   return res;
 }
@@ -869,19 +898,26 @@ function FinancialCommandCenter() {
           setSocialResults([]);
         }
       } else if (socialSearchPlatform === 'youtube') {
+        // Miyagi POST /youtube-search: Search YouTube videos
         const response = await miyagiAPI.post('/youtube-search', {
           q: socialSearchQuery,
+          query: socialSearchQuery,
           maxResults: 20,
         });
-        if (response.success && response.data && response.data.videos) {
-          setSocialResults(response.data.videos.map((video, idx) => ({
+        if (response.success && response.data && response.data.videos && response.data.videos.length >= 0) {
+          const videos = response.data.videos;
+          setSocialResults(videos.map((video, idx) => ({
             ...video,
-            id: video.id?.videoId || video.id || `video-${idx}`,
+            id: video.id?.videoId ?? video.id ?? video.videoId ?? `video-${idx}`,
+            videoId: video.videoId ?? video.id?.videoId,
+            channelId: video.channelId ?? video.id?.channelId ?? video.snippet?.channelId,
+            snippet: video.snippet ?? {},
             platform: 'youtube',
           })));
+          setSocialError(null);
         } else {
           const errorMsg = response.error || response.message || 'Failed to search YouTube';
-          setSocialError(`YouTube Error: ${errorMsg}. The DeepSpace YouTube integration may need configuration.`);
+          setSocialError(response.error || response.message || 'YouTube search failed. In Deep Space this uses miyagi /youtube-search.');
           setSocialResults([]);
         }
       }
