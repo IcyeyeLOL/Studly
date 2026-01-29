@@ -3,9 +3,11 @@
  * Uses miyagiAPI.post(endpoint, body) -> { success, data } and useStorage(key, initial, { scope: 'user' }).
  *
  * DEEP SPACE: All APIs (news, stock search, AI, social) first use Deep Space's miyagiAPI when available.
- * If Deep Space doesn't support an endpoint or returns an error, we fall back to YOUR backend when
- * WIDGET_API_BASE is set. Set it to your deployed Stock Tracker URL (e.g. 'https://your-app.vercel.app')
- * so stock search and other features work if Deep Space doesn't provide them.
+ * If Deep Space fails (e.g. "cost...user only has 0 remaining" = credits exhausted), we fall back to
+ * YOUR backend when WIDGET_API_BASE is set.
+ *
+ * TO FIX NEWS IN DEEP SPACE: (1) Deploy this app (e.g. Vercel), (2) Add NEWS_API_KEY in project env vars,
+ * (3) Set WIDGET_API_BASE below to your deployed URL (e.g. 'https://stock-tracker-xyz.vercel.app').
  *
  * LOCALHOST: Leave WIDGET_API_BASE empty; fallback calls same-origin /api/*.
  */
@@ -13,7 +15,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 // Backend URL (optional).
 // - Leave empty for localhost (same-origin /api/*)
-// - Set to your deployed app URL if needed in Deep Space
+// - For Deep Space: set to your deployed URL, e.g. const WIDGET_API_BASE = 'https://stock-tracker-xyz.vercel.app';
 const WIDGET_API_BASE = '';
 
 function getApiBase() {
@@ -1439,7 +1441,11 @@ function FinancialCommandCenter() {
             ) : newsError ? (
               <div style={{ textAlign: 'center', padding: '40px', color: theme.errorText }}>
                 <p style={{ marginBottom: '12px' }}>{newsError}</p>
-                <p style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '16px' }}>Ensure NEWS_API_KEY is set in .env for the news API.</p>
+                <p style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '16px' }}>
+                  {deepSpace && !getApiBase() && /cost|remaining|credits/i.test(newsError || '')
+                    ? 'Deep Space news credits exhausted. Deploy this app (e.g. Vercel), add NEWS_API_KEY in project env vars, then set WIDGET_API_BASE in the widget code to your deployed URL.'
+                    : 'Ensure NEWS_API_KEY is set in .env for the news API.'}
+                </p>
                 <button
                   onClick={loadNews}
                   style={{
