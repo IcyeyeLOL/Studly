@@ -319,6 +319,7 @@ function FinancialCommandCenter() {
   const [watchlist, setWatchlist] = useStorage('financial.watchlist', [], { scope: 'user' });
   const [customSectors, setCustomSectors] = useStorage('financial.customSectors', [], { scope: 'user' });
   const [positions, setPositions] = useStorage('financial.positions', {}, { scope: 'user' });
+  const [stockInfo, setStockInfo] = useStorage('financial.stockInfo', {}, { scope: 'user' });
   const [tickerNotes, setTickerNotes] = useStorage('financial.tickerNotes', {}, { scope: 'user' });
   const [followedAccounts, setFollowedAccounts] = useStorage('financial.followedAccounts', [], { scope: 'user' });
   const [lastAlertCheck, setLastAlertCheck] = useStorage('financial.lastAlertCheck', null, { scope: 'user' });
@@ -454,13 +455,13 @@ function FinancialCommandCenter() {
 
   useEffect(() => {
     if (activeView !== 'portfolio') return;
-    const tickers = Object.keys(positions || {}).filter((t) => (positions || {})[t]?.quantity);
+    const tickers = [...new Set([...(watchlist || []), ...Object.keys(positions || {})])];
     const timeouts = [];
     tickers.forEach((ticker, i) => {
       timeouts.push(setTimeout(() => refreshQuote(ticker, true), i * 380));
     });
     return () => timeouts.forEach((t) => clearTimeout(t));
-  }, [activeView, Object.keys(positions || {}).length]);
+  }, [activeView, (watchlist || []).length, Object.keys(positions || {}).length]);
 
   const loadNews = async () => {
     setLoading(true);
@@ -1084,19 +1085,36 @@ function FinancialCommandCenter() {
         term: ticker,
       });
       if (response.success && response.data && response.data.symbols && response.data.symbols.length > 0) {
+        const found = response.data.symbols.find((r) => r && r.symbol && String(r.symbol).toUpperCase() === ticker);
+        if (found) {
+          setStockInfo((prev) => ({
+            ...(prev || {}),
+            [ticker]: {
+              name: found.name || ticker,
+              region: found.region || undefined,
+              currency: found.currency || undefined,
+            },
+          }));
+        }
         setWatchlist((prev) => [...(prev || []), ticker]);
         setNewTickerInput('');
+        refreshQuote(ticker, true);
       } else {
         const confirmAdd = window.confirm(`Could not verify ticker ${ticker}. Add anyway?`);
         if (confirmAdd) {
           setWatchlist((prev) => [...(prev || []), ticker]);
           setNewTickerInput('');
+          refreshQuote(ticker, true);
         }
       }
     } catch (error) {
       console.error('Error adding ticker:', error);
-      setWatchlist((prev) => [...(prev || []), ticker]);
-      setNewTickerInput('');
+      const confirmAdd = window.confirm(`Error verifying ${ticker}. Add anyway?`);
+      if (confirmAdd) {
+        setWatchlist((prev) => [...(prev || []), ticker]);
+        setNewTickerInput('');
+        refreshQuote(ticker, true);
+      }
     }
   };
 
@@ -1151,6 +1169,28 @@ function FinancialCommandCenter() {
     }
     setPortfolioSearchQuery('');
     setPortfolioSearchResults([]);
+  };
+
+  const addFromPortfolioSearchResult = (result) => {
+    const symbol = (result && result.symbol) || (typeof result === 'string' ? result : '');
+    if (!symbol) return;
+    const sym = String(symbol).toUpperCase();
+    if ((watchlist || []).includes(sym)) {
+      alert(`${sym} is already in your portfolio.`);
+      return;
+    }
+    setWatchlist((prev) => [...(prev || []), sym]);
+    setStockInfo((prev) => ({
+      ...(prev || {}),
+      [sym]: {
+        name: result.name || sym,
+        region: result.region || undefined,
+        currency: result.currency || undefined,
+      },
+    }));
+    setPortfolioSearchQuery('');
+    setPortfolioSearchResults([]);
+    refreshQuote(sym, true);
   };
 
   const addPosition = (ticker, quantity, entryPrice) => {
@@ -1290,7 +1330,10 @@ function FinancialCommandCenter() {
         article.description?.toLowerCase().includes(query)
       );
     }
-    return filtered;
+    // Push articles without images towards the bottom
+    return [...filtered].sort((a, b) =>
+      (a.urlToImage ? 0 : 1) - (b.urlToImage ? 0 : 1)
+    );
   }, [news, selectedCatalysts, searchQuery]);
 
   const clusteredNews = useMemo(() => clusterStories(filteredNews), [filteredNews]);
@@ -2940,19 +2983,21 @@ function FinancialCommandCenter() {
                           <span style={{ fontWeight: '600', fontSize: '14px' }}>{symbol}</span>
                           {result.name && <span style={{ fontSize: '12px', color: theme.textMuted }}>{result.name}</span>}
                           <button
-                            onClick={() => addTickerToPortfolio(symbol)}
+                            onClick={() => addFromPortfolioSearchResult(result)}
+                            disabled={(watchlist || []).includes(symbol.toUpperCase())}
                             style={{
                               padding: '4px 10px',
-                              backgroundColor: '#10b981',
+                              backgroundColor: (watchlist || []).includes(symbol.toUpperCase()) ? theme.textMuted : '#10b981',
                               color: '#ffffff',
                               border: 'none',
                               borderRadius: '4px',
-                              cursor: 'pointer',
+                              cursor: (watchlist || []).includes(symbol.toUpperCase()) ? 'not-allowed' : 'pointer',
                               fontSize: '12px',
                               fontWeight: '500',
+                              opacity: (watchlist || []).includes(symbol.toUpperCase()) ? 0.7 : 1,
                             }}
                           >
-                            Add
+                            {(watchlist || []).includes(symbol.toUpperCase()) ? 'In portfolio' : 'Add'}
                           </button>
                         </div>
                       );
@@ -3098,13 +3143,23 @@ function FinancialCommandCenter() {
                         }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                          <div style={{ fontSize: '20px', fontWeight: '600' }}>{ticker}</div>
+                          <div>
+                            <div style={{ fontSize: '20px', fontWeight: '600' }}>{ticker}</div>
+                            {(stockInfo || {})[ticker]?.name && (
+                              <div style={{ fontSize: '13px', color: theme.textMuted, marginTop: '2px' }}>{(stockInfo || {})[ticker].name}</div>
+                            )}
+                          </div>
                           <button
                             onClick={() => {
                               if (typeof window !== 'undefined' && window.confirm && window.confirm(`Remove ${ticker} from tracking?`)) {
                                 const currentWatchlist = watchlist || [];
                                 setWatchlist(currentWatchlist.filter((t) => t !== ticker));
                                 deletePosition(ticker);
+                                setStockInfo((prev) => {
+                                  const next = { ...(prev || {}) };
+                                  delete next[ticker];
+                                  return next;
+                                });
                               }
                             }}
                             style={{
