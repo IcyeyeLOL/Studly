@@ -84,12 +84,16 @@ function _fallbackPost(endpoint, body = {}) {
     });
   }
   if (endpoint === '/linkedin-search-profiles') {
-    const q = b.name ?? b.q ?? b.query ?? '';
-    return _request(`/api/social/linkedin?q=${encodeURIComponent(q)}`).then(({ ok, data, error }) => {
+    const q = String(b.query ?? b.name ?? b.q ?? '').trim();
+    if (!q) return Promise.resolve({ success: false, error: 'query/name/q is required' });
+    return _request('/api/social/linkedin', {
+      method: 'POST',
+      body: JSON.stringify({ query: q, name: q, q }),
+    }).then(({ ok, data, error }) => {
       if (!ok) return { success: false, error: error || 'Request failed' };
-      const results = (data && data.results) || [];
-      const profiles = results.map((r) => ({ ...r, link: r.searchUrl || r.link }));
-      return { success: true, data: { profiles } };
+      const profiles = (data && data.profiles) || (data && data.results) || [];
+      const normalized = profiles.map((r) => ({ ...r, link: r.searchUrl || r.link || r.profileUrl, platform: 'linkedin' }));
+      return { success: true, data: { profiles: normalized } };
     });
   }
   if (endpoint === '/youtube-search') {
@@ -159,6 +163,12 @@ function _normalizeResponse(endpoint, res) {
     const raw = d.videos ?? d.results ?? d.items ?? [];
     const videos = Array.isArray(raw) ? raw.map(_normalizeYoutubeItem).filter(Boolean) : [];
     return { success: true, data: { ...d, videos } };
+  }
+  // Miyagi /linkedin-search-profiles: ensure data.profiles exists (API may return profiles or results)
+  if (endpoint === '/linkedin-search-profiles') {
+    const raw = d.profiles ?? d.results ?? [];
+    const profiles = Array.isArray(raw) ? raw.map((p) => ({ ...p, link: p.searchUrl || p.link || p.profileUrl, platform: 'linkedin' })) : [];
+    return { success: true, data: { ...d, profiles } };
   }
   return res;
 }
@@ -246,19 +256,21 @@ const CATALYSTS = [
 const THEMES = {
   light: {
     bg: '#ffffff',
-    text: '#000000',
-    textMuted: '#666666',
-    textMutedLight: '#999999',
-    border: '#e5e5e5',
+    text: '#0f172a',
+    textMuted: '#475569',
+    textMutedLight: '#94a3b8',
+    border: '#e2e8f0',
     surface: '#ffffff',
-    secondaryBg: '#fafafa',
-    secondaryBgAlt: '#f9fafb',
+    secondaryBg: '#f8fafc',
+    secondaryBgAlt: '#f1f5f9',
     errorBg: '#fef2f2',
     errorText: '#b91c1c',
+    primary: '#6B46C1',
+    primaryHover: '#5b21b6',
   },
   dark: {
     bg: '#0f172a',
-    text: '#f1f5f9',
+    text: '#f8fafc',
     textMuted: '#94a3b8',
     textMutedLight: '#64748b',
     border: '#334155',
@@ -267,8 +279,27 @@ const THEMES = {
     secondaryBgAlt: '#334155',
     errorBg: '#450a0a',
     errorText: '#fca5a5',
+    primary: '#7c3aed',
+    primaryHover: '#6b21a8',
   },
 };
+
+function timeAgo(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const now = new Date();
+  const sec = Math.floor((now.getTime() - d.getTime()) / 1000);
+  if (sec < 60) return 'Just now';
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const day = Math.floor(hr / 24);
+  if (day < 7) return `${day}d ago`;
+  const week = Math.floor(day / 7);
+  if (week < 4) return `${week}w ago`;
+  return d.toLocaleDateString();
+}
 
 function FinancialCommandCenter() {
   const [themeMode, setThemeMode] = useStorage('financial.widgetTheme', 'light', { scope: 'user' });
@@ -309,6 +340,7 @@ function FinancialCommandCenter() {
   const [portfolioSearching, setPortfolioSearching] = useState(false);
   const [editingPositionData, setEditingPositionData] = useState({});
   const [refreshingQuotes, setRefreshingQuotes] = useState({});
+  const [refreshingAllPortfolioPrices, setRefreshingAllPortfolioPrices] = useState(false);
   const [watchlistSearchQuery, setWatchlistSearchQuery] = useState('');
   const [watchlistSearchResults, setWatchlistSearchResults] = useState([]);
   const [watchlistSearchError, setWatchlistSearchError] = useState(null);
@@ -407,6 +439,16 @@ function FinancialCommandCenter() {
     runPriceAlertCheck('poll');
     return () => clearInterval(id);
   }, [priceAlertPollingEnabled, priceAlertPollingMinutes, priceAlertRules, priceAlertEmailEnabled, priceAlertEmail]);
+
+  useEffect(() => {
+    if (activeView !== 'portfolio') return;
+    const tickers = Object.keys(positions || {}).filter((t) => (positions || {})[t]?.quantity);
+    const timeouts = [];
+    tickers.forEach((ticker, i) => {
+      timeouts.push(setTimeout(() => refreshQuote(ticker, true), i * 380));
+    });
+    return () => timeouts.forEach((t) => clearTimeout(t));
+  }, [activeView, Object.keys(positions || {}).length]);
 
   const loadNews = async () => {
     setLoading(true);
@@ -889,16 +931,22 @@ function FinancialCommandCenter() {
     try {
       if (socialSearchPlatform === 'linkedin') {
         const response = await miyagiAPI.post('/linkedin-search-profiles', {
-          name: socialSearchQuery,
+          query: socialSearchQuery.trim(),
+          name: socialSearchQuery.trim(),
+          q: socialSearchQuery.trim(),
         });
-        if (response.success && response.data && response.data.profiles) {
+        if (response.success && response.data && Array.isArray(response.data.profiles)) {
           setSocialResults(response.data.profiles.map((profile, idx) => ({
             ...profile,
-            id: profile.link || `linkedin-${profile.name}-${idx}`,
+            id: profile.id || profile.link || profile.profileUrl || `linkedin-${(profile.name || '').replace(/\s/g, '-')}-${idx}`,
             platform: 'linkedin',
+            name: profile.name || profile.headline || 'Unknown',
+            headline: profile.headline,
+            searchUrl: profile.searchUrl || profile.link || profile.profileUrl,
           })));
+          setSocialError(null);
         } else {
-          setSocialError(response.error || 'Failed to search LinkedIn profiles');
+          setSocialError(response.error || response.message || 'Failed to search LinkedIn profiles');
           setSocialResults([]);
         }
       } else if (socialSearchPlatform === 'youtube') {
@@ -1131,21 +1179,29 @@ function FinancialCommandCenter() {
     });
   };
 
-  const refreshQuote = async (ticker) => {
+  const refreshQuote = async (ticker, updatePositionPrice = true) => {
     setRefreshingQuotes((prev) => ({ ...prev, [ticker]: true }));
     try {
-      const response = await miyagiAPI.post('/search-stocks', {
-        term: ticker,
-      });
-      if (response.success && response.data && response.data.symbols && response.data.symbols.length > 0) {
-        const mockCurrentPrice = (positions || {})[ticker]?.entryPrice * (1 + (Math.random() * 0.2 - 0.1));
-        updatePosition(ticker, { currentPrice: mockCurrentPrice });
+      const { ok, data } = await _request(`/api/stocks/quote?symbol=${encodeURIComponent(String(ticker).trim().toUpperCase())}`, { method: 'GET' });
+      if (ok && data && Number.isFinite(Number(data.price)) && Number(data.price) > 0) {
+        if (updatePositionPrice) updatePosition(ticker, { currentPrice: Number(data.price) });
       }
     } catch (error) {
       console.error('Error refreshing quote:', error);
     } finally {
       setRefreshingQuotes((prev) => ({ ...prev, [ticker]: false }));
     }
+  };
+
+  const refreshAllPortfolioPrices = async () => {
+    const tickers = Object.keys(positions || {}).filter((t) => (positions || {})[t]?.quantity);
+    if (tickers.length === 0) return;
+    setRefreshingAllPortfolioPrices(true);
+    for (const ticker of tickers) {
+      await refreshQuote(ticker, true);
+      await new Promise((r) => setTimeout(r, 280));
+    }
+    setRefreshingAllPortfolioPrices(false);
   };
 
   const updateTickerNotes = (ticker, notes) => {
@@ -1273,7 +1329,7 @@ function FinancialCommandCenter() {
       marginBottom: '8px',
       border: 'none',
       borderRadius: '10px',
-      backgroundColor: isActive ? '#6366f1' : 'transparent',
+      backgroundColor: isActive ? (theme.primary || '#6B46C1') : 'transparent',
       color: isActive ? '#ffffff' : theme.text,
       cursor: 'pointer',
       textAlign: 'left',
@@ -1302,7 +1358,7 @@ function FinancialCommandCenter() {
     },
     button: (variant = 'primary') => ({
       padding: '12px 24px',
-      backgroundColor: variant === 'primary' ? '#6366f1' : variant === 'danger' ? '#ef4444' : 'transparent',
+      backgroundColor: variant === 'primary' ? (theme.primary || '#6B46C1') : variant === 'danger' ? '#ef4444' : 'transparent',
       color: variant === 'primary' || variant === 'danger' ? '#ffffff' : theme.text,
       border: variant === 'ghost' ? `1px solid ${theme.border}` : 'none',
       borderRadius: '10px',
@@ -1322,10 +1378,10 @@ function FinancialCommandCenter() {
     <div style={styles.container}>
       <div style={styles.sidebar}>
         <div style={{ marginBottom: '40px' }}>
-          <h1 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '8px', letterSpacing: '-0.02em', color: theme.text }}>
-            Command Center
+          <h1 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '4px', letterSpacing: '-0.02em', color: theme.text }}>
+            News + Stock + Social Tracker
           </h1>
-          <p style={{ fontSize: '14px', color: theme.textMuted, marginTop: '4px' }}>Financial market intelligence</p>
+          <p style={{ fontSize: '14px', color: theme.textMuted, marginTop: '4px' }}>Track news, markets, and social profiles in one place.</p>
           <button
             type="button"
             onClick={() => setThemeMode((m) => (m === 'light' ? 'dark' : 'light'))}
@@ -1442,7 +1498,177 @@ function FinancialCommandCenter() {
       </div>
 
       <div style={styles.mainContent}>
-        {(activeView === 'dashboard' || activeView === 'alerts') && (
+        <header style={{ marginBottom: '24px', paddingBottom: '16px', borderBottom: `1px solid ${theme.border}` }}>
+          <h1 style={{ fontSize: '20px', fontWeight: '700', color: theme.text, marginBottom: '4px' }}>News + Stock + Social Tracker</h1>
+          <p style={{ fontSize: '14px', color: theme.textMuted, marginBottom: '16px' }}>Track news, markets, and social profiles in one place.</p>
+          <nav style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+            {[
+              { id: 'dashboard', label: 'News' },
+              { id: 'watchlist', label: 'Stocks' },
+              { id: 'social', label: 'Social' },
+              { id: 'portfolio', label: 'Portfolio' },
+              { id: 'alerts', label: 'Alerts' },
+              { id: 'ticker', label: 'Ticker' },
+              { id: 'digest', label: 'Digest' },
+            ].map(({ id, label }) => (
+              <button
+                key={id}
+                onClick={() => setActiveView(id)}
+                style={{
+                  paddingBottom: '8px',
+                  fontSize: '14px',
+                  fontWeight: activeView === id ? '600' : '400',
+                  color: activeView === id ? (theme.primary || '#6B46C1') : theme.textMuted,
+                  border: 'none',
+                  borderBottom: `2px solid ${activeView === id ? (theme.primary || '#6B46C1') : 'transparent'}`,
+                  background: 'none',
+                  cursor: 'pointer',
+                  marginBottom: '-2px',
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
+        </header>
+
+        {activeView === 'dashboard' && (
+          <div>
+            {newsError && (
+              <div style={{ marginBottom: '16px', padding: '12px 16px', backgroundColor: theme.errorBg, border: `1px solid ${theme.border}`, borderRadius: '8px', fontSize: '13px', color: theme.errorText }}>
+                {newsError}
+              </div>
+            )}
+
+            <section style={{ marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '11px', fontWeight: '600', letterSpacing: '0.05em', color: theme.textMuted, marginBottom: '12px', textTransform: 'uppercase' }}>Search News</h2>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <input
+                  type="text"
+                  placeholder="Search for specific topics, companies, or keywords..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{ ...styles.input, flex: 1 }}
+                />
+                <button
+                  onClick={loadNews}
+                  disabled={loading}
+                  style={{
+                    padding: '12px 24px',
+                    backgroundColor: theme.primary || '#6B46C1',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                  }}
+                >
+                  {loading ? 'Loading...' : 'Search'}
+                </button>
+              </div>
+            </section>
+
+            <section style={{ marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '11px', fontWeight: '600', letterSpacing: '0.05em', color: theme.textMuted, marginBottom: '12px', textTransform: 'uppercase' }}>Category</h2>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {(allSectorsList || []).slice(0, 8).map((sector) => {
+                  const isSelected = (selectedSectors || []).includes(sector.id);
+                  return (
+                    <button
+                      key={sector.id}
+                      type="button"
+                      onClick={() => {
+                        if (isSelected) setSelectedSectors((prev) => (prev || []).filter((s) => s !== sector.id));
+                        else setSelectedSectors((prev) => [...(prev || []), sector.id]);
+                      }}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '9999px',
+                        fontSize: '13px',
+                        fontWeight: '500',
+                        border: `1px solid ${isSelected ? (theme.primary || '#6B46C1') : theme.border}`,
+                        backgroundColor: isSelected ? (theme.primary || '#6B46C1') : theme.surface,
+                        color: isSelected ? '#ffffff' : theme.textMuted,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {sector.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
+            {loading && (news || []).length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '48px', color: theme.textMutedLight }}>Loading news...</div>
+            ) : (filteredNews || []).length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '48px', color: theme.textMutedLight }}>No news found. Try adjusting filters or search.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {(filteredNews || []).map((article, idx) => (
+                  <article
+                    key={(article.url || '') + idx}
+                    style={{
+                      display: 'flex',
+                      gap: '16px',
+                      padding: '16px',
+                      backgroundColor: theme.surface,
+                      border: `1px solid ${theme.border}`,
+                      borderRadius: '12px',
+                      boxShadow: themeMode === 'dark' ? '0 1px 3px rgba(0,0,0,0.2)' : '0 1px 3px rgba(0,0,0,0.06)',
+                    }}
+                  >
+                    <a href={article.url} target="_blank" rel="noopener noreferrer" style={{ flexShrink: 0, width: '96px', height: '96px', borderRadius: '8px', overflow: 'hidden', backgroundColor: theme.secondaryBgAlt }}>
+                      {article.urlToImage ? (
+                        <img src={article.urlToImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: theme.textMutedLight }}>No image</div>
+                      )}
+                    </a>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <a href={article.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
+                        <h3 style={{ fontSize: '15px', fontWeight: '600', color: theme.text, marginBottom: '6px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{article.title}</h3>
+                      </a>
+                      {article.description && (
+                        <p style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '8px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{article.description}</p>
+                      )}
+                      <p style={{ fontSize: '12px', color: theme.textMutedLight }}>
+                        {(article.source && article.source.name) || 'Unknown'} Â· {timeAgo(article.publishedAt)}
+                      </p>
+                    </div>
+                    <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+                      <a
+                        href={article.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          fontSize: '13px',
+                          fontWeight: '500',
+                          backgroundColor: themeMode === 'dark' ? 'rgba(245, 158, 11, 0.15)' : '#fef9c3',
+                          color: themeMode === 'dark' ? '#fcd34d' : '#92400e',
+                          border: `1px solid ${themeMode === 'dark' ? 'rgba(245, 158, 11, 0.4)' : '#fde047'}`,
+                          textDecoration: 'none',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <span style={{ color: themeMode === 'dark' ? '#fbbf24' : '#b45309' }}>âœ¦</span>
+                        AI Summary
+                      </a>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeView === 'alerts' && (
           <div style={{ marginBottom: '32px' }}>
             <input
               type="text"
@@ -1451,150 +1677,6 @@ function FinancialCommandCenter() {
               onChange={(e) => setSearchQuery(e.target.value)}
               style={styles.input}
             />
-          </div>
-        )}
-
-        {activeView === 'dashboard' && (
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontSize: '24px', fontWeight: '600' }}>Market Dashboard</h2>
-              <button
-                onClick={loadNews}
-                disabled={loading}
-                style={{
-                  padding: '10px 20px',
-                  backgroundColor: '#6366f1',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                }}
-              >
-                {loading ? 'Loading...' : 'Refresh'}
-              </button>
-            </div>
-
-            {loading && (news || []).length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px', color: theme.textMutedLight }}>Loading news...</div>
-            ) : newsError ? (
-              <div style={{ textAlign: 'center', padding: '40px', color: theme.errorText }}>
-                <p style={{ marginBottom: '12px' }}>{newsError}</p>
-                <p style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '16px' }}>
-                  {deepSpace && !getApiBase() && /cost|remaining|credits/i.test(newsError || '')
-                    ? 'Deep Space news credits exhausted. Deploy this app (e.g. Vercel), add NEWS_API_KEY in project env vars, then set WIDGET_API_BASE in the widget code to your deployed URL.'
-                    : 'Ensure NEWS_API_KEY is set in .env for the news API.'}
-                </p>
-                <button
-                  onClick={loadNews}
-                  style={{
-                    padding: '10px 20px',
-                    backgroundColor: '#6366f1',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                  }}
-                >
-                  Retry
-                </button>
-              </div>
-            ) : (clusteredNews || []).length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px', color: theme.textMutedLight }}>No news found. Try adjusting filters or click Refresh.</div>
-            ) : (
-              <div>
-                {(clusteredNews || []).map((cluster, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      marginBottom: '24px',
-                      padding: '20px',
-                      backgroundColor: theme.surface,
-                      border: `1px solid ${theme.border}`,
-                      borderRadius: '12px',
-                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                      <h3 style={{ fontSize: '18px', fontWeight: '600' }}>
-                        {(cluster.key || '').charAt(0).toUpperCase() + (cluster.key || '').slice(1)} ({cluster.size || 0} stories)
-                      </h3>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        {(cluster.topCatalysts || []).map((catId) => {
-                          const cat = (CATALYSTS || []).find((c) => c.id === catId);
-                          return cat ? (
-                            <span
-                              key={catId}
-                              style={{
-                                padding: '4px 8px',
-                                backgroundColor: (cat.color || '') + '20',
-                                color: cat.color,
-                                borderRadius: '4px',
-                                fontSize: '11px',
-                                fontWeight: '500',
-                              }}
-                            >
-                              {cat.name}
-                            </span>
-                          ) : null;
-                        })}
-                      </div>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
-                      {(cluster.stories || []).slice(0, 6).map((article, aidx) => (
-                        <a
-                          key={aidx}
-                          href={article.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            padding: '16px',
-                            backgroundColor: theme.secondaryBgAlt,
-                            border: `1px solid ${theme.border}`,
-                            borderRadius: '8px',
-                            textDecoration: 'none',
-                            color: theme.text,
-                            display: 'block',
-                            transition: 'transform 0.2s',
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
-                          onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
-                        >
-                          <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px', lineHeight: '1.4' }}>{article.title}</div>
-                          <div style={{ fontSize: '12px', color: theme.textMuted, marginBottom: '8px' }}>
-                            {(article.source && article.source.name) || 'Unknown'} | {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString() : ''}
-                          </div>
-                          {article.catalysts && article.catalysts.length > 0 && (
-                            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                              {article.catalysts.map((catId) => {
-                                const cat = (CATALYSTS || []).find((c) => c.id === catId);
-                                return cat ? (
-                                  <span
-                                    key={catId}
-                                    style={{
-                                      padding: '2px 6px',
-                                      backgroundColor: (cat.color || '') + '20',
-                                      color: cat.color,
-                                      borderRadius: '3px',
-                                      fontSize: '10px',
-                                    }}
-                                  >
-                                    {cat.name}
-                                  </span>
-                                ) : null;
-                              })}
-                            </div>
-                          )}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         )}
 
@@ -2479,7 +2561,7 @@ function FinancialCommandCenter() {
                 onClick={() => setSocialSearchPlatform('linkedin')}
                 style={{
                   padding: '10px 20px',
-                  backgroundColor: socialSearchPlatform === 'linkedin' ? '#6366f1' : 'transparent',
+                  backgroundColor: socialSearchPlatform === 'linkedin' ? (theme.primary || '#6B46C1') : 'transparent',
                   color: socialSearchPlatform === 'linkedin' ? '#ffffff' : theme.text,
                   border: `1px solid ${theme.border}`,
                   borderRadius: '8px',
@@ -2494,7 +2576,7 @@ function FinancialCommandCenter() {
                 onClick={() => setSocialSearchPlatform('youtube')}
                 style={{
                   padding: '10px 20px',
-                  backgroundColor: socialSearchPlatform === 'youtube' ? '#6366f1' : 'transparent',
+                  backgroundColor: socialSearchPlatform === 'youtube' ? (theme.primary || '#6B46C1') : 'transparent',
                   color: socialSearchPlatform === 'youtube' ? '#ffffff' : theme.text,
                   border: `1px solid ${theme.border}`,
                   borderRadius: '8px',
@@ -2506,6 +2588,12 @@ function FinancialCommandCenter() {
                 YouTube
               </button>
             </div>
+
+            {socialSearchPlatform === 'linkedin' && (
+              <div style={{ marginBottom: '16px', padding: '12px 16px', backgroundColor: themeMode === 'dark' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(245, 158, 11, 0.1)', border: `1px solid ${themeMode === 'dark' ? 'rgba(245, 158, 11, 0.4)' : 'rgba(245, 158, 11, 0.35)'}`, borderRadius: '8px', fontSize: '13px', color: themeMode === 'dark' ? '#fcd34d' : '#92400e' }}>
+                LinkedIn doesn&apos;t offer a public search API. We open LinkedIn&apos;s own search in a new tab. Results and ranking are from LinkedIn; we don&apos;t control quality (e.g. fake or irrelevant profiles may appear).
+              </div>
+            )}
 
             <div
               style={{
@@ -2520,7 +2608,7 @@ function FinancialCommandCenter() {
               <div style={{ display: 'flex', gap: '12px' }}>
                 <input
                   type="text"
-                  placeholder={socialSearchPlatform === 'linkedin' ? 'Search LinkedIn profiles...' : 'Search YouTube channels/videos...'}
+                  placeholder={socialSearchPlatform === 'linkedin' ? "Name or topic â€” we'll open LinkedIn search" : 'Search YouTube channels/videos...'}
                   value={socialSearchQuery}
                   onChange={(e) => setSocialSearchQuery(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && searchSocial()}
@@ -2548,7 +2636,7 @@ function FinancialCommandCenter() {
                     fontWeight: '500',
                   }}
                 >
-                  {socialLoading ? 'Searching...' : 'Search'}
+                  {socialLoading ? 'Searching...' : socialSearchPlatform === 'linkedin' ? 'Open LinkedIn search' : 'Search'}
                 </button>
               </div>
             </div>
@@ -2634,7 +2722,40 @@ function FinancialCommandCenter() {
               </div>
             )}
 
-            {socialResults && socialResults.length > 0 && (
+            {socialResults && socialResults.length > 0 && (() => {
+              const linkedinSearchUrl = socialResults.length === 1 && socialResults[0].platform === 'linkedin' && (socialResults[0].searchUrl || socialResults[0].link);
+              if (linkedinSearchUrl) {
+                return (
+                  <div>
+                    <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>LinkedIn</h3>
+                    <div style={{ maxWidth: '420px', padding: '20px', backgroundColor: theme.surface, border: `1px solid ${theme.border}`, borderRadius: '12px', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)' }}>
+                      <p style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '16px' }}>
+                        We can&apos;t search LinkedIn from here. Click below to open LinkedIn&apos;s search for &quot;{socialSearchQuery}&quot; in a new tab. Results and ranking are from LinkedIn; we don&apos;t control quality.
+                      </p>
+                      <a
+                        href={linkedinSearchUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '10px 18px',
+                          borderRadius: '8px',
+                          backgroundColor: '#0A66C2',
+                          color: '#fff',
+                          fontWeight: '600',
+                          textDecoration: 'none',
+                          fontSize: '14px',
+                        }}
+                      >
+                        Open LinkedIn search
+                      </a>
+                    </div>
+                  </div>
+                );
+              }
+              return (
               <div>
                 <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>Search Results</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '16px' }}>
@@ -2642,7 +2763,7 @@ function FinancialCommandCenter() {
                     const isLinkedIn = result.platform === 'linkedin';
                     const isFollowing = (followedAccounts || []).some((acc) => acc.id === result.id && acc.platform === result.platform);
                     const linkUrl = isLinkedIn
-                      ? `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(result.name || result.headline || socialSearchQuery)}`
+                      ? (result.searchUrl || result.link) || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(result.name || result.headline || socialSearchQuery)}`
                       : result.videoId
                         ? `https://www.youtube.com/watch?v=${result.videoId}`
                         : (result.channelId || (result.snippet && result.snippet.channelId))
@@ -2706,7 +2827,7 @@ function FinancialCommandCenter() {
                           style={{
                             width: '100%',
                             padding: '8px',
-                            backgroundColor: isFollowing ? '#ef4444' : '#6366f1',
+                            backgroundColor: isFollowing ? '#ef4444' : (theme.primary || '#6B46C1'),
                             color: '#ffffff',
                             border: 'none',
                             borderRadius: '6px',
@@ -2722,7 +2843,8 @@ function FinancialCommandCenter() {
                   })}
                 </div>
               </div>
-            )}
+              );
+            })()}
 
             {!socialLoading && (!socialResults || socialResults.length === 0) && socialSearchQuery && (
               <div style={{ textAlign: 'center', padding: '40px', color: theme.textMutedLight }}>No results found. Try a different search query.</div>
@@ -2894,7 +3016,27 @@ function FinancialCommandCenter() {
                       boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
                     }}
                   >
-                    <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>Portfolio Summary</h3>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '16px' }}>
+                      <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Portfolio Summary</h3>
+                      <button
+                        type="button"
+                        onClick={refreshAllPortfolioPrices}
+                        disabled={refreshingAllPortfolioPrices || !Object.keys(positions || {}).some((t) => (positions || {})[t]?.quantity)}
+                        style={{
+                          padding: '8px 14px',
+                          fontSize: '13px',
+                          fontWeight: '500',
+                          backgroundColor: '#059669',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          cursor: refreshingAllPortfolioPrices ? 'not-allowed' : 'pointer',
+                          opacity: refreshingAllPortfolioPrices ? 0.7 : 1,
+                        }}
+                      >
+                        {refreshingAllPortfolioPrices ? 'Updatingâ€¦' : 'Refresh all prices'}
+                      </button>
+                    </div>
                     {(() => {
                       const pos = positions || {};
                       const totalCost = Object.values(pos).reduce((sum, p) => sum + (p.costBasis || (p.quantity || 0) * (p.entryPrice || 0)), 0);
@@ -3005,22 +3147,29 @@ function FinancialCommandCenter() {
                               />
                             </div>
                             <div style={{ marginBottom: '12px' }}>
-                              <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px' }}>Current Price</label>
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={position.currentPrice || ''}
-                                onChange={(e) => updatePosition(ticker, { ...position, currentPrice: parseFloat(e.target.value) || 0 })}
-                                style={{
-                                  width: '100%',
-                                  padding: '8px',
-                                  border: `1px solid ${theme.border}`,
-                                  borderRadius: '6px',
-                                  fontSize: '14px',
-                                  backgroundColor: theme.surface,
-                                  color: theme.text,
-                                }}
-                              />
+                              <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px' }}>Current price</label>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: '13px', color: theme.textMuted }}>
+                                  {refreshingQuotes[ticker] ? 'Loadingâ€¦' : (position.currentPrice != null && position.currentPrice !== '') ? `$${Number(position.currentPrice).toFixed(2)} (live)` : 'â€”'}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => refreshQuote(ticker, true)}
+                                  disabled={refreshingQuotes[ticker]}
+                                  style={{
+                                    padding: '4px 10px',
+                                    fontSize: '12px',
+                                    border: `1px solid ${theme.border}`,
+                                    borderRadius: '6px',
+                                    backgroundColor: theme.surface,
+                                    color: theme.text,
+                                    cursor: refreshingQuotes[ticker] ? 'not-allowed' : 'pointer',
+                                  }}
+                                >
+                                  Refresh
+                                </button>
+                              </div>
+                              <div style={{ fontSize: '11px', color: theme.textMutedLight, marginTop: '4px' }}>Fetched from market; no need to enter.</div>
                             </div>
                             <div style={{ marginBottom: '12px' }}>
                               <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px' }}>Target Price</label>
