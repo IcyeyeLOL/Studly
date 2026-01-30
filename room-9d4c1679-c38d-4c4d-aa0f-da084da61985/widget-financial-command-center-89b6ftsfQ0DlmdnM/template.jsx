@@ -165,6 +165,10 @@ function _normalizeResponse(endpoint, res) {
 
 const miyagiAPI = {
   post: async (endpoint, body = {}) => {
+    // In Deep Space, YouTube search is not provided by miyagi â€” always use user's backend when set
+    if (endpoint === '/youtube-search' && getApiBase()) {
+      return _fallbackPost(endpoint, body);
+    }
     if (deepSpace) {
       try {
         const res = await globalThis.miyagiAPI.post(endpoint, body);
