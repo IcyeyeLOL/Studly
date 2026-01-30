@@ -335,7 +335,7 @@ function FinancialCommandCenter() {
   const [selectedTicker, setSelectedTicker] = useState(null);
   const [tickerBrief, setTickerBrief] = useState(null);
   const [digest, setDigest] = useState(null);
-  const [socialSearchPlatform, setSocialSearchPlatform] = useState('linkedin');
+  const [socialSearchPlatform, setSocialSearchPlatform] = useState('youtube');
   const [socialSearchQuery, setSocialSearchQuery] = useState('');
   const [socialResults, setSocialResults] = useState([]);
   const [socialLoading, setSocialLoading] = useState(false);
@@ -1608,7 +1608,7 @@ function FinancialCommandCenter() {
                         <p style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '8px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{article.description}</p>
                       )}
                       <p style={{ fontSize: '12px', color: theme.textMutedLight }}>
-                        {(article.source && article.source.name) || 'Unknown'} Â· {timeAgo(article.publishedAt)}
+                        {(article.source && article.source.name) || 'Unknown'} - {timeAgo(article.publishedAt)}
                       </p>
                     </div>
                     <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
@@ -1631,7 +1631,7 @@ function FinancialCommandCenter() {
                           cursor: 'pointer',
                         }}
                       >
-                        <span style={{ color: themeMode === 'dark' ? '#fbbf24' : '#b45309' }}>âœ¦</span>
+                        <span style={{ color: themeMode === 'dark' ? '#fbbf24' : '#b45309' }}>*</span>
                         AI Summary
                       </a>
                     </div>
@@ -2532,21 +2532,6 @@ function FinancialCommandCenter() {
             <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '24px' }}>Social Tracking</h2>
             <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
               <button
-                onClick={() => setSocialSearchPlatform('linkedin')}
-                style={{
-                  padding: '10px 20px',
-                  backgroundColor: socialSearchPlatform === 'linkedin' ? (theme.primary || '#6B46C1') : 'transparent',
-                  color: socialSearchPlatform === 'linkedin' ? '#ffffff' : theme.text,
-                  border: `1px solid ${theme.border}`,
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                }}
-              >
-                LinkedIn
-              </button>
-              <button
                 onClick={() => setSocialSearchPlatform('youtube')}
                 style={{
                   padding: '10px 20px',
@@ -2560,6 +2545,21 @@ function FinancialCommandCenter() {
                 }}
               >
                 YouTube
+              </button>
+              <button
+                onClick={() => setSocialSearchPlatform('linkedin')}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: socialSearchPlatform === 'linkedin' ? (theme.primary || '#6B46C1') : 'transparent',
+                  color: socialSearchPlatform === 'linkedin' ? '#ffffff' : theme.text,
+                  border: `1px solid ${theme.border}`,
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                }}
+              >
+                LinkedIn
               </button>
             </div>
 
