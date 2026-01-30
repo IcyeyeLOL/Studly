@@ -175,7 +175,7 @@ function _normalizeResponse(endpoint, res) {
 
 const miyagiAPI = {
   post: async (endpoint, body = {}) => {
-    // In Deep Space, YouTube search is not provided by miyagi â€” always use user's backend when set
+    // In Deep Space, YouTube search is not provided by miyagi - always use user's backend when set
     if (endpoint === '/youtube-search' && getApiBase()) {
       return _fallbackPost(endpoint, body);
     }
@@ -195,6 +195,17 @@ const miyagiAPI = {
     return _fallbackPost(endpoint, body);
   },
 };
+
+/** Fix UTF-8 mojibake (e.g. Ã¢â‚¬" instead of â€”) so text displays correctly on simple page / any encoding. */
+function fixMojibake(str) {
+  if (str == null || typeof str !== 'string') return '';
+  return String(str)
+    .replace(/\u00E2\u20AC\u201D/g, '-')
+    .replace(/\u00E2\u20AC\u00A6/g, '...')
+    .replace(/\u00E2\u20AC\u201C/g, '"')
+    .replace(/\u2013|\u2014/g, '-')
+    .replace(/\u2026/g, '...');
+}
 
 const useStorage = typeof globalThis.useStorage !== 'undefined' ? globalThis.useStorage : function useStorage(key, initialValue, opts) {
   const [storedValue, setStoredValue] = useState(initialValue);
@@ -2571,7 +2582,7 @@ function FinancialCommandCenter() {
               <div style={{ display: 'flex', gap: '12px' }}>
                 <input
                   type="text"
-                  placeholder={socialSearchPlatform === 'linkedin' ? "Name or topic â€” we'll open LinkedIn search" : 'Search YouTube channels/videos...'}
+                  placeholder={fixMojibake(socialSearchPlatform === 'linkedin' ? "Name or topic - we'll open LinkedIn search" : 'Search YouTube channels/videos...')}
                   value={socialSearchQuery}
                   onChange={(e) => setSocialSearchQuery(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && searchSocial()}
@@ -3035,7 +3046,7 @@ function FinancialCommandCenter() {
                           opacity: refreshingAllPortfolioPrices ? 0.7 : 1,
                         }}
                       >
-                        {refreshingAllPortfolioPrices ? 'Updatingâ€¦' : 'Refresh all prices'}
+                        {refreshingAllPortfolioPrices ? 'Updating...' : 'Refresh all prices'}
                       </button>
                     </div>
                     {(() => {
@@ -3151,7 +3162,7 @@ function FinancialCommandCenter() {
                               <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px' }}>Current price</label>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                                 <span style={{ fontSize: '13px', color: theme.textMuted }}>
-                                  {refreshingQuotes[ticker] ? 'Loadingâ€¦' : (position.currentPrice != null && position.currentPrice !== '') ? `$${Number(position.currentPrice).toFixed(2)} (live)` : 'â€”'}
+                                  {refreshingQuotes[ticker] ? 'Loading...' : (position.currentPrice != null && position.currentPrice !== '') ? `$${Number(position.currentPrice).toFixed(2)} (live)` : '-'}
                                 </span>
                                 <button
                                   type="button"
