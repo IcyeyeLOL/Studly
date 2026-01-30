@@ -33,12 +33,12 @@ room-xxx/
 
 ## How to Edit Files
 
-### 1. Find the Current Room
-The current room is in `/app/container_vars.json` under `currentRoom`.
+### 1. Find the Current Room Path
+Read `/app/container_vars.json` to get `currentRoomPath` - this is the full path to your room.
 
 ### 2. Locate the Files Directory
 ```
-/app/workspace/repo/<currentRoom>/files/
+<currentRoomPath>/files/
 ```
 
 ### 3. Edit Files Using File Tools

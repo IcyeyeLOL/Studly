@@ -9,9 +9,9 @@ This repository enforces strict agent constraints. Read this document together w
   - Do not use raw shell (e.g., `node`, `npm`, etc.).
   - Do not chain commands (no `&&`, `|`, `;`). Send one high‑level command at a time.
 - Room scope only:
-  - Active room ID is stored at `/app/container_vars.json` under `currentRoom`.
-  - Work strictly under `/app/workspace/repo/<currentRoom>` (and nested `room-*` subrooms if any).
-  - Never modify files outside the current room subtree.
+  - Your room path is stored at `/app/container_vars.json` under `currentRoomPath`.
+  - Work strictly within `currentRoomPath` (not in nested `room-*` subrooms).
+  - Never modify files outside the current room.
 - Outputs are auto‑managed by hooks:
   - Do not attempt to run bundlers; `template.html` is generated automatically on commit.
   - Do not attempt to run any git commands; this is handled for you automatically when you complete the request
@@ -30,33 +30,27 @@ This repository enforces strict agent constraints. Read this document together w
 
 ## Document Inspection
 
-- `inspect document <assetId>` - Fetch and process document from canvas
+- `inspect document <asset_id_or_file_path>` - Fetch and process documents from canvas or chat attachments
+  - **Accepts either**:
+    - Asset ID (e.g., `GM2wo-KippGsBKzYPvYv3`) - fetches from canvas/R2
+    - File path (e.g., `.chat-attachments/document.pdf`) - reads local file
   - Supported types: PDF, DOCX, images, text files
   - What it does:
     - **PDF/DOCX**: Extracts text + metadata
     - **Images**: Fetches image (viewable with Read - Claude has vision)
     - **Text**: Fetches text content
   - Saves results to `.canvas-documents/`
-  - Example: `inspect document abc123`
-  - Example: `inspect document abc123 --extract-images`
+  - **Examples**:
+    - `inspect document GM2wo-KippGsBKzYPvYv3` (canvas asset)
+    - `inspect document .chat-attachments/report.pdf` (chat attachment)
+    - `inspect document .chat-attachments/doc.pdf --extract-images` (with image extraction)
   - Options (PDF only):
     - `--extract-images` - Extract embedded images from PDFs
     - `--extract-attachments` - Extract embedded files from PDFs
 - After extraction, use Read tool to view the content
-  - PDF/DOCX: `Read .canvas-documents/abc123.txt`
-  - Images: `Read .canvas-documents/abc123.png`
-  - Metadata: `Read .canvas-documents/abc123.json`
-
----
-
-## Room Navigation
-
-- `locate-room` - Find the full path to your current room
-  - Uses room ID from `/app/container_vars.json`
-  - Returns full path like `/app/workspace/repo/parent-room/your-room`
-  - Example: `locate-room`
-  - Example: `locate-room room-487be075-a712-4234-aa53-2017d8021e2e`
-- Use this to find your workspace before starting work
+  - PDF/DOCX: `Read .canvas-documents/{assetId}.txt`
+  - Images: `Read .canvas-documents/{assetId}.png`
+  - Metadata: `Read .canvas-documents/{assetId}.json`
 
 ---
 

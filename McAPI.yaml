@@ -556,7 +556,7 @@ categories:
         description: "Get detailed author information"
   search:
     file: integrations/search.yaml
-    endpoint_count: 8
+    endpoint_count: 13
     endpoints:
       - name: search_web
         method: POST
@@ -570,6 +570,26 @@ categories:
         method: POST
         endpoint: /search-web-ai
         description: "Search web pages and process results with ChatGPT using custom prompt"
+      - name: exa_search
+        method: POST
+        endpoint: /exa-search
+        description: "Search the web using Exa AI with neural search capabilities. Supports categories, content extraction (text, highlights, summaries), and advanced filtering."
+      - name: exa_find_similar
+        method: POST
+        endpoint: /exa-find-similar
+        description: "Find similar links to the provided URL using Exa AI. Supports content extraction (text, highlights, summaries) and advanced filtering for discovered links."
+      - name: exa_contents
+        method: POST
+        endpoint: /exa-contents
+        description: "Get full page contents, summaries, and metadata for a list of URLs using Exa AI. Returns instant results from cache."
+      - name: exa_answer
+        method: POST
+        endpoint: /exa-answer
+        description: "Get an LLM answer to a question informed by Exa search results. Performs search and generates either a direct answer for specific queries or a detailed summary with citations for open-ended queries."
+      - name: exa_research
+        method: POST
+        endpoint: /exa-research
+        description: "Create a research task that explores the web, gathers sources, and synthesizes findings. Waits for completion and returns the full research content. Research can take up to 10 minutes for complex queries."
       - name: search_images
         method: POST
         endpoint: /search-images
@@ -590,6 +610,26 @@ categories:
         method: POST
         endpoint: /advanced-web-search
         description: "Advanced multi-modal web search with structured output for widgets"
+  slack:
+    file: integrations/slack.yaml
+    endpoint_count: 4
+    endpoints:
+      - name: slack_channels
+        method: GET
+        endpoint: /slack-channels
+        description: "List Slack channels the user has access to"
+      - name: slack_send_message
+        method: POST
+        endpoint: /slack-send-message
+        description: "Send a message to a Slack channel"
+      - name: slack_channel_history
+        method: POST
+        endpoint: /slack-channel-history
+        description: "Get message history from a Slack channel with resolved user names"
+      - name: slack_team_info
+        method: GET
+        endpoint: /slack-team-info
+        description: "Get Slack workspace/team information"
   social-media:
     file: integrations/social-media.yaml
     endpoint_count: 1

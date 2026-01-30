@@ -32,9 +32,10 @@ async function inspectImage(assetId) {
       console.error('❌ Error: No userId set in container vars');
       process.exit(1);
     }
-    roomPath = findRoomPath(currentRoom);
+    // Get room path from container vars
+    roomPath = containerVars.currentRoomPath;
     if (!roomPath) {
-      console.error(`❌ Error: Could not find room directory for: ${currentRoom}`);
+      console.error(`❌ Error: No currentRoomPath set in container vars`);
       process.exit(1);
     }
   } catch (err) {
@@ -148,16 +149,6 @@ async function inspectImage(assetId) {
   } catch (err) {
     console.error(`❌ Error: ${err.message}`);
     process.exit(1);
-  }
-}
-
-function findRoomPath(roomName) {
-  const { execSync } = require('child_process');
-  try {
-    const result = execSync(`find /app/workspace/repo -type d -name "${roomName}" 2>/dev/null`, { encoding: 'utf8' }).trim();
-    return result ? result.split('\n')[0] : null;
-  } catch {
-    return null;
   }
 }
 

@@ -74,32 +74,6 @@ function getNextWidgetIndex(roomPath) {
 }
 
 /**
- * Find the full path to a room directory by searching for it
- * @param {string} roomName - The room name to search for
- * @returns {string|null} The full path to the room directory, or null if not found
- */
-function findRoomPath(roomName) {
-  const { execSync } = require('child_process');
-  
-  try {
-    // Use find command to search for directory under /app/workspace/repo
-    const findCommand = `find /app/workspace/repo -type d -name "${roomName}" 2>/dev/null`;
-    const result = execSync(findCommand, { encoding: 'utf8' }).trim();
-    
-    if (result) {
-      // Return the first match (there should only be one)
-      const paths = result.split('\n');
-      return paths[0];
-    }
-    
-    return null;
-  } catch (error) {
-    // If find command fails, return null
-    return null;
-  }
-}
-
-/**
  * Generate widget directory and files
  * @param {string} templateHandle - Template handle (required)
  * @param {string} roomPath - The path to the room directory (optional)
@@ -131,21 +105,12 @@ function generateWidget(templateHandle, roomPath) {
     console.log(`🎨 Using style: ${currentStyle.name} (${currentStyle.id})`);
   }
 
-  // If no roomPath provided, try to find it using current room from container vars
+  // If no roomPath provided, use currentRoomPath from container vars
   if (!roomPath) {
-    const currentRoom = containerVars.currentRoom;
-    if (!currentRoom) {
-      console.error('Error: No roomPath provided and no current room set in container vars');
-      console.log('Either provide roomPath as second argument or ensure current room is set');
-      process.exit(1);
-    }
-
-    console.log(`🔍 Searching for room: ${currentRoom}`);
-    roomPath = findRoomPath(currentRoom);
-
+    roomPath = containerVars.currentRoomPath;
     if (!roomPath) {
-      console.error(`Error: Could not find room directory for: ${currentRoom}`);
-      console.log('Searched in: /app/workspace/repo');
+      console.error('Error: No roomPath provided and no currentRoomPath set in container vars');
+      console.log('Either provide roomPath as second argument or ensure current room is set');
       process.exit(1);
     }
 

@@ -1,0 +1,195 @@
+# slack integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: Call using miyagiAPI:
+#   miyagiAPI.post('/endpoint', { ...params })
+#   miyagiAPI.get('/endpoint', { ...params })
+
+tools:
+
+  slack_channels:
+    method: GET
+    endpoint: /slack-channels
+    description: "List Slack channels the user has access to"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            channels:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  is_private:
+                    type: boolean
+                  num_members:
+                    type: number
+                required:
+                  - id
+                  - name
+                  - is_private
+                additionalProperties: false
+            nextCursor:
+              type: string
+          required:
+            - channels
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  slack_send_message:
+    method: POST
+    endpoint: /slack-send-message
+    description: "Send a message to a Slack channel"
+    input_schema:
+      type: object
+      properties:
+        channel:
+          type: string
+          minLength: 1
+        text:
+          type: string
+          minLength: 1
+        thread_ts:
+          type: string
+        unfurl_links:
+          type: boolean
+        unfurl_media:
+          type: boolean
+      required:
+        - channel
+        - text
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            ts:
+              type: string
+            channel:
+              type: string
+            text:
+              type: string
+          required:
+            - ts
+            - channel
+            - text
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  slack_channel_history:
+    method: POST
+    endpoint: /slack-channel-history
+    description: "Get message history from a Slack channel with resolved user names"
+    input_schema:
+      type: object
+      properties:
+        channel:
+          type: string
+          minLength: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 200
+        cursor:
+          type: string
+        oldest:
+          type: string
+        latest:
+          type: string
+      required:
+        - channel
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            messages:
+              type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  user:
+                    type: string
+                  username:
+                    type: string
+                  userAvatar:
+                    type: string
+                  text:
+                    type: string
+                  ts:
+                    type: string
+                required:
+                  - type
+                  - text
+                  - ts
+                additionalProperties: false
+            hasMore:
+              type: boolean
+            nextCursor:
+              type: string
+          required:
+            - messages
+            - hasMore
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  slack_team_info:
+    method: GET
+    endpoint: /slack-team-info
+    description: "Get Slack workspace/team information"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            team:
+              type: object
+              properties:
+                id:
+                  type: string
+                name:
+                  type: string
+                domain:
+                  type: string
+                icon:
+                  type: string
+              required:
+                - id
+                - name
+                - domain
+              additionalProperties: false
+          required:
+            - team
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

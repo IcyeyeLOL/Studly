@@ -53,9 +53,9 @@ For simple requests (single widget changes, small fixes), skip steps 1-3 and jus
 - **CRITICAL**: Before modifying widget styling, read Styling.md
 
 - **Room scope only**:
-  - Active room ID is stored at `/app/container_vars.json` under `currentRoom`.
-  - Work strictly under `/app/workspace/repo/<currentRoom>` (and nested `room-*` subrooms if any).
-  - Never modify files outside the current room subtree.
+  - Your room path is stored at `/app/container_vars.json` under `currentRoomPath`.
+  - Work strictly within `currentRoomPath` (not in nested `room-*` subrooms).
+  - Never modify files outside the current room.
 
 - **Outputs are auto-managed by hooks**:
   - Do not attempt to run bundlers; `template.html` is generated automatically.

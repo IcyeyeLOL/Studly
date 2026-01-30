@@ -245,6 +245,777 @@ tools:
       required:
         - success
 
+  exa_search:
+    method: POST
+    endpoint: /exa-search
+    description: "Search the web using Exa AI with neural search capabilities. Supports categories, content extraction (text, highlights, summaries), and advanced filtering."
+    input_schema:
+      type: object
+      properties:
+        query:
+          type: string
+          minLength: 1
+        numResults:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+          description: "Number of results to return (1-100)"
+        type:
+          type: string
+          enum:
+            - neural
+            - fast
+            - auto
+            - deep
+          default: auto
+          description: "Search type: auto (default) intelligently combines methods, neural uses embeddings, fast uses streamlined models, deep provides comprehensive search"
+        category:
+          type: string
+          enum:
+            - company
+            - research paper
+            - news
+            - pdf
+            - github
+            - tweet
+            - personal site
+            - financial report
+            - people
+          description: Data category to focus on
+        includeDomains:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          description: List of domains to include in search results
+        excludeDomains:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          description: List of domains to exclude from search results
+        startPublishedDate:
+          type: string
+          description: Only links published after this date (ISO 8601 format)
+        endPublishedDate:
+          type: string
+          description: Only links published before this date (ISO 8601 format)
+        includeText:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          maxItems: 1
+          description: Text that must be present in webpage (max 1 string, up to 5 words)
+        excludeText:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          maxItems: 1
+          description: Text that must NOT be present in webpage (max 1 string, up to 5 words)
+        contents:
+          type: object
+          properties:
+            text:
+              anyOf:
+                - 
+                  type: boolean
+                - 
+                  type: object
+                  properties:
+                    maxCharacters:
+                      type: integer
+                      exclusiveMinimum: 0
+                      description: Maximum character limit for full page text (controls response size and API costs)
+                    includeHtmlTags:
+                      type: boolean
+                      default: false
+                      description: Include HTML tags to help LLMs understand text structure
+                  additionalProperties: false
+              default: true
+              description: Return full page text (boolean) or advanced text options (object)
+            highlights:
+              type: object
+              properties:
+                numSentences:
+                  type: integer
+                  minimum: 1
+                  default: 1
+                  description: Number of sentences per highlight snippet
+                highlightsPerUrl:
+                  type: integer
+                  minimum: 1
+                  default: 1
+                  description: Number of highlight snippets per result
+              additionalProperties: false
+              description: Text snippets identified as most relevant
+            summary:
+              type: object
+              properties:
+                query:
+                  type: string
+                  description: "Custom query for LLM-generated summary"
+              additionalProperties: false
+              description: Summary of the webpage
+            extras:
+              type: object
+              properties:
+                links:
+                  type: integer
+                  minimum: 0
+                  default: 0
+                  description: Number of URLs to return from each webpage
+                imageLinks:
+                  type: integer
+                  minimum: 0
+                  default: 0
+                  description: Number of images to return for each result
+              additionalProperties: false
+              description: Additional content to extract
+          additionalProperties: false
+          description: Content extraction options
+        context:
+          type: boolean
+          default: false
+          description: Return page contents as a combined context string for LLM (combines all results)
+        moderation:
+          type: boolean
+          default: false
+          description: Enable content moderation to filter unsafe content
+      required:
+        - query
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            results:
+              type: array
+              items:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  url:
+                    type: string
+                  publishedDate:
+                    type:
+                      - string
+                      - null
+                  author:
+                    type:
+                      - string
+                      - null
+                  id:
+                    type: string
+                  image:
+                    type: string
+                  favicon:
+                    type: string
+                  text:
+                    type: string
+                  highlights:
+                    type: array
+                    items:
+                      type: string
+                  summary:
+                    type: string
+                  extras:
+                    type: object
+                    properties:
+                      links:
+                        type: array
+                        items:
+                          type: string
+                      imageLinks:
+                        type: array
+                        items:
+                          type: string
+                    additionalProperties: false
+                required:
+                  - title
+                  - url
+                  - publishedDate
+                  - author
+                  - id
+                additionalProperties: false
+            context:
+              type: string
+              description: Combined context string if context=true
+            searchType:
+              type: string
+              enum:
+                - neural
+                - deep
+              description: Actual search type used (for auto searches)
+            usageId:
+              type: string
+            cost: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  exa_find_similar:
+    method: POST
+    endpoint: /exa-find-similar
+    description: "Find similar links to the provided URL using Exa AI. Supports content extraction (text, highlights, summaries) and advanced filtering for discovered links."
+    input_schema:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+        numResults:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+          description: "Number of results to return (1-100)"
+        includeDomains:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          description: List of domains to include in search results
+        excludeDomains:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          description: List of domains to exclude from search results
+        startPublishedDate:
+          type: string
+          description: Only links published after this date (ISO 8601 format)
+        endPublishedDate:
+          type: string
+          description: Only links published before this date (ISO 8601 format)
+        includeText:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          maxItems: 1
+          description: Text that must be present in webpage (max 1 string, up to 5 words)
+        excludeText:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          maxItems: 1
+          description: Text that must NOT be present in webpage (max 1 string, up to 5 words)
+        contents:
+          type: object
+          properties:
+            text:
+              anyOf:
+                - 
+                  type: boolean
+                - 
+                  type: object
+                  properties:
+                    maxCharacters:
+                      type: integer
+                      exclusiveMinimum: 0
+                      description: Maximum character limit for full page text
+                    includeHtmlTags:
+                      type: boolean
+                      default: false
+                      description: Include HTML tags to help LLMs understand text structure
+                  additionalProperties: false
+              default: true
+              description: Return full page text (boolean) or advanced text options (object)
+            highlights:
+              type: object
+              properties:
+                numSentences:
+                  type: integer
+                  minimum: 1
+                  default: 1
+                  description: Number of sentences per highlight snippet
+                highlightsPerUrl:
+                  type: integer
+                  minimum: 1
+                  default: 1
+                  description: Number of highlight snippets per result
+              additionalProperties: false
+              description: Text snippets identified as most relevant
+            summary:
+              type: object
+              properties:
+                query:
+                  type: string
+                  description: "Custom query for LLM-generated summary"
+              additionalProperties: false
+              description: Summary of the webpage
+            extras:
+              type: object
+              properties:
+                links:
+                  type: integer
+                  minimum: 0
+                  default: 0
+                  description: Number of URLs to return from each webpage
+                imageLinks:
+                  type: integer
+                  minimum: 0
+                  default: 0
+                  description: Number of images to return for each result
+              additionalProperties: false
+              description: Additional content to extract
+          additionalProperties: false
+          description: Content extraction options
+        context:
+          type: boolean
+          default: false
+          description: Return page contents as a combined context string for LLM (combines all results)
+        moderation:
+          type: boolean
+          default: false
+          description: Enable content moderation to filter unsafe content
+      required:
+        - url
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            results:
+              type: array
+              items:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  url:
+                    type: string
+                  publishedDate:
+                    type:
+                      - string
+                      - null
+                  author:
+                    type:
+                      - string
+                      - null
+                  id:
+                    type: string
+                  image:
+                    type: string
+                  favicon:
+                    type: string
+                  text:
+                    type: string
+                  highlights:
+                    type: array
+                    items:
+                      type: string
+                  summary:
+                    type: string
+                  extras:
+                    type: object
+                    properties:
+                      links:
+                        type: array
+                        items:
+                          type: string
+                      imageLinks:
+                        type: array
+                        items:
+                          type: string
+                    additionalProperties: false
+                required:
+                  - title
+                  - url
+                  - publishedDate
+                  - author
+                  - id
+                additionalProperties: false
+            context:
+              type: string
+              description: Combined context string if context=true
+            usageId:
+              type: string
+            cost: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  exa_contents:
+    method: POST
+    endpoint: /exa-contents
+    description: "Get full page contents, summaries, and metadata for a list of URLs using Exa AI. Returns instant results from cache."
+    input_schema:
+      type: object
+      properties:
+        urls:
+          type: array
+          items:
+            type: string
+            format: uri
+          minItems: 1
+          description: Array of URLs to fetch content from
+        text:
+          anyOf:
+            - 
+              type: boolean
+            - 
+              type: object
+              properties:
+                maxCharacters:
+                  type: integer
+                  exclusiveMinimum: 0
+                  description: Maximum character limit for full page text
+                includeHtmlTags:
+                  type: boolean
+                  default: false
+                  description: Include HTML tags to help LLMs understand text structure
+              additionalProperties: false
+          default: true
+          description: Return full page text (boolean) or advanced text options (object)
+        highlights:
+          type: object
+          properties:
+            numSentences:
+              type: integer
+              minimum: 1
+              default: 1
+              description: Number of sentences per highlight snippet
+            highlightsPerUrl:
+              type: integer
+              minimum: 1
+              default: 1
+              description: Number of highlight snippets per URL
+            query:
+              type: string
+              description: Custom query to direct highlight selection
+          additionalProperties: false
+          description: Text snippets identified as most relevant
+        summary:
+          type: object
+          properties:
+            query:
+              type: string
+              description: "Custom query for LLM-generated summary"
+          additionalProperties: false
+          description: Summary of the webpage
+        subpages:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of subpages to crawl from each URL
+        subpageTarget:
+          anyOf:
+            - 
+              type: string
+            - 
+              type: array
+              items:
+                type: string
+          description: Term to find specific subpages (single string or array)
+        extras:
+          type: object
+          properties:
+            links:
+              type: integer
+              minimum: 0
+              default: 0
+              description: Number of URLs to return from each webpage
+            imageLinks:
+              type: integer
+              minimum: 0
+              default: 0
+              description: Number of images to return for each result
+          additionalProperties: false
+          description: Additional content to extract
+        context:
+          anyOf:
+            - 
+              type: boolean
+            - 
+              type: object
+              properties:
+                maxCharacters:
+                  type: integer
+                  exclusiveMinimum: 0
+                  description: Maximum character limit for the context string
+              additionalProperties: false
+          description: Return page contents as a combined context string for LLM
+      required:
+        - urls
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            results:
+              type: array
+              items:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  url:
+                    type: string
+                  publishedDate:
+                    type:
+                      - string
+                      - null
+                  author:
+                    type:
+                      - string
+                      - null
+                  id:
+                    type: string
+                  image:
+                    type: string
+                  favicon:
+                    type: string
+                  text:
+                    type: string
+                  highlights:
+                    type: array
+                    items:
+                      type: string
+                  summary:
+                    type: string
+                  subpages:
+                    type: array
+                  extras:
+                    type: object
+                    properties:
+                      links:
+                        type: array
+                        items:
+                          type: string
+                      imageLinks:
+                        type: array
+                        items:
+                          type: string
+                    additionalProperties: false
+                required:
+                  - title
+                  - url
+                  - publishedDate
+                  - author
+                  - id
+                additionalProperties: false
+            context:
+              type: string
+              description: Combined context string if context was requested
+            statuses:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  status:
+                    type: string
+                    enum:
+                      - success
+                      - error
+                  error:
+                    type: object
+                    properties:
+                      tag:
+                        type: string
+                      httpStatusCode:
+                        type: number
+                    required:
+                      - tag
+                    additionalProperties: false
+                required:
+                  - id
+                  - status
+                additionalProperties: false
+              description: Status information for each requested URL
+            cost: {}
+            usageId:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  exa_answer:
+    method: POST
+    endpoint: /exa-answer
+    description: "Get an LLM answer to a question informed by Exa search results. Performs search and generates either a direct answer for specific queries or a detailed summary with citations for open-ended queries."
+    input_schema:
+      type: object
+      properties:
+        query:
+          type: string
+          minLength: 1
+          description: The question or query to answer
+        text:
+          type: boolean
+          default: false
+          description: Include full text content in the citations
+      required:
+        - query
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            answer:
+              type: string
+              description: The generated answer based on search results
+            citations:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  url:
+                    type: string
+                  title:
+                    type: string
+                  author:
+                    type:
+                      - string
+                      - null
+                  publishedDate:
+                    type:
+                      - string
+                      - null
+                    description: "Estimated creation date (YYYY-MM-DD format)"
+                  text:
+                    type: string
+                    description: Full text content (only when text=true)
+                  image:
+                    type: string
+                    description: URL of associated image
+                  favicon:
+                    type: string
+                    description: URL of domain favicon
+                required:
+                  - id
+                  - url
+                  - title
+                  - author
+                  - publishedDate
+                additionalProperties: false
+              description: Search results used to generate the answer
+            cost: {}
+            usageId:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  exa_research:
+    method: POST
+    endpoint: /exa-research
+    description: "Create a research task that explores the web, gathers sources, and synthesizes findings. Waits for completion and returns the full research content. Research can take up to 10 minutes for complex queries."
+    input_schema:
+      type: object
+      properties:
+        instructions:
+          type: string
+          minLength: 1
+          maxLength: 4096
+          description: Instructions for what you would like research on. Clearly define what information you want to find, how research should be conducted, and what the output should look like.
+        model:
+          type: string
+          enum:
+            - exa-research-fast
+            - exa-research
+            - exa-research-pro
+          default: "exa-research"
+          description: "Research model: exa-research (default) is balanced, exa-research-fast is faster and cheaper, exa-research-pro provides more thorough analysis"
+        outputSchema:
+          type: object
+          additionalProperties: {}
+          description: JSON Schema to enforce structured output. When provided, the research output will be validated against this schema and returned as parsed JSON.
+      required:
+        - instructions
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            researchId:
+              type: string
+              description: Unique identifier for the research request
+            status:
+              type: string
+              enum:
+                - pending
+                - running
+                - completed
+                - failed
+                - canceled
+              description: Final status of the research task
+            content:
+              type: string
+              description: The complete research output as text
+            parsed:
+              type: object
+              additionalProperties: {}
+              description: Structured JSON object matching outputSchema (only present when outputSchema was provided)
+            output:
+              type: object
+              properties:
+                content:
+                  type: string
+                  description: The complete research output as text
+                parsed:
+                  type: object
+                  additionalProperties: {}
+                  description: Structured JSON object matching outputSchema
+              required:
+                - content
+              additionalProperties: false
+              description: Research output matching Exa API structure
+            costDollars:
+              type: object
+              properties:
+                total:
+                  type: number
+                numSearches:
+                  type: number
+                numPages:
+                  type: number
+                reasoningTokens:
+                  type: number
+              required:
+                - total
+              additionalProperties: false
+              description: Actual cost breakdown in USD for this research request
+            usageId:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
   search_images:
     method: POST
     endpoint: /search-images

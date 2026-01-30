@@ -4,32 +4,6 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * Find the full path to a room directory by searching for it
- * @param {string} roomName - The room name to search for
- * @returns {string|null} The full path to the room directory, or null if not found
- */
-function findRoomPath(roomName) {
-  const { execSync } = require('child_process');
-  
-  try {
-    // Use find command to search for directory under /app/workspace/repo
-    const findCommand = `find /app/workspace/repo -type d -name "${roomName}" 2>/dev/null`;
-    const result = execSync(findCommand, { encoding: 'utf8' }).trim();
-    
-    if (result) {
-      // Return the first match (there should only be one)
-      const paths = result.split('\n');
-      return paths[0];
-    }
-    
-    return null;
-  } catch (error) {
-    // If find command fails, return null
-    return null;
-  }
-}
-
-/**
  * Count occurrences of 'room-' in a path to determine if it's a root room
  * @param {string} roomPath - The absolute path to the room directory
  * @returns {number} Number of 'room-' occurrences in the path
@@ -70,13 +44,10 @@ function deleteRoom(canvasDir) {
     process.exit(1);
   }
 
-  // Find the room path
-  console.log(`🔍 Searching for parent room: ${currentRoom}`);
-  const parentRoomPath = findRoomPath(currentRoom);
-  
+  // Get room path from container vars
+  const parentRoomPath = containerVars.currentRoomPath;
   if (!parentRoomPath) {
-    console.error(`Error: Could not find parent room directory for: ${currentRoom}`);
-    console.log('Searched in: /app/workspace/repo');
+    console.error(`Error: No currentRoomPath set in container vars`);
     process.exit(1);
   }
 

@@ -9,6 +9,8 @@ room-9ee0cdde-865f-47e8-b0a6-753dcf9108f6/      # Root canvas (your main workspa
 ├── global-storage.json                         # Canvas-wide shared data
 ├── canvas-link-{shapeId}.json                  # Canvas-link to nested room (position, label)
 │
+├── .chat-attachments/                          # Chat file uploads for this room
+│   └── {timestamp}_{filename}.ext              # Uploaded files with timestamp prefix
 ├── .canvas-images/                             # Image inspection cache (inspect image)
 ├── .canvas-documents/                          # Document inspection cache (inspect document)
 │   ├── {assetId}.txt                          # Extracted text

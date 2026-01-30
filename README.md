@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Miyagi Canvas Repository
 
 This is your personal Miyagi canvas repository, where all your canvases and widgets live.
@@ -109,6 +108,3 @@ node agent_scripts/generate-widget.js $WIDGET_ID $ROOM_ID
 - Avoid simultaneous interaction with both the repo and the app as this **WILL** lead to merge conflicts. This is handled for you when using the chat feature of the app, but there is no conflict resolution logic here.
 
 </details>
-=======
-# stock-tracker
->>>>>>> remote-main

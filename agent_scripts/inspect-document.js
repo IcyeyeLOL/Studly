@@ -22,7 +22,7 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
  */
 function parseArgs(args) {
   const options = {
-    assetId: args[0],
+    assetIdOrPath: args[0],  // Can be either asset ID or file path
     extractImages: false,
     extractAttachments: false,
   };
@@ -40,57 +40,24 @@ function parseArgs(args) {
 }
 
 /**
- * Load container variables (userId, currentRoom)
+ * Load container variables (userId, currentRoomPath)
  */
 function loadContainerVars() {
   try {
     const containerVars = JSON.parse(fs.readFileSync('/app/container_vars.json', 'utf8'));
+    const currentRoomPath = containerVars.currentRoomPath;
     const currentRoom = containerVars.currentRoom;
     const userId = containerVars.userId;
 
-    if (!currentRoom) {
-      console.error('❌ Error: No current room set in container vars');
-      process.exit(1);
-    }
     if (!userId) {
       console.error('❌ Error: No userId set in container vars');
       process.exit(1);
     }
 
-    return { currentRoom, userId };
+    return { currentRoomPath, currentRoom, userId };
   } catch (err) {
     console.error('❌ Error reading container vars:', err.message);
     process.exit(1);
-  }
-}
-
-/**
- * Find room path by room name
- * Room names are unique hashes, so there should be exactly one match
- */
-function findRoomPath(roomName) {
-  try {
-    const result = execSync(`find /app/workspace/repo -type d -name "${roomName}" 2>/dev/null`, { encoding: 'utf8' }).trim();
-    if (!result) {
-      return null;
-    }
-
-    const matches = result.split('\n').filter(p => p.length > 0);
-
-    if (matches.length === 0) {
-      return null;
-    }
-
-    if (matches.length > 1) {
-      console.error(`❌ Error: Found multiple directories named ${roomName}:`);
-      matches.forEach(m => console.error(`  - ${m}`));
-      console.error('This should never happen. Room names should be unique.');
-      process.exit(1);
-    }
-
-    return matches[0];
-  } catch {
-    return null;
   }
 }
 
@@ -473,21 +440,21 @@ function saveResults(roomPath, assetId, results) {
 /**
  * Print agent-friendly results
  */
-function printResults(results, savedFiles) {
+function printResults(results, savedFiles, roomPath) {
   console.log(`✅ Document processed: ${results.assetId}`);
   console.log(`Type: ${results.type}`);
 
   // For image-type documents
   if (results.type === 'image' && savedFiles.imagePath) {
     const ext = path.extname(savedFiles.imagePath);
-    const relativePath = `.canvas-documents/${results.assetId}${ext}`;
-    console.log(`Image saved to: ${relativePath}`);
+    const fullPath = path.join(roomPath, '.canvas-documents', `${results.assetId}${ext}`);
+    console.log(`Image saved to: ${fullPath}`);
     if (results.compressed) {
       console.log(`Note: Image was compressed to reduce size`);
     }
     console.log('');
     console.log('To view this image (Claude has vision), use:');
-    console.log(`Read ${relativePath}`);
+    console.log(`Read ${fullPath}`);
     return;
   }
 
@@ -500,8 +467,9 @@ function printResults(results, savedFiles) {
 
   if (results.text) {
     const wordCount = results.text.split(/\s+/).filter(w => w.length > 0).length;
+    const fullPath = path.join(roomPath, '.canvas-documents', `${results.assetId}.txt`);
     console.log(`Text extracted: ${wordCount} words`);
-    console.log(`Text saved to: .canvas-documents/${results.assetId}.txt`);
+    console.log(`Text saved to: ${fullPath}`);
     if (results.truncated) {
       console.log(`Warning: Text truncated at 100,000 characters`);
     }
@@ -509,8 +477,9 @@ function printResults(results, savedFiles) {
 
   // For images extracted FROM PDFs (not image-type documents)
   if (results.images?.length) {
+    const imagesDir = path.join(roomPath, '.canvas-documents', results.assetId, 'images');
     console.log(`Images extracted from PDF: ${results.images.length}`);
-    console.log(`Images location: .canvas-documents/${results.assetId}/images/`);
+    console.log(`Images location: ${imagesDir}/`);
     results.images.forEach((img) => {
       console.log(`  - ${img}`);
     });
@@ -526,8 +495,9 @@ function printResults(results, savedFiles) {
   // Clear instructions for agent
   console.log('');
   if (results.text) {
+    const fullPath = path.join(roomPath, '.canvas-documents', `${results.assetId}.txt`);
     console.log('To read the extracted text, use:');
-    console.log(`Read .canvas-documents/${results.assetId}.txt`);
+    console.log(`Read ${fullPath}`);
   } else if (results.images?.length) {
     console.log('To view extracted images, use:');
     console.log(`Read ${results.images[0]}`);
@@ -537,82 +507,118 @@ function printResults(results, savedFiles) {
 /**
  * Main function
  */
-async function inspectDocument(assetId, options) {
+async function inspectDocument(assetIdOrPath, options) {
   try {
-    // 1. Load container vars (userId, currentRoom)
-    const { currentRoom, userId } = loadContainerVars();
+    // 1. Load container vars (userId, currentRoom, currentRoomPath)
+    const { currentRoomPath, currentRoom, userId } = loadContainerVars();
 
-    // 2. Find room path
-    const roomPath = findRoomPath(currentRoom);
+    // 2. Get room path from container vars
+    const roomPath = currentRoomPath;
     if (!roomPath) {
-      console.error(`❌ Error: Could not find room directory for: ${currentRoom}`);
+      console.error(`❌ Error: No currentRoomPath set in container vars`);
       process.exit(1);
     }
 
-    // 3. Find asset JSON
-    const assetJsonPath = findAssetJson(roomPath, assetId);
-    if (!assetJsonPath) {
-      console.error(`❌ Error: Could not find general-asset-image-${assetId}.json in room`);
-      console.log('Make sure the asset ID is correct and exists in the current room.');
-      process.exit(1);
+    let buffer, filename, assetId;
+
+    // Detect if input is a file path or asset ID
+    const isFilePath = assetIdOrPath.includes('/') || assetIdOrPath.includes('.');
+
+    // Branch 1: File path mode
+    if (isFilePath) {
+      // Resolve path relative to room
+      const filePath = path.resolve(roomPath, assetIdOrPath);
+
+      // Security: validate path is within room
+      if (!filePath.startsWith(roomPath)) {
+        console.error('❌ Error: File path outside room (security check failed)');
+        process.exit(1);
+      }
+
+      // Read file directly
+      buffer = fs.readFileSync(filePath);
+      filename = path.basename(filePath);
+
+      // Generate asset ID for saving results
+      assetId = `file-${Date.now()}-${filename.replace(/[^a-zA-Z0-9-_]/g, '_')}`;
+
+      console.log(`📎 Processing local file: ${filename}`);
+      console.log(`   Path: ${assetIdOrPath}`);
+      console.log(`   Size: ${buffer.length} bytes`);
+    }
+    // Branch 2: Asset ID mode (existing behavior)
+    else {
+      // Strip "asset:" prefix if present (e.g., "asset:abc123" -> "abc123")
+      assetId = assetIdOrPath.startsWith('asset:')
+        ? assetIdOrPath.slice(6)
+        : assetIdOrPath;
+
+      // 3. Find asset JSON
+      const assetJsonPath = findAssetJson(roomPath, assetId);
+      if (!assetJsonPath) {
+        console.error(`❌ Error: Could not find general-asset-image-${assetId}.json in room`);
+        console.log('Make sure the asset ID is correct and exists in the current room.');
+        process.exit(1);
+      }
+
+      // 4. Read asset metadata
+      let assetMeta;
+      try {
+        assetMeta = JSON.parse(fs.readFileSync(assetJsonPath, 'utf8'));
+      } catch (err) {
+        console.error(`❌ Error reading asset JSON: ${err.message}`);
+        process.exit(1);
+      }
+
+      const srcUrl = assetMeta.props?.src;
+      if (!srcUrl) {
+        console.error('❌ Error: Asset has no src URL');
+        process.exit(1);
+      }
+
+      // 5. Extract upload ID from URL
+      const uploadIdMatch = srcUrl.match(/\/api\/uploads\/([a-f0-9-]+)/i);
+      if (!uploadIdMatch) {
+        console.error('❌ Error: Could not extract upload ID from src URL');
+        console.log(`URL: ${srcUrl}`);
+        process.exit(1);
+      }
+      const uploadId = uploadIdMatch[1];
+
+      // 6. Detect file type
+      const fileType = detectFileType(assetMeta);
+      console.log(`🔍 Inspecting document: ${assetId}`);
+      console.log(`📄 Type detected: ${fileType}`);
+      console.log(`📦 File: ${assetMeta.props?.name || 'unknown'}`);
+
+      // 7. Fetch document from API
+      const apiUrl = process.env.DOCKER_CANVAS_SYNC_URL;
+      const response = await fetchDocument(apiUrl, uploadId, userId, currentRoom);
+
+      if (!response.success) {
+        console.error(`❌ Error fetching document: ${response.error}`);
+        process.exit(1);
+      }
+
+      // Check file size
+      if (response.size > MAX_FILE_SIZE) {
+        console.error(`❌ Error: Document is too large: ${(response.size / 1024 / 1024).toFixed(2)} MB (max 50 MB)`);
+        process.exit(1);
+      }
+
+      // 8. Decode base64
+      buffer = Buffer.from(response.base64, 'base64');
+      filename = assetMeta.props?.name || `document`;
     }
 
-    // 4. Read asset metadata
-    let assetMeta;
-    try {
-      assetMeta = JSON.parse(fs.readFileSync(assetJsonPath, 'utf8'));
-    } catch (err) {
-      console.error(`❌ Error reading asset JSON: ${err.message}`);
-      process.exit(1);
-    }
-
-    const srcUrl = assetMeta.props?.src;
-    if (!srcUrl) {
-      console.error('❌ Error: Asset has no src URL');
-      process.exit(1);
-    }
-
-    // 5. Extract upload ID from URL
-    const uploadIdMatch = srcUrl.match(/\/api\/uploads\/([a-f0-9-]+)/i);
-    if (!uploadIdMatch) {
-      console.error('❌ Error: Could not extract upload ID from src URL');
-      console.log(`URL: ${srcUrl}`);
-      process.exit(1);
-    }
-    const uploadId = uploadIdMatch[1];
-
-    // 6. Detect file type
-    const fileType = detectFileType(assetMeta);
-    console.log(`🔍 Inspecting document: ${assetId}`);
-    console.log(`📄 Type detected: ${fileType}`);
-    console.log(`📦 File: ${assetMeta.props?.name || 'unknown'}`);
-
-    // 7. Fetch document from API
-    const apiUrl = process.env.DOCKER_CANVAS_SYNC_URL;
-    const response = await fetchDocument(apiUrl, uploadId, userId, currentRoom);
-
-    if (!response.success) {
-      console.error(`❌ Error fetching document: ${response.error}`);
-      process.exit(1);
-    }
-
-    // Check file size
-    if (response.size > MAX_FILE_SIZE) {
-      console.error(`❌ Error: Document is too large: ${(response.size / 1024 / 1024).toFixed(2)} MB (max 50 MB)`);
-      process.exit(1);
-    }
-
-    // 8. Decode base64
-    const buffer = Buffer.from(response.base64, 'base64');
-
+    // COMMON PATH: Both branches converge here
     // 9. Process document using shared service
     let results;
     try {
-      const filename = assetMeta.props?.name || `document.${fileType}`;
       results = await processDocument(buffer, filename, assetId, roomPath, options);
     } catch (err) {
       if (err.message.includes('Unsupported file type')) {
-        console.error(`❌ Error: Unsupported file type: ${fileType}`);
+        console.error(`❌ Error: Unsupported file type`);
         console.log('Supported types: PDF, DOCX, images (PNG, JPG, etc.), text files');
       } else {
         console.error(`❌ Error processing document: ${err.message}`);
@@ -624,7 +630,7 @@ async function inspectDocument(assetId, options) {
     const savedFiles = saveResults(roomPath, assetId, results);
 
     // 11. Print results
-    printResults(results, savedFiles);
+    printResults(results, savedFiles, roomPath);
 
   } catch (err) {
     if (err.message.includes('password')) {
@@ -643,7 +649,11 @@ async function inspectDocument(assetId, options) {
 const args = process.argv.slice(2);
 
 if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
-  console.log('Usage: node inspect-document.js <asset_id> [options]');
+  console.log('Usage: node inspect-document.js <asset_id_or_file_path> [options]');
+  console.log('');
+  console.log('Accepts either:');
+  console.log('  - Asset ID (e.g., GM2wo-KippGsBKzYPvYv3)');
+  console.log('  - File path (e.g., .chat-attachments/document.pdf)');
   console.log('');
   console.log('Default: Extracts text and metadata');
   console.log('');
@@ -653,17 +663,17 @@ if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
   console.log('');
   console.log('Examples:');
   console.log('  inspect document GM2wo-KippGsBKzYPvYv3');
-  console.log('  inspect document abc123 --extract-images');
-  console.log('  inspect document xyz789 --extract-images --extract-attachments');
+  console.log('  inspect document .chat-attachments/report.pdf');
+  console.log('  inspect document .chat-attachments/doc.pdf --extract-images');
   process.exit(0);
 }
 
 const options = parseArgs(args);
 
-if (!options.assetId) {
-  console.error('❌ Error: Asset ID is required');
-  console.log('Usage: node inspect-document.js <asset_id>');
+if (!options.assetIdOrPath) {
+  console.error('❌ Error: Asset ID or file path is required');
+  console.log('Usage: node inspect-document.js <asset_id_or_file_path>');
   process.exit(1);
 }
 
-inspectDocument(options.assetId, options);
+inspectDocument(options.assetIdOrPath, options);
