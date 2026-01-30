@@ -330,6 +330,7 @@ function FinancialCommandCenter() {
   const [socialLoading, setSocialLoading] = useState(false);
   const [socialError, setSocialError] = useState(null);
   const [hasSocialSearched, setHasSocialSearched] = useState(false);
+  const [linkedinTab, setLinkedinTab] = useState('people'); // 'people' | 'jobs' | 'companies'
   const [editingPosition, setEditingPosition] = useState(null);
   const [newTickerInput, setNewTickerInput] = useState('');
   const [newSectorName, setNewSectorName] = useState('');
@@ -1438,44 +1439,6 @@ function FinancialCommandCenter() {
           </div>
         </div>
 
-        <div style={{ marginBottom: '32px' }}>
-          <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '16px', color: theme.text }}>
-            Sectors ({allSectorsList.length})
-          </div>
-          {allSectorsList.slice(0, showAllSectors ? undefined : 5).map((sector) => (
-            <label key={sector.id} style={{ display: 'block', marginBottom: '12px', fontSize: '14px', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={(selectedSectors || []).includes(sector.id)}
-                onChange={(e) => {
-                  if (e.target.checked) setSelectedSectors((prev) => [...(prev || []), sector.id]);
-                  else setSelectedSectors((prev) => (prev || []).filter((s) => s !== sector.id));
-                }}
-                style={{ marginRight: '10px' }}
-              />
-              {sector.name}
-              {sector.custom && <span style={{ fontSize: '11px', color: '#6366f1', marginLeft: '6px' }}>(Custom)</span>}
-            </label>
-          ))}
-          {allSectorsList.length > 5 && (
-            <button
-              type="button"
-              onClick={() => setShowAllSectors((v) => !v)}
-              style={{
-                marginTop: '12px',
-                fontSize: '13px',
-                color: '#6366f1',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontWeight: '500',
-              }}
-            >
-              {showAllSectors ? 'View less' : `View all (${allSectorsList.length})`}
-            </button>
-          )}
-        </div>
-
         <div>
           <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '16px', color: theme.text }}>
             Catalysts
@@ -2451,7 +2414,7 @@ function FinancialCommandCenter() {
               <h2 style={{ fontSize: '24px', fontWeight: '600' }}>Daily Digest</h2>
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button
-                  onClick={generateDigest}
+                  onClick={digest ? () => setDigest(null) : generateDigest}
                   disabled={loading}
                   style={{
                     padding: '10px 20px',
@@ -2464,7 +2427,7 @@ function FinancialCommandCenter() {
                     fontWeight: '500',
                   }}
                 >
-                  {loading ? 'Generating...' : 'Generate Digest'}
+                  {loading ? 'Generating...' : digest ? 'Close digest' : 'Generate Digest'}
                 </button>
                 {digest && (
                   <>
@@ -2722,18 +2685,47 @@ function FinancialCommandCenter() {
               </div>
             )}
 
-            {socialResults && socialResults.length > 0 && (() => {
-              const linkedinSearchUrl = socialResults.length === 1 && socialResults[0].platform === 'linkedin' && (socialResults[0].searchUrl || socialResults[0].link);
-              if (linkedinSearchUrl) {
+            {socialResults && socialResults.length > 0 && socialSearchPlatform === 'linkedin' && socialResults.every((r) => r.platform === 'linkedin') && (() => {
+              const linkedinLinks = socialResults.filter((r) => r.searchUrl || r.link);
+              if (linkedinLinks.length > 0) {
+                const selected = linkedinLinks.find((r) => (r.name || '').toLowerCase().startsWith(linkedinTab)) || linkedinLinks[0];
+                const url = selected.searchUrl || selected.link;
                 return (
                   <div>
                     <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>LinkedIn</h3>
-                    <div style={{ maxWidth: '420px', padding: '20px', backgroundColor: theme.surface, border: `1px solid ${theme.border}`, borderRadius: '12px', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)' }}>
+                    <p style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '16px' }}>
+                      We can&apos;t search LinkedIn from here. Choose what to search, then open LinkedIn for &quot;{socialSearchQuery}&quot; in a new tab. Add people you find to Following manually if you like.
+                    </p>
+                    <div style={{ maxWidth: '520px', padding: '20px', backgroundColor: theme.surface, border: `1px solid ${theme.border}`, borderRadius: '12px', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)' }}>
+                      <div style={{ display: 'flex', gap: '4px', padding: '4px', backgroundColor: theme.secondaryBg, borderRadius: '8px', marginBottom: '16px' }}>
+                        {['people', 'jobs', 'companies'].map((tab) => (
+                          <button
+                            key={tab}
+                            type="button"
+                            onClick={() => setLinkedinTab(tab)}
+                            style={{
+                              flex: 1,
+                              padding: '10px 16px',
+                              borderRadius: '6px',
+                              fontSize: '13px',
+                              fontWeight: '500',
+                              textTransform: 'capitalize',
+                              border: 'none',
+                              cursor: 'pointer',
+                              backgroundColor: linkedinTab === tab ? theme.surface : 'transparent',
+                              color: linkedinTab === tab ? theme.text : theme.textMuted,
+                              boxShadow: linkedinTab === tab ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+                            }}
+                          >
+                            {tab}
+                          </button>
+                        ))}
+                      </div>
                       <p style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '16px' }}>
-                        We can&apos;t search LinkedIn from here. Click below to open LinkedIn&apos;s search for &quot;{socialSearchQuery}&quot; in a new tab. Results and ranking are from LinkedIn; we don&apos;t control quality.
+                        {(selected.headline || `Search ${linkedinTab} on LinkedIn`)} for &quot;{socialSearchQuery}&quot;
                       </p>
                       <a
-                        href={linkedinSearchUrl}
+                        href={url}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{
@@ -2749,12 +2741,16 @@ function FinancialCommandCenter() {
                           fontSize: '14px',
                         }}
                       >
-                        Open LinkedIn search
+                        Open on LinkedIn â†’
                       </a>
                     </div>
                   </div>
                 );
               }
+              return null;
+            })()}
+
+            {socialResults && socialResults.length > 0 && socialSearchPlatform === 'youtube' && socialResults.some((r) => r.platform === 'youtube') && (() => {
               return (
               <div>
                 <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>Search Results</h3>
@@ -2846,9 +2842,14 @@ function FinancialCommandCenter() {
               );
             })()}
 
-            {!socialLoading && (!socialResults || socialResults.length === 0) && socialSearchQuery && (
-              <div style={{ textAlign: 'center', padding: '40px', color: theme.textMutedLight }}>No results found. Try a different search query.</div>
-            )}
+            {!socialLoading && socialSearchQuery && (() => {
+              const hasLinkedInResults = socialResults.length > 0 && socialResults.every((r) => r.platform === 'linkedin');
+              const hasYoutubeResults = socialResults.length > 0 && socialResults.some((r) => r.platform === 'youtube');
+              const showNoResults = (socialSearchPlatform === 'linkedin' && !hasLinkedInResults) || (socialSearchPlatform === 'youtube' && !hasYoutubeResults);
+              return showNoResults ? (
+                <div style={{ textAlign: 'center', padding: '40px', color: theme.textMutedLight }}>No results for this tab. Search above or switch tab.</div>
+              ) : null;
+            })()}
           </div>
         )}
 
@@ -3423,4 +3424,7 @@ function FinancialCommandCenter() {
 }
 
 export default FinancialCommandCenter;
+if (typeof window !== 'undefined') {
+  window.FinancialCommandCenter = FinancialCommandCenter;
+}
 
