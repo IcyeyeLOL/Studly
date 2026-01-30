@@ -463,6 +463,16 @@ function FinancialCommandCenter() {
     return () => timeouts.forEach((t) => clearTimeout(t));
   }, [activeView, (watchlist || []).length, Object.keys(positions || {}).length]);
 
+  useEffect(() => {
+    if (activeView !== 'watchlist') return;
+    const tickers = watchlist || [];
+    const timeouts = [];
+    tickers.forEach((ticker, i) => {
+      timeouts.push(setTimeout(() => refreshWatchlistQuote(ticker), i * 380));
+    });
+    return () => timeouts.forEach((t) => clearTimeout(t));
+  }, [activeView, (watchlist || []).length]);
+
   const loadNews = async () => {
     setLoading(true);
     setNewsError(null);
@@ -1073,6 +1083,25 @@ function FinancialCommandCenter() {
     }
   };
 
+  const addFromWatchlistSearchResult = (result) => {
+    const symbol = (result && result.symbol) || (typeof result === 'string' ? result : '');
+    if (!symbol) return;
+    const sym = String(symbol).toUpperCase();
+    if ((watchlist || []).includes(sym)) {
+      return;
+    }
+    setWatchlist((prev) => [...(prev || []), sym]);
+    setStockInfo((prev) => ({
+      ...(prev || {}),
+      [sym]: {
+        name: result.name || sym,
+        region: result.region || undefined,
+        currency: result.currency || undefined,
+      },
+    }));
+    refreshWatchlistQuote(sym);
+  };
+
   const addTickerToWatchlist = async () => {
     if (!newTickerInput.trim()) return;
     const ticker = newTickerInput.trim().toUpperCase();
@@ -1099,12 +1128,14 @@ function FinancialCommandCenter() {
         setWatchlist((prev) => [...(prev || []), ticker]);
         setNewTickerInput('');
         refreshQuote(ticker, true);
+        refreshWatchlistQuote(ticker);
       } else {
         const confirmAdd = window.confirm(`Could not verify ticker ${ticker}. Add anyway?`);
         if (confirmAdd) {
           setWatchlist((prev) => [...(prev || []), ticker]);
           setNewTickerInput('');
           refreshQuote(ticker, true);
+          refreshWatchlistQuote(ticker);
         }
       }
     } catch (error) {
@@ -1114,6 +1145,7 @@ function FinancialCommandCenter() {
         setWatchlist((prev) => [...(prev || []), ticker]);
         setNewTickerInput('');
         refreshQuote(ticker, true);
+        refreshWatchlistQuote(ticker);
       }
     }
   };
@@ -1121,17 +1153,15 @@ function FinancialCommandCenter() {
   const refreshWatchlistQuote = async (ticker) => {
     setLoadingWatchlistQuotes((prev) => ({ ...prev, [ticker]: true }));
     try {
-      const mockQuote = {
-        symbol: ticker,
-        price: (Math.random() * 500 + 50).toFixed(2),
-        change: (Math.random() * 20 - 10).toFixed(2),
-        changePercent: (Math.random() * 10 - 5).toFixed(2),
-        volume: Math.floor(Math.random() * 10000000),
-        latestTradingDay: new Date().toISOString().split('T')[0],
-      };
-      setWatchlistQuotes((prev) => ({ ...prev, [ticker]: mockQuote }));
+      const { ok, data } = await _request(`/api/stocks/quote?symbol=${encodeURIComponent(String(ticker).trim().toUpperCase())}`, { method: 'GET' });
+      if (ok && data && Number.isFinite(Number(data.price))) {
+        setWatchlistQuotes((prev) => ({ ...prev, [ticker]: data }));
+      } else {
+        setWatchlistQuotes((prev) => ({ ...prev, [ticker]: null }));
+      }
     } catch (error) {
-      console.error('Error refreshing quote:', error);
+      console.error('Error refreshing watchlist quote:', error);
+      setWatchlistQuotes((prev) => ({ ...prev, [ticker]: null }));
     } finally {
       setLoadingWatchlistQuotes((prev) => ({ ...prev, [ticker]: false }));
     }
@@ -1773,19 +1803,21 @@ function FinancialCommandCenter() {
                           <span style={{ fontWeight: '600', fontSize: '14px' }}>{symbol}</span>
                           {result.name && <span style={{ fontSize: '12px', color: theme.textMuted }}>{result.name}</span>}
                           <button
-                            onClick={() => addToWatchlistFromSearch(symbol)}
+                            onClick={() => addFromWatchlistSearchResult(result)}
+                            disabled={(watchlist || []).includes(symbol.toUpperCase())}
                             style={{
                               padding: '4px 10px',
-                              backgroundColor: '#10b981',
+                              backgroundColor: (watchlist || []).includes(symbol.toUpperCase()) ? theme.textMuted : '#10b981',
                               color: '#ffffff',
                               border: 'none',
                               borderRadius: '4px',
-                              cursor: 'pointer',
+                              cursor: (watchlist || []).includes(symbol.toUpperCase()) ? 'not-allowed' : 'pointer',
                               fontSize: '12px',
                               fontWeight: '500',
+                              opacity: (watchlist || []).includes(symbol.toUpperCase()) ? 0.7 : 1,
                             }}
                           >
-                            Add
+                            {(watchlist || []).includes(symbol.toUpperCase()) ? 'In watchlist' : 'Add'}
                           </button>
                         </div>
                       );
@@ -1847,54 +1879,98 @@ function FinancialCommandCenter() {
               <div style={{ textAlign: 'center', padding: '40px', color: theme.textMutedLight }}>No tickers in watchlist. Add some above!</div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '16px' }}>
-                {(watchlist || []).map((ticker) => (
-                  <div
-                    key={ticker}
-                    style={{
-                      padding: '20px',
-                      backgroundColor: theme.surface,
-                      border: `1px solid ${theme.border}`,
-                      borderRadius: '12px',
-                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <div style={{ fontSize: '20px', fontWeight: '600' }}>{ticker}</div>
-                      <button
-                        onClick={() => setWatchlist((watchlist || []).filter((t) => t !== ticker))}
-                        style={{
-                          padding: '4px 8px',
-                          backgroundColor: '#ef4444',
-                          color: '#ffffff',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                        }}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                    <button
-                      onClick={() => briefTicker(ticker)}
-                      disabled={loading}
+                {(watchlist || []).map((ticker) => {
+                  const wq = (watchlistQuotes || {})[ticker];
+                  return (
+                    <div
+                      key={ticker}
                       style={{
-                        width: '100%',
-                        padding: '10px',
-                        backgroundColor: '#6366f1',
-                        color: '#ffffff',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: loading ? 'not-allowed' : 'pointer',
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        marginTop: '8px',
+                        padding: '20px',
+                        backgroundColor: theme.surface,
+                        border: `1px solid ${theme.border}`,
+                        borderRadius: '12px',
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
                       }}
                     >
-                      {loading && selectedTicker === ticker ? 'Loading...' : 'Brief Me'}
-                    </button>
-                  </div>
-                ))}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                        <div>
+                          <div style={{ fontSize: '20px', fontWeight: '600' }}>{ticker}</div>
+                          {(stockInfo || {})[ticker]?.name && (
+                            <div style={{ fontSize: '13px', color: theme.textMuted, marginTop: '2px' }}>{(stockInfo || {})[ticker].name}</div>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => {
+                            setWatchlist((watchlist || []).filter((t) => t !== ticker));
+                            setStockInfo((prev) => {
+                              const next = { ...(prev || {}) };
+                              delete next[ticker];
+                              return next;
+                            });
+                          }}
+                          style={{
+                            padding: '4px 8px',
+                            backgroundColor: '#ef4444',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      {wq && (
+                        <div style={{ marginBottom: '12px', display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '8px' }}>
+                          <span style={{ fontSize: '18px', fontWeight: '600' }}>
+                            ${Number(wq.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                          <span style={{ color: (wq.change || 0) >= 0 ? '#10b981' : '#ef4444', fontSize: '14px' }}>
+                            {(wq.change || 0) >= 0 ? '+' : ''}{Number(wq.change || 0).toFixed(2)} ({wq.changePercent || '0%'})
+                          </span>
+                          {loadingWatchlistQuotes[ticker] && <span style={{ fontSize: '12px', color: theme.textMuted }}>Updating...</span>}
+                        </div>
+                      )}
+                      {!wq && !loadingWatchlistQuotes[ticker] && (
+                        <div style={{ marginBottom: '12px', fontSize: '13px', color: theme.textMuted }}>No quote yet</div>
+                      )}
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <button
+                          onClick={() => refreshWatchlistQuote(ticker)}
+                          disabled={loadingWatchlistQuotes[ticker]}
+                          style={{
+                            padding: '8px 12px',
+                            fontSize: '13px',
+                            border: `1px solid ${theme.border}`,
+                            borderRadius: '6px',
+                            backgroundColor: theme.surface,
+                            color: theme.text,
+                            cursor: loadingWatchlistQuotes[ticker] ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          {loadingWatchlistQuotes[ticker] ? 'Updating...' : 'Refresh price'}
+                        </button>
+                        <button
+                          onClick={() => briefTicker(ticker)}
+                          disabled={loading}
+                          style={{
+                            padding: '8px 12px',
+                            backgroundColor: '#6366f1',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                            fontSize: '13px',
+                            fontWeight: '500',
+                          }}
+                        >
+                          {loading && selectedTicker === ticker ? 'Loading...' : 'Brief Me'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -3236,7 +3312,6 @@ function FinancialCommandCenter() {
                                   Refresh
                                 </button>
                               </div>
-                              <div style={{ fontSize: '11px', color: theme.textMutedLight, marginTop: '4px' }}>Fetched from market; no need to enter.</div>
                             </div>
                             <div style={{ marginBottom: '12px' }}>
                               <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px' }}>Target Price</label>
