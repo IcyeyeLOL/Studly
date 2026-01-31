@@ -1,12 +1,15 @@
 {
-  "shapeId": "shape:financial-command-center-AI30-CqsZPxEC83IVaU21",
-  "widgetId": "shape:financial-command-center-AI30-CqsZPxEC83IVaU21",
+  "shapeId": "shape:financial-command-center-1Xhrt5jTAK6Nu03nrvzql",
+  "widgetId": "shape:financial-command-center-1Xhrt5jTAK6Nu03nrvzql",
   "templateHandle": "financial-command-center",
   "templateName": "Financial Command Center",
-  "icon": "💾",
+  "icon": {
+    "type": "react-icon",
+    "value": "Fi:FiPackage"
+  },
   "position": {
-    "x": 237.95993376146077,
-    "y": 162.87572195969148
+    "x": 248.88767720828787,
+    "y": 187.00109051254088
   },
   "size": {
     "w": 1596.2704471101417,
@@ -21,11 +24,11 @@
   "savedJsxContentHash": "14amg70",
   "meta": {
     "justCreated": false,
-    "createdAt": 1769814245654,
-    "dockOrder": 6,
-    "showDefaultHandles": false
+    "createdAt": 1769824060721,
+    "showDefaultHandles": false,
+    "dockOrder": 0
   },
   "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
-  "index": "aehULHuG",
-  "lastChangedClock": 6576
+  "index": "a1",
+  "lastChangedClock": 10757
 }

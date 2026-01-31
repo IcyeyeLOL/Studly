@@ -11,19 +11,9 @@
         "config": {
           "type": "dock",
           "name": "Dock Space",
-          "description": "Dock mode with macOS-style dock bar for widgets (zoom locked at 50% via DOCK_MODE_ZOOM constant)",
-          "canvasBounds": {
-            "x": 0,
-            "y": 0,
-            "w": 2261.286804798255,
-            "h": 1080
-          },
-          "canvasSize": {
-            "width": 2261.286804798255,
-            "height": 1080
-          }
+          "description": "Dock mode with macOS-style dock bar for widgets (zoom locked at 50% via DOCK_MODE_ZOOM constant)"
         },
-        "lastUpdated": 1769822822917
+        "lastUpdated": 1769828151082
       },
       "publishedSpaceHandle": "deepspace-lime17451"
     },
@@ -37,7 +27,7 @@
       "name": "Page 1",
       "index": "a1",
       "typeName": "page",
-      "lastChangedClock": 5103
+      "lastChangedClock": 6582
     }
   ],
   "schema": {
@@ -82,26 +72,31 @@
       "com.tldraw.binding.arrow": 1
     }
   },
-  "generatedAt": "2026-01-31T01:32:33.336Z",
-  "clock": 6581,
-  "documentClock": 6579,
+  "generatedAt": "2026-01-31T02:55:52.131Z",
+  "clock": 10759,
+  "documentClock": 10759,
   "tombstones": {
     "shape:password-strength-checker-E0rHZqa3_3pHgf9ZPxoOk": 4798,
     "shape:secure-bike-booking-OQfKCmASWPsshJa0XD0YG": 3674,
     "shape:social-media-tracker-ujEtVNtfwvhzIQNF4KFSj": 768,
     "shape:financial-command-center-V6HKO6HyJ3cS4jhAHiDZ7": 3678,
+    "shape:financial-command-center-AI30-CqsZPxEC83IVaU21": 7013,
     "shape:financial-command-center-UDLd3AUSpNXF4Yip2mtvg": 4665,
+    "shape:news-stock-social-tracker-GCXAn7jnRDloG9Zk": 9442,
     "shape:j62Khx-AvdbtjWRCQBiUe": 2218,
     "shape:RKAAsFsLR2nRcNJh": 2293,
     "shape:financial-command-center-R8Hl9bRTp7wQwtWeyQSmw": 3709,
     "shape:financial-command-center-r3bVRingsdy0bMt-Q7Bz3": 4184,
+    "shape:financial-command-center-89b6ftsfQ0DlmdnM": 8673,
     "shape:splitwise-expense-tracker-copy-mitchell-Rb7qJUDXpNhqbfhlBJCMY": 3545,
     "shape:markdown-table-editor-GMT-hSUL9Mv2FYYxJ1F_5": 3592,
+    "shape:financial-command-center-MDHkto4LqjXFkGIw": 7502,
     "shape:financial-command-center-irg_dqgblcDcT-uZID0ph": 3543,
     "shape:financial-command-center-2NCvXB45Wx-_lenltp9t-": 4665,
     "shape:bg-remover-pro-kDiIVicb3I0g4KH9BAxYH": 4732,
     "shape:ratecraft-rdGM5J_KNPs9V-fwAClyz": 3544,
     "shape:normalizer-extractor-kvjQ0JMwgbTFmzkoCYbZv": 3583,
+    "shape:slide-deck-react-uGU5-z5W3KoUzBMWk0Pm-": 9771,
     "shape:P5MlYGs6_VYdJ0Ah": 1326
   },
   "tombstoneHistoryStartsAtClock": 1
