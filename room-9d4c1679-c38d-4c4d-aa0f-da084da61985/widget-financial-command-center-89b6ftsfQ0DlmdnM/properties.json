@@ -3,8 +3,8 @@
   "widgetId": "financial-command-center_1769483843072",
   "templateHandle": "financial-command-center",
   "position": {
-    "x": 578.8113413304247,
-    "y": 215.64885496183214
+    "x": -50000,
+    "y": -50000
   },
   "size": {
     "w": 1174.6346782988003,
@@ -21,9 +21,13 @@
     "justCreated": false,
     "createdAt": 1769484121518,
     "dockOrder": 3,
-    "showDefaultHandles": false
+    "showDefaultHandles": false,
+    "isDockedHidden": true,
+    "hiddenAt": 1769809180410,
+    "originalX": 578.8113413304247,
+    "originalY": 215.64885496183214
   },
   "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
-  "index": "aTEsYysV",
-  "lastChangedClock": 1007
+  "index": "aXlLuRNV",
+  "lastChangedClock": 5277
 }

@@ -23,8 +23,9 @@
             "height": 1080
           }
         },
-        "lastUpdated": 1769615865383
-      }
+        "lastUpdated": 1769822822917
+      },
+      "publishedSpaceHandle": "deepspace-lime17451"
     },
     "id": "document:document",
     "typeName": "document"
@@ -36,7 +37,7 @@
       "name": "Page 1",
       "index": "a1",
       "typeName": "page",
-      "lastChangedClock": 1007
+      "lastChangedClock": 5103
     }
   ],
   "schema": {
@@ -81,11 +82,27 @@
       "com.tldraw.binding.arrow": 1
     }
   },
-  "generatedAt": "2026-01-28T15:57:39.820Z",
-  "clock": 1024,
-  "documentClock": 1021,
+  "generatedAt": "2026-01-31T01:32:33.336Z",
+  "clock": 6581,
+  "documentClock": 6579,
   "tombstones": {
-    "shape:social-media-tracker-ujEtVNtfwvhzIQNF4KFSj": 768
+    "shape:password-strength-checker-E0rHZqa3_3pHgf9ZPxoOk": 4798,
+    "shape:secure-bike-booking-OQfKCmASWPsshJa0XD0YG": 3674,
+    "shape:social-media-tracker-ujEtVNtfwvhzIQNF4KFSj": 768,
+    "shape:financial-command-center-V6HKO6HyJ3cS4jhAHiDZ7": 3678,
+    "shape:financial-command-center-UDLd3AUSpNXF4Yip2mtvg": 4665,
+    "shape:j62Khx-AvdbtjWRCQBiUe": 2218,
+    "shape:RKAAsFsLR2nRcNJh": 2293,
+    "shape:financial-command-center-R8Hl9bRTp7wQwtWeyQSmw": 3709,
+    "shape:financial-command-center-r3bVRingsdy0bMt-Q7Bz3": 4184,
+    "shape:splitwise-expense-tracker-copy-mitchell-Rb7qJUDXpNhqbfhlBJCMY": 3545,
+    "shape:markdown-table-editor-GMT-hSUL9Mv2FYYxJ1F_5": 3592,
+    "shape:financial-command-center-irg_dqgblcDcT-uZID0ph": 3543,
+    "shape:financial-command-center-2NCvXB45Wx-_lenltp9t-": 4665,
+    "shape:bg-remover-pro-kDiIVicb3I0g4KH9BAxYH": 4732,
+    "shape:ratecraft-rdGM5J_KNPs9V-fwAClyz": 3544,
+    "shape:normalizer-extractor-kvjQ0JMwgbTFmzkoCYbZv": 3583,
+    "shape:P5MlYGs6_VYdJ0Ah": 1326
   },
   "tombstoneHistoryStartsAtClock": 1
 }

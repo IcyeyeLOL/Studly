@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Financial Command Center - single file for copy-paste into widget.
  * Uses miyagiAPI.post(endpoint, body) -> { success, data } and useStorage(key, initial, { scope: 'user' }).
  *
@@ -2871,7 +2871,7 @@ function FinancialCommandCenter() {
                           fontSize: '14px',
                         }}
                       >
-                        Open on LinkedIn →
+                        Open on LinkedIn â†’
                       </a>
                     </div>
                   </div>

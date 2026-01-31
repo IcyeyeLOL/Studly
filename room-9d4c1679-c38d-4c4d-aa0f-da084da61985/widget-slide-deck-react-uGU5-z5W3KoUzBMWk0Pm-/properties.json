@@ -8,8 +8,8 @@
     "value": "Fi:FiMonitor"
   },
   "position": {
-    "x": 704.1984732824423,
-    "y": 330
+    "x": -50000,
+    "y": -50000
   },
   "size": {
     "w": 900,
@@ -24,11 +24,15 @@
   "savedJsxContentHash": "517zfn",
   "meta": {
     "justCreated": false,
-    "createdAt": 1769483252152,
+    "createdAt": 1769809566762,
     "dockOrder": 0,
-    "showDefaultHandles": false
+    "showDefaultHandles": false,
+    "isDockedHidden": true,
+    "hiddenAt": 1769809572299,
+    "originalX": 1255.9323882224644,
+    "originalY": 327.6444929116685
   },
   "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
-  "index": "aEELIIMV",
-  "lastChangedClock": 1007
+  "index": "acBAywkV",
+  "lastChangedClock": 6418
 }
