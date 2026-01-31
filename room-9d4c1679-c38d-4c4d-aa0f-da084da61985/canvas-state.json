@@ -1,6 +1,6 @@
 {
-  "clock": 11308,
-  "documentClock": 11308,
+  "clock": 11360,
+  "documentClock": 11358,
   "tombstones": {
     "shape:password-strength-checker-E0rHZqa3_3pHgf9ZPxoOk": 4798,
     "shape:secure-bike-booking-OQfKCmASWPsshJa0XD0YG": 3674,
@@ -26,7 +26,8 @@
     "shape:ratecraft-rdGM5J_KNPs9V-fwAClyz": 3544,
     "shape:normalizer-extractor-kvjQ0JMwgbTFmzkoCYbZv": 3583,
     "shape:slide-deck-react-uGU5-z5W3KoUzBMWk0Pm-": 9771,
-    "shape:P5MlYGs6_VYdJ0Ah": 1326
+    "shape:P5MlYGs6_VYdJ0Ah": 1326,
+    "shape:qr-code-generator-POsoDUo7P-Kd46sLThSDO": 11358
   },
   "tombstoneHistoryStartsAtClock": 1,
   "schema": {
@@ -136,9 +137,9 @@
         "typeName": "shape",
         "type": "miyagi-widget",
         "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
-        "index": "a9amParV",
-        "x": 333.0861504907307,
-        "y": 210.59978189749185,
+        "index": "aBAhUUyO",
+        "x": 200,
+        "y": 200,
         "rotation": 0,
         "isLocked": false,
         "opacity": 1,
@@ -153,8 +154,8 @@
           "originalY": 318.52780806979274
         },
         "props": {
-          "w": 1384.721919302072,
-          "h": 591.9738276990186,
+          "w": 1511.7993456924755,
+          "h": 701.504907306434,
           "widgetId": "shape:financial-command-center-1Xhrt5jTAK6Nu03nrvzql",
           "templateHandle": "financial-command-center",
           "templateName": "Financial Command Center",
@@ -171,7 +172,7 @@
           "sources": null
         }
       },
-      "lastChangedClock": 11252
+      "lastChangedClock": 11327
     },
     {
       "state": {
@@ -185,8 +186,8 @@
     },
     {
       "state": {
-        "x": 149.9563794983643,
-        "y": 154.02399127589965,
+        "x": 360,
+        "y": 200,
         "rotation": 0,
         "isLocked": false,
         "opacity": 1,
@@ -199,8 +200,8 @@
         "id": "shape:financial-command-center-3aDhWUkbq9XfU-iPhfk5E",
         "type": "miyagi-widget",
         "props": {
-          "w": 1596.2704471101417,
-          "h": 682.4427480916031,
+          "w": 120,
+          "h": 120,
           "widgetId": "shape:financial-command-center-3aDhWUkbq9XfU-iPhfk5E",
           "templateHandle": "financial-command-center",
           "templateName": "Financial Command Center",
@@ -220,12 +221,12 @@
         "index": "aAZcc8Ul",
         "typeName": "shape"
       },
-      "lastChangedClock": 11305
+      "lastChangedClock": 11310
     },
     {
       "state": {
-        "x": 332.9116684841876,
-        "y": 218.84405670665214,
+        "x": 520,
+        "y": 200,
         "rotation": 0,
         "isLocked": false,
         "opacity": 1,
@@ -263,7 +264,7 @@
         "index": "a7spINXV",
         "typeName": "shape"
       },
-      "lastChangedClock": 11167
+      "lastChangedClock": 11310
     },
     {
       "state": {
@@ -280,14 +281,14 @@
               "name": "Dock Space",
               "description": "Dock mode with macOS-style dock bar for widgets (zoom locked at 50% via DOCK_MODE_ZOOM constant)"
             },
-            "lastUpdated": 1769879011632
+            "lastUpdated": 1769880472974
           },
           "publishedSpaceHandle": "deepspace-lime17451"
         },
         "id": "document:document",
         "typeName": "document"
       },
-      "lastChangedClock": 11308
+      "lastChangedClock": 11352
     },
     {
       "state": {
@@ -328,6 +329,9 @@
           },
           "shape:financial-command-center-3aDhWUkbq9XfU-iPhfk5E": {
             "__widget_config": "{\"roomId\":\"room-9d4c1679-c38d-4c4d-aa0f-da084da61985\",\"pageId\":\"page:ryfD_vTjBIH4xjvQ2a2vu\",\"shapeId\":\"shape:financial-command-center-3aDhWUkbq9XfU-iPhfk5E\",\"templateHandle\":\"financial-command-center\"}"
+          },
+          "shape:qr-code-generator-POsoDUo7P-Kd46sLThSDO": {
+            "__widget_config": "{\"roomId\":\"room-9d4c1679-c38d-4c4d-aa0f-da084da61985\",\"pageId\":\"page:ryfD_vTjBIH4xjvQ2a2vu\",\"shapeId\":\"shape:qr-code-generator-POsoDUo7P-Kd46sLThSDO\",\"templateHandle\":\"qr-code-generator\"}"
           }
         },
         "global": {
@@ -410,7 +414,7 @@
               }
             }
           },
-          "__widget_io_configs": "{\"shape:financial-command-center-1Xhrt5jTAK6Nu03nrvzql\":{\"inputs\":[],\"outputs\":[]},\"shape:fps-QFKMOVlCTzH29Bjn7h3CQ\":{\"inputs\":[],\"outputs\":[]},\"shape:financial-command-center-3aDhWUkbq9XfU-iPhfk5E\":{\"inputs\":[],\"outputs\":[]}}",
+          "__widget_io_configs": "{\"shape:financial-command-center-1Xhrt5jTAK6Nu03nrvzql\":{\"inputs\":[],\"outputs\":[]},\"shape:fps-QFKMOVlCTzH29Bjn7h3CQ\":{\"inputs\":[],\"outputs\":[]},\"shape:financial-command-center-3aDhWUkbq9XfU-iPhfk5E\":{\"inputs\":[],\"outputs\":[]},\"shape:qr-code-generator-POsoDUo7P-Kd46sLThSDO\":{\"inputs\":[],\"outputs\":[]}}",
           "__widget_connections": "[]",
           "fcc-dark-mode": "true",
           "fcc-watchlists": "[{\"id\":\"default\",\"name\":\"My Watchlist\",\"tickers\":[]}]",
@@ -438,7 +442,7 @@
         "id": "canvas_storage:main",
         "typeName": "canvas_storage"
       },
-      "lastChangedClock": 11258
+      "lastChangedClock": 11355
     }
   ]
 }
