@@ -1,0 +1,35 @@
+{
+  "shapeId": "shape:wavelength-9bGw90ctWcv34v87sk97T",
+  "widgetId": "shape:wavelength-9bGw90ctWcv34v87sk97T",
+  "templateHandle": "wavelength-lime17451",
+  "templateName": "Wavelength",
+  "icon": "💾",
+  "position": {
+    "x": -50000,
+    "y": -50000
+  },
+  "size": {
+    "w": 885.0516986706056,
+    "h": 960.4770587149186
+  },
+  "rotation": 0,
+  "opacity": 1,
+  "isLocked": false,
+  "color": "black",
+  "zoomScale": 1,
+  "isFullscreen": false,
+  "savedJsxContentHash": "gqutsd",
+  "meta": {
+    "justCreated": false,
+    "createdAt": 1769975408496,
+    "dockOrder": 6,
+    "showDefaultHandles": false,
+    "isDockedHidden": true,
+    "hiddenAt": 1769975505382,
+    "originalX": 688.1175530638247,
+    "originalY": 59.7614706425407
+  },
+  "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
+  "index": "aIMIGTtV",
+  "lastChangedClock": 11497
+}

@@ -1,0 +1,20 @@
+{
+  "meta": {
+    "isFileAsset": true,
+    "originalMimeType": "application/pdf",
+    "originalFileName": "DeepSpace_Penetration_Test_Report.docx.pdf"
+  },
+  "id": "asset:GuAnpniOVkyi1_cL3eu35",
+  "type": "image",
+  "typeName": "asset",
+  "props": {
+    "name": "DeepSpace_Penetration_Test_Report.docx.pdf",
+    "src": "https://miyagi-canvas-sync.eudaimonicincorporated.workers.dev/api/uploads/6ea7ad4e-285a-4c0c-b6df-0b07a9650bca",
+    "w": 200,
+    "h": 120,
+    "fileSize": 381629,
+    "mimeType": "application/pdf",
+    "isAnimated": false
+  },
+  "generatedAt": "2026-02-07T20:45:57.649Z"
+}

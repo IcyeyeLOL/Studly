@@ -1,0 +1,22 @@
+{
+  "x": 1130.6434023991276,
+  "y": 540,
+  "rotation": 0,
+  "isLocked": false,
+  "opacity": 1,
+  "meta": {
+    "dockOrder": 11,
+    "showDefaultHandles": false
+  },
+  "id": "shape:2UFxqgIbsiAvkr5xjKSbB",
+  "type": "file",
+  "props": {
+    "w": 200,
+    "h": 120,
+    "assetId": "asset:GuAnpniOVkyi1_cL3eu35"
+  },
+  "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
+  "index": "aXTB2QbV",
+  "typeName": "shape",
+  "generatedAt": "2026-02-07T20:45:57.628Z"
+}

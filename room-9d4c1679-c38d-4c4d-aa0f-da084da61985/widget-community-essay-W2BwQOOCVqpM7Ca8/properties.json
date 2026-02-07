@@ -1,0 +1,25 @@
+{
+  "shapeId": "shape:community-essay-W2BwQOOCVqpM7Ca8",
+  "widgetId": "community-essay_1770497169008",
+  "templateHandle": "community-essay",
+  "position": {
+    "x": -24684.678298800438,
+    "y": -24970
+  },
+  "size": {
+    "w": 700,
+    "h": 600
+  },
+  "rotation": 0,
+  "opacity": 1,
+  "isLocked": false,
+  "color": "black",
+  "zoomScale": 1,
+  "savedJsxContentHash": "initial",
+  "meta": {
+    "initializationState": "ready"
+  },
+  "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
+  "index": "aU",
+  "lastChangedClock": 1676
+}

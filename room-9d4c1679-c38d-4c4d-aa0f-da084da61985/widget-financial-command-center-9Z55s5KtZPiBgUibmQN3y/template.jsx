@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Financial Command Center - single file for copy-paste into widget.
  * Uses miyagiAPI.post(endpoint, body) -> { success, data } and useStorage(key, initial, { scope: 'user' }).
  *
@@ -1747,36 +1747,29 @@ function FinancialCommandCenter() {
                   placeholder="Search by symbol or company name"
                   value={watchlistSearchQuery}
                   onChange={(e) => setWatchlistSearchQuery(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && !watchlistSearching && watchlistSearchQuery.trim() && searchWatchlistStocks()}
+                  onKeyPress={(e) => e.key === 'Enter' && searchWatchlistStocks()}
                   style={{
                     flex: 1,
-                    padding: '14px 20px',
-                    border: '1px solid #f0f0f0',
-                    borderRadius: '10px',
+                    padding: '12px 16px',
+                    border: `1px solid ${theme.border}`,
+                    borderRadius: '8px',
                     fontSize: '14px',
-                    backgroundColor: '#ffffff',
-                    color: '#000000',
-                    outline: 'none',
-                    transition: 'border-color 0.2s',
+                    backgroundColor: theme.surface,
+                    color: theme.text,
                   }}
-                  onFocus={(e) => e.target.style.borderColor = '#6366f1'}
-                  onBlur={(e) => e.target.style.borderColor = '#f0f0f0'}
                 />
                 <button
                   onClick={searchWatchlistStocks}
                   disabled={watchlistSearching || !watchlistSearchQuery.trim()}
                   style={{
-                    padding: '14px 32px',
+                    padding: '12px 24px',
                     backgroundColor: '#6366f1',
                     color: '#ffffff',
                     border: 'none',
-                    borderRadius: '10px',
-                    cursor: (watchlistSearching || !watchlistSearchQuery.trim()) ? 'not-allowed' : 'pointer',
+                    borderRadius: '8px',
+                    cursor: watchlistSearching ? 'not-allowed' : 'pointer',
                     fontSize: '14px',
-                    fontWeight: '600',
-                    opacity: (watchlistSearching || !watchlistSearchQuery.trim()) ? 0.5 : 1,
-                    transition: 'all 0.2s',
-                    boxShadow: '0 4px 16px rgba(99, 102, 241, 0.15)',
+                    fontWeight: '500',
                   }}
                 >
                   {watchlistSearching ? 'Searching...' : 'Search'}
@@ -3010,36 +3003,29 @@ function FinancialCommandCenter() {
                   placeholder="Search by symbol or company name"
                   value={portfolioSearchQuery}
                   onChange={(e) => setPortfolioSearchQuery(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && !portfolioSearching && portfolioSearchQuery.trim() && searchPortfolioTicker()}
+                  onKeyPress={(e) => e.key === 'Enter' && searchPortfolioTicker()}
                   style={{
                     flex: 1,
-                    padding: '14px 20px',
-                    border: '1px solid #f0f0f0',
-                    borderRadius: '10px',
+                    padding: '12px 16px',
+                    border: `1px solid ${theme.border}`,
+                    borderRadius: '8px',
                     fontSize: '14px',
-                    backgroundColor: '#ffffff',
-                    color: '#000000',
-                    outline: 'none',
-                    transition: 'border-color 0.2s',
+                    backgroundColor: theme.surface,
+                    color: theme.text,
                   }}
-                  onFocus={(e) => e.target.style.borderColor = '#6366f1'}
-                  onBlur={(e) => e.target.style.borderColor = '#f0f0f0'}
                 />
                 <button
                   onClick={searchPortfolioTicker}
                   disabled={portfolioSearching || !portfolioSearchQuery.trim()}
                   style={{
-                    padding: '14px 32px',
+                    padding: '12px 24px',
                     backgroundColor: '#6366f1',
                     color: '#ffffff',
                     border: 'none',
-                    borderRadius: '10px',
-                    cursor: (portfolioSearching || !portfolioSearchQuery.trim()) ? 'not-allowed' : 'pointer',
+                    borderRadius: '8px',
+                    cursor: portfolioSearching ? 'not-allowed' : 'pointer',
                     fontSize: '14px',
-                    fontWeight: '600',
-                    opacity: (portfolioSearching || !portfolioSearchQuery.trim()) ? 0.5 : 1,
-                    transition: 'all 0.2s',
-                    boxShadow: '0 4px 16px rgba(99, 102, 241, 0.15)',
+                    fontWeight: '500',
                   }}
                 >
                   {portfolioSearching ? 'Searching...' : 'Search'}

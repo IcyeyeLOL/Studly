@@ -11,9 +11,19 @@
         "config": {
           "type": "dock",
           "name": "Dock Space",
-          "description": "Dock mode with macOS-style dock bar for widgets (zoom locked at 50% via DOCK_MODE_ZOOM constant)"
+          "description": "Dock mode with macOS-style dock bar for widgets (zoom locked at 50% via DOCK_MODE_ZOOM constant)",
+          "canvasBounds": {
+            "x": 0,
+            "y": 0,
+            "w": 2261.286804798255,
+            "h": 1080
+          },
+          "canvasSize": {
+            "width": 2261.286804798255,
+            "height": 1080
+          }
         },
-        "lastUpdated": 1769828151082
+        "lastUpdated": 1770497124564
       },
       "publishedSpaceHandle": "deepspace-lime17451"
     },
@@ -27,7 +37,7 @@
       "name": "Page 1",
       "index": "a1",
       "typeName": "page",
-      "lastChangedClock": 6582
+      "lastChangedClock": 10762
     }
   ],
   "schema": {
@@ -72,17 +82,22 @@
       "com.tldraw.binding.arrow": 1
     }
   },
-  "generatedAt": "2026-01-31T02:55:52.131Z",
-  "clock": 10759,
-  "documentClock": 10759,
+  "generatedAt": "2026-02-07T20:45:57.649Z",
+  "clock": 11796,
+  "documentClock": 11796,
   "tombstones": {
     "shape:password-strength-checker-E0rHZqa3_3pHgf9ZPxoOk": 4798,
     "shape:secure-bike-booking-OQfKCmASWPsshJa0XD0YG": 3674,
     "shape:social-media-tracker-ujEtVNtfwvhzIQNF4KFSj": 768,
+    "shape:S2TuJsOqdQ2omWORTmVop": 11086,
+    "shape:PrLpZwFCh0EWCfDXyp6B1": 11018,
+    "shape:financial-command-center-1Xhrt5jTAK6Nu03nrvzql": 11713,
     "shape:financial-command-center-V6HKO6HyJ3cS4jhAHiDZ7": 3678,
     "shape:financial-command-center-AI30-CqsZPxEC83IVaU21": 7013,
     "shape:financial-command-center-UDLd3AUSpNXF4Yip2mtvg": 4665,
     "shape:news-stock-social-tracker-GCXAn7jnRDloG9Zk": 9442,
+    "shape:bUT5YyGwtUSgCF2d": 11561,
+    "shape:financial-command-center-3aDhWUkbq9XfU-iPhfk5E": 11790,
     "shape:j62Khx-AvdbtjWRCQBiUe": 2218,
     "shape:RKAAsFsLR2nRcNJh": 2293,
     "shape:financial-command-center-R8Hl9bRTp7wQwtWeyQSmw": 3709,
@@ -94,10 +109,12 @@
     "shape:financial-command-center-irg_dqgblcDcT-uZID0ph": 3543,
     "shape:financial-command-center-2NCvXB45Wx-_lenltp9t-": 4665,
     "shape:bg-remover-pro-kDiIVicb3I0g4KH9BAxYH": 4732,
+    "shape:fps-5_W2K0EPWVkGlh-dcwuKe": 11014,
     "shape:ratecraft-rdGM5J_KNPs9V-fwAClyz": 3544,
     "shape:normalizer-extractor-kvjQ0JMwgbTFmzkoCYbZv": 3583,
     "shape:slide-deck-react-uGU5-z5W3KoUzBMWk0Pm-": 9771,
-    "shape:P5MlYGs6_VYdJ0Ah": 1326
+    "shape:P5MlYGs6_VYdJ0Ah": 1326,
+    "shape:qr-code-generator-POsoDUo7P-Kd46sLThSDO": 11358
   },
   "tombstoneHistoryStartsAtClock": 1
 }

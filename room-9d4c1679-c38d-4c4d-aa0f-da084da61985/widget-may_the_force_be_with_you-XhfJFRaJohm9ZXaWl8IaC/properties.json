@@ -1,0 +1,38 @@
+{
+  "shapeId": "shape:may_the_force_be_with_you-XhfJFRaJohm9ZXaWl8IaC",
+  "widgetId": "shape:may_the_force_be_with_you-XhfJFRaJohm9ZXaWl8IaC",
+  "templateHandle": "may_the_force_be_with_you-lime17451",
+  "templateName": "Star Wars Game",
+  "icon": {
+    "type": "react-icon",
+    "value": "Fi:FiPackage"
+  },
+  "position": {
+    "x": -50000,
+    "y": -50000
+  },
+  "size": {
+    "w": 1416,
+    "h": 876.0000000000001
+  },
+  "rotation": 0,
+  "opacity": 1,
+  "isLocked": false,
+  "color": "black",
+  "zoomScale": 1,
+  "isFullscreen": false,
+  "savedJsxContentHash": "1bqifpa",
+  "meta": {
+    "justCreated": false,
+    "createdAt": 1769975513139,
+    "dockOrder": 8,
+    "showDefaultHandles": false,
+    "isDockedHidden": true,
+    "hiddenAt": 1769975582044,
+    "originalX": 422.6434023991276,
+    "originalY": 101.99999999999994
+  },
+  "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
+  "index": "aJwwIiMV",
+  "lastChangedClock": 11502
+}

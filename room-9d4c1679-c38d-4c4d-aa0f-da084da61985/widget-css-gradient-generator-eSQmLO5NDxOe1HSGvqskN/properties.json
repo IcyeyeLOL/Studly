@@ -1,0 +1,38 @@
+{
+  "shapeId": "shape:css-gradient-generator-eSQmLO5NDxOe1HSGvqskN",
+  "widgetId": "shape:css-gradient-generator-eSQmLO5NDxOe1HSGvqskN",
+  "templateHandle": "css-gradient-generator-lime17451",
+  "templateName": "Css Gradient Generator",
+  "icon": {
+    "type": "react-icon",
+    "value": "Fi:FiPackage"
+  },
+  "position": {
+    "x": -50000,
+    "y": -50000
+  },
+  "size": {
+    "w": 760.8108108108106,
+    "h": 739.8648648648648
+  },
+  "rotation": 0,
+  "opacity": 1,
+  "isLocked": false,
+  "color": "black",
+  "zoomScale": 1,
+  "isFullscreen": false,
+  "savedJsxContentHash": "js6pyr",
+  "meta": {
+    "justCreated": false,
+    "createdAt": 1769883705202,
+    "dockOrder": 5,
+    "showDefaultHandles": false,
+    "isDockedHidden": true,
+    "hiddenAt": 1770151449644,
+    "originalX": 712.5840213643071,
+    "originalY": 290.1351351351352
+  },
+  "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
+  "index": "aR23ww2V",
+  "lastChangedClock": 11715
+}

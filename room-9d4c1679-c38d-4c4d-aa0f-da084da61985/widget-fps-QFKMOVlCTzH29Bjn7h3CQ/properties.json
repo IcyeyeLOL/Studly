@@ -1,0 +1,38 @@
+{
+  "shapeId": "shape:fps-QFKMOVlCTzH29Bjn7h3CQ",
+  "widgetId": "shape:fps-QFKMOVlCTzH29Bjn7h3CQ",
+  "templateHandle": "fps-lime17451",
+  "templateName": "First Person Shooter (FPS)",
+  "icon": {
+    "type": "react-icon",
+    "value": "Ai:AiOutlineAim"
+  },
+  "position": {
+    "x": -50000,
+    "y": -50000
+  },
+  "size": {
+    "w": 1730.1753042106322,
+    "h": 949.8354683573634
+  },
+  "rotation": 0,
+  "opacity": 1,
+  "isLocked": false,
+  "color": "black",
+  "zoomScale": 1,
+  "isFullscreen": false,
+  "savedJsxContentHash": "19067ra",
+  "meta": {
+    "justCreated": false,
+    "createdAt": 1769878787683,
+    "dockOrder": 2,
+    "showDefaultHandles": false,
+    "isDockedHidden": true,
+    "hiddenAt": 1769878917945,
+    "originalX": 481.1115005876229,
+    "originalY": 80.16453164263658
+  },
+  "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
+  "index": "aFsFN8VV",
+  "lastChangedClock": 11383
+}

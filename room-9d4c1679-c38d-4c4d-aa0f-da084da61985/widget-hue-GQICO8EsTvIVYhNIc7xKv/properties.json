@@ -1,0 +1,38 @@
+{
+  "shapeId": "shape:hue-GQICO8EsTvIVYhNIc7xKv",
+  "widgetId": "shape:hue-GQICO8EsTvIVYhNIc7xKv",
+  "templateHandle": "hue-lime17451",
+  "templateName": "Hue",
+  "icon": {
+    "type": "react-icon",
+    "value": "Io:IoColorFilterOutline"
+  },
+  "position": {
+    "x": -50000,
+    "y": -50000
+  },
+  "size": {
+    "w": 580.8708272859217,
+    "h": 706.589259796807
+  },
+  "rotation": 0,
+  "opacity": 1,
+  "isLocked": false,
+  "color": "black",
+  "zoomScale": 1,
+  "isFullscreen": false,
+  "savedJsxContentHash": "1v9ortv",
+  "meta": {
+    "justCreated": false,
+    "createdAt": 1769975718034,
+    "dockOrder": 9,
+    "showDefaultHandles": false,
+    "isDockedHidden": true,
+    "hiddenAt": 1770151452459,
+    "originalX": 1287.7543355391547,
+    "originalY": 255.01507566321044
+  },
+  "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
+  "index": "aThrQSuV",
+  "lastChangedClock": 11719
+}
