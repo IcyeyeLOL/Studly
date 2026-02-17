@@ -85,9 +85,6 @@ npm run push ALL           # Push all rooms
 If you need to run the build steps manually:
 
 ```bash
-# Compile JSX templates to HTML
-node agent_scripts/bundle-templates.js
-
 # Generate canvas-state.json from all widget directories
 node agent_scripts/generate-canvas.js
 

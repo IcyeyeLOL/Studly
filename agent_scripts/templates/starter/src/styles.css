@@ -1,0 +1,133 @@
+@import "tailwindcss" source(none);
+
+/* Scan widget source files for Tailwind classes */
+@source "./**/*.{js,ts,jsx,tsx}";
+/* Scan SDK and chat package source for their Tailwind classes */
+@source "../node_modules/@spaces/sdk/src/**/*.{js,ts,jsx,tsx}";
+@source "../node_modules/@miyagi/chat/src/**/*.{js,ts,jsx,tsx}";
+
+/*
+ * Theme configuration (replaces tailwind.config.js)
+ * Each widget can customize these values.
+ */
+@theme {
+  /* Surfaces (backgrounds) */
+  --color-surface: #0a0f1a;
+  --color-surface-elevated: #0f172a;
+  --color-surface-overlay: #1e293b;
+  --color-surface-input: rgba(30, 41, 59, 0.6);
+
+  /* Text */
+  --color-content: #f1f5f9;
+  --color-content-secondary: #94a3b8;
+  --color-content-muted: #64748b;
+  --color-content-inverse: #0f172a;
+
+  /* Borders */
+  --color-border: rgba(51, 65, 85, 0.5);
+  --color-border-strong: rgba(71, 85, 105, 0.5);
+  --color-border-focus: rgba(139, 92, 246, 0.5);
+
+  /* Primary accent */
+  --color-primary: #8b5cf6;
+  --color-primary-hover: #a78bfa;
+  --color-primary-muted: rgba(139, 92, 246, 0.2);
+  --color-primary-border: rgba(139, 92, 246, 0.3);
+
+  /* Status colors */
+  --color-success: #10b981;
+  --color-success-muted: rgba(16, 185, 129, 0.2);
+  --color-success-border: rgba(16, 185, 129, 0.4);
+
+  --color-warning: #f59e0b;
+  --color-warning-muted: rgba(245, 158, 11, 0.2);
+  --color-warning-border: rgba(245, 158, 11, 0.4);
+
+  --color-danger: #ef4444;
+  --color-danger-muted: rgba(239, 68, 68, 0.2);
+  --color-danger-border: rgba(239, 68, 68, 0.4);
+
+  --color-info: #3b82f6;
+  --color-info-muted: rgba(59, 130, 246, 0.2);
+  --color-info-border: rgba(59, 130, 246, 0.4);
+
+  /* Legacy colors (for chat components) */
+  --color-chat-bg: #0f172a;
+  --color-chat-user: #1e293b;
+  --color-chat-ai: #1e293b;
+  --color-border-light: rgba(71, 85, 105, 0.5);
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-accent: #8b5cf6;
+  --color-accent-hover: #a78bfa;
+
+  /* Shadows */
+  --shadow-glow-violet: 0 0 24px rgba(139, 92, 246, 0.3);
+  --shadow-glow-cyan: 0 0 24px rgba(6, 182, 212, 0.3);
+  --shadow-glow-emerald: 0 0 24px rgba(16, 185, 129, 0.3);
+  --shadow-glow-amber: 0 0 24px rgba(245, 158, 11, 0.3);
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 12px 40px rgba(0, 0, 0, 0.4);
+
+  /* Animations */
+  --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
+}
+
+/*
+ * Custom base styles — must be in @layer base so utility classes can override.
+ * The * reset from v3 is removed: Tailwind v4 Preflight already handles
+ * box-sizing, margin, and padding resets inside @layer base.
+ */
+@layer base {
+  html, body, #root {
+    min-height: 100vh;
+    background-color: var(--color-surface);
+  }
+
+  body {
+    font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-size: 14px;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border-radius: 0.25rem;
+    background-color: var(--color-border);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-content-muted);
+  }
+
+  /* Selection styling */
+  ::selection {
+    background-color: var(--color-primary);
+    color: var(--color-white, #fff);
+  }
+
+  /* Focus states for accessibility */
+  *:focus-visible {
+    outline-style: solid;
+    outline-width: 2px;
+    outline-offset: 2px;
+    outline-color: var(--color-primary);
+  }
+
+  /* Form input calendar icons (dark mode invert) */
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.7);
+  }
+}

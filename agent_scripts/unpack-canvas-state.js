@@ -5,10 +5,11 @@
  * 
  * Processes all canvas-state.json files in the repository recursively.
  * Each room (root or subcanvas) is processed identically and generates:
- * - Widget directories (widget-{shapeId}/) with properties.json, template.jsx, template.html, storage.json
+ * - Widget directories (widget-{shapeId}/) with properties.json and src/ directory
  * - Canvas metadata files (canvas-metadata.json) 
- * - Global storage files (global-storage.json)
  * - Canvas-link files (canvas-link-{shapeId}.json) in parent room directories
+ * 
+ * Note: Storage (global-storage.json, files/) is no longer generated.
  * 
  * Usage: node unpack-canvas-state.js
  */
@@ -159,10 +160,10 @@ class CanvasStateUnpacker {
       const canvasStateContent = fs.readFileSync(canvasStateFilePath, 'utf8');
       const canvasState = JSON.parse(canvasStateContent);
 
-      // Collect metadata, canvas_storage, and buffer assets
+      // Collect metadata and buffer assets
+      // Note: canvas_storage is no longer processed
       let documentData = null;
       const pages = [];
-      let canvasStorageState = null;
       const referencedAssetIds = new Set();
       const bufferedAssets = [];
 
@@ -172,7 +173,6 @@ class CanvasStateUnpacker {
         if (result) {
           if (result.type === 'document') documentData = result.data;
           else if (result.type === 'page') pages.push(result.data);
-          else if (result.type === 'canvas_storage') canvasStorageState = result.data;
         }
       }
 
@@ -183,14 +183,8 @@ class CanvasStateUnpacker {
         }
       }
 
-      // Generate metadata files
+      // Generate metadata file
       await this.generateCanvasMetadata(documentData, pages, canvasState, roomDir);
-      await this.generateGlobalStorage(canvasStorageState, roomDir);
-      
-      // Process canvas_storage LAST - only writes storage.json for existing widget directories
-      if (canvasStorageState) {
-        await this.unpackCanvasStorage(canvasStorageState, roomDir);
-      }
 
       console.log(`✅ Processed room: ${roomName}`);
 
@@ -203,6 +197,7 @@ class CanvasStateUnpacker {
   /**
    * Main document processor - dispatches based on typeName and writes files directly
    * Assets are buffered and assetId references are collected from shapes
+   * Note: canvas_storage is skipped
    */
   async processDocument(document, roomDir, referencedAssetIds, bufferedAssets) {
     const { state, lastChangedClock } = document;
@@ -213,7 +208,8 @@ class CanvasStateUnpacker {
       case 'page':
         return { type: 'page', data: { ...state, lastChangedClock } };
       case 'canvas_storage':
-        return { type: 'canvas_storage', data: state };
+        // Skip - storage is now handled by RecordRoom/Yjs
+        return null;
       case 'shape':
         // Collect assetId reference if shape has one
         if (state.props?.assetId) {
@@ -227,25 +223,6 @@ class CanvasStateUnpacker {
         return null;
       default:
         return null;
-    }
-  }
-
-  /**
-   * Unpack canvas_storage - writes storage.json files ONLY for existing widget directories
-   * Called after all shapes are processed to avoid creating directories for deleted widgets
-   */
-  async unpackCanvasStorage(state, roomDir) {
-    const widgetStorage = state.widgets || {};
-    for (const [shapeId, storage] of Object.entries(widgetStorage)) {
-      const widgetDirName = `widget-${shapeId.replace('shape:', '')}`;
-      const widgetDir = path.join(roomDir, widgetDirName);
-      
-      // Only write storage.json if widget directory exists (widget shape was processed)
-      if (fs.existsSync(widgetDir)) {
-        const storagePath = path.join(widgetDir, 'storage.json');
-        fs.writeFileSync(storagePath, JSON.stringify(storage, null, 2), 'utf8');
-      }
-      // Silently skip if widget directory doesn't exist (widget was deleted, storage is stale)
     }
   }
 
@@ -292,7 +269,9 @@ class CanvasStateUnpacker {
       color: state.props?.color,
       zoomScale: state.props?.zoomScale,
       isFullscreen: state.props?.isFullscreen,
-      savedJsxContentHash: state.props?.savedJsxContentHash,
+      savedContentHash: state.props?.savedContentHash,
+      templateDescription: state.props?.templateDescription,
+      templateCategory: state.props?.templateCategory,
       meta: state.meta,
       parentId: state.parentId,
       index: state.index,
@@ -304,11 +283,7 @@ class CanvasStateUnpacker {
     const stylingMd = generateStylingMd(state.props?.style);
     fs.writeFileSync(path.join(widgetDir, 'styling.md'), stylingMd, 'utf8');
 
-    // Write template files
-    fs.writeFileSync(path.join(widgetDir, 'template.jsx'), state.props?.jsxContent || '', 'utf8');
-    fs.writeFileSync(path.join(widgetDir, 'template.html'), state.props?.htmlContent || '', 'utf8');
-
-    // Write source files if present
+    // Write source files from unified sources map
     if (state.props?.sources && typeof state.props.sources === 'object') {
       for (const [relPath, code] of Object.entries(state.props.sources)) {
         const safeRel = relPath.replace(/^\/+/, '').replace(/\\/g, '/');
@@ -418,84 +393,6 @@ class CanvasStateUnpacker {
   }
 
   /**
-   * Generate global-storage.json for this room
-   * Also unpacks files/* keys into files/ folder as actual files
-   */
-  async generateGlobalStorage(canvasStorageData, canvasDir) {
-    const globalStorage = canvasStorageData?.global || {};
-    
-    // Write the original global-storage.json (for backwards compatibility)
-    const globalStoragePath = path.join(canvasDir, 'global-storage.json');
-    fs.writeFileSync(globalStoragePath, JSON.stringify(globalStorage, null, 2), 'utf8');
-    console.log(`  🌐 Generated: ${path.relative(this.rootDir, globalStoragePath)}`);
-    
-    // Unpack files/* keys into files/ folder as actual files
-    await this.unpackFilesToFilesystem(globalStorage, canvasDir);
-  }
-
-  /**
-   * Unpack files/* keys from global storage into actual files under files/
-   * This makes it easy to edit files directly in the filesystem
-   * 
-   * Strategy:
-   * - Keys starting with "files/" are unpacked as actual files
-   * - The key path after "files/" becomes the file path
-   * - Content is written directly (string as-is, objects as JSON)
-   */
-  async unpackFilesToFilesystem(globalStorage, canvasDir) {
-    const FILES_PREFIX = 'files/';
-    const filesDir = path.join(canvasDir, 'files');
-    
-    // Note: files/ directory is cleaned in cleanRoomDirectory()
-    
-    let unpackedCount = 0;
-    
-    for (const [key, rawValue] of Object.entries(globalStorage)) {
-      // Skip non-files keys
-      if (!key.startsWith(FILES_PREFIX)) {
-        continue;
-      }
-      
-      // Determine content to write:
-      // Values in global storage are JSON-stringified, so we parse them first
-      // - If parsed result is a string (text files like .md, .html, .csv) -> write directly
-      // - If parsed result is an object (config.json, meta.json) -> format as JSON
-      let content;
-      if (typeof rawValue === 'string') {
-        try {
-          const parsed = JSON.parse(rawValue);
-          if (typeof parsed === 'string') {
-            // Text file content - write directly
-            content = parsed;
-          } else {
-            // Object/array - format as pretty JSON
-            content = JSON.stringify(parsed, null, 2);
-          }
-        } catch (e) {
-          // Not valid JSON - write raw string
-          content = rawValue;
-        }
-      } else {
-        // Already an object - stringify it
-        content = JSON.stringify(rawValue, null, 2);
-      }
-      
-      // Get the file path (remove 'files/' prefix)
-      const filePath = key.slice(FILES_PREFIX.length);
-      const fullPath = path.join(filesDir, filePath);
-      
-      // Ensure parent directory exists (needed for nested paths like notes/projects/note.md)
-      fs.mkdirSync(path.dirname(fullPath), { recursive: true });
-      
-      fs.writeFileSync(fullPath, content, 'utf8');
-      unpackedCount++;
-    }
-    
-    // Always log for debugging (even if 0 files unpacked)
-    console.log(`  📄 Unpacked ${unpackedCount} files to: ${path.relative(this.rootDir, filesDir)}/`);
-  }
-
-  /**
    * Sanitize a string for use as a filename
    */
   sanitizeFileName(name) {
@@ -510,7 +407,7 @@ class CanvasStateUnpacker {
       const fullPath = path.join(roomPath, entry.name);
       
       if (entry.isDirectory()) {
-        if (entry.name.startsWith('widget-') || entry.name === 'files') {
+        if (entry.name.startsWith('widget-')) {
           fs.rmSync(fullPath, { recursive: true, force: true });
         }
       } else if (entry.isFile()) {

@@ -1,6 +1,6 @@
 # McAPI Integration
 
-- McAPI is short for miyagiAPI
+- **Import**: `import { mcapi } from '@spaces/sdk'`
 - **McAPI.yaml** contains a summary of all integrations (names, descriptions, categories)
 - **integrations/*.yaml** contain the full endpoint specifications with input/output schemas
 
@@ -35,22 +35,26 @@ All responses follow this structure:
 
 ## API Usage Pattern:
 ```javascript
+import { mcapi } from '@spaces/sdk';
+
 // POST requests (most integrations)
-const response = await miyagiAPI.post('/generate-text', { prompt: '...' });
+const response = await mcapi.post('/generate-text', { prompt: '...' });
 if (response.success) {
   console.log(response.data.text);  // Access payload via response.data
 }
 
 // GET requests (fetching data)
-const response = await miyagiAPI.get('/flights', { from: 'NYC', to: 'LAX', date: '2025-06-15' });
+const response = await mcapi.get('/flights', { from: 'NYC', to: 'LAX', date: '2025-06-15' });
 ```
 
 ---
 
 ## Example API Calls:
 ```javascript
+import { mcapi } from '@spaces/sdk';
+
 // Generate text with LLM
-const response = await miyagiAPI.post('/generate-text', {
+const response = await mcapi.post('/generate-text', {
   prompt: 'Explain quantum computing',
   provider: 'openai',
   model: 'gpt-4o-mini',
@@ -59,11 +63,11 @@ const response = await miyagiAPI.post('/generate-text', {
 const text = response.data.text;
 
 // Search Amazon products
-const response = await miyagiAPI.post('/amazon-search', { query: 'laptop', limit: 5 });
+const response = await mcapi.post('/amazon-search', { query: 'laptop', limit: 5 });
 const products = response.data.products;
 
 // Get weather data
-const response = await miyagiAPI.post('/current-weather', { location: 'New York' });
+const response = await mcapi.post('/current-weather', { location: 'New York' });
 const weather = response.data.weather;
 ```
 
@@ -72,8 +76,8 @@ const weather = response.data.weather;
 ## Critical Rules:
 - **Always access payload via `response.data`** (not `response.text`, `response.products`, etc.)
 - **Use the `endpoint` field** with leading `/` (e.g., `/generate-text`)
-- Use `miyagiAPI.post()` for most integrations
-- Use `miyagiAPI.get()` for simple data fetches
+- Use `mcapi.post()` for most integrations
+- Use `mcapi.get()` for simple data fetches
 - Check `output.data` schema in **integrations/{category}.yaml** for available fields
 
 ---
@@ -82,7 +86,7 @@ const weather = response.data.weather;
 
 **The response structure in McAPI.yaml is EXACTLY what you get.** Do not assume wrappers or transformations based on other libraries you've seen.
 
-### Before Using miyagiAPI:
+### Before Using mcapi:
 1. **Find the endpoint in McAPI.yaml** (summary file)
 2. **Read the full schema in integrations/{category}.yaml**
 3. **Use exactly the structure shown** — no additions, no assumptions

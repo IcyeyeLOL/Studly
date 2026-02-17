@@ -1,0 +1,1086 @@
+# basketball integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: import { mcapi } from '@spaces/sdk'
+#   mcapi.post('/endpoint', { ...params })
+#   mcapi.get('/endpoint', { ...params })
+
+tools:
+
+  basketball_countries:
+    method: GET
+    endpoint: /basketball/countries
+    description: "Get all available countries for basketball leagues and competitions"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            countries:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  name:
+                    type: string
+                  code:
+                    type:
+                      - string
+                      - null
+                  flag:
+                    type:
+                      - string
+                      - null
+                required:
+                  - id
+                  - name
+                  - code
+                  - flag
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  basketball_leagues:
+    method: GET
+    endpoint: /basketball/leagues
+    description: "Get basketball leagues and competitions. Includes NBA, NCAA, EuroLeague, and 426+ other leagues."
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            leagues:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  name:
+                    type: string
+                  type:
+                    type:
+                      - string
+                      - null
+                  logo:
+                    type:
+                      - string
+                      - null
+                  country:
+                    anyOf:
+                      - 
+                        type: object
+                        properties:
+                          id:
+                            type:
+                              - number
+                              - null
+                          name:
+                            type:
+                              - string
+                              - null
+                          code:
+                            type:
+                              - string
+                              - null
+                          flag:
+                            type:
+                              - string
+                              - null
+                        required:
+                          - id
+                          - name
+                          - code
+                          - flag
+                        additionalProperties: false
+                      - 
+                        type: null
+                  seasons:
+                    type: array
+                required:
+                  - id
+                  - name
+                  - type
+                  - logo
+                  - country
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  basketball_teams:
+    method: GET
+    endpoint: /basketball/teams
+    description: "Get basketball team information. Use league and season to find teams in a specific competition."
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: number
+          description: Team ID
+        name:
+          type: string
+          description: Team name (e.g., "Los Angeles Lakers")
+        country_id:
+          type: number
+          description: Country ID
+        country:
+          type: string
+          description: Country name
+        league:
+          type: number
+          description: League ID
+        season:
+          type: string
+          description: "Season (YYYY or YYYY-YYYY)"
+        search:
+          type: string
+          minLength: 3
+          description: Search term (min 3 chars)
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            teams:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  name:
+                    type: string
+                  nationnal:
+                    type: boolean
+                  logo:
+                    type:
+                      - string
+                      - null
+                  country:
+                    anyOf:
+                      - 
+                        type: object
+                        properties:
+                          id:
+                            type:
+                              - number
+                              - null
+                          name:
+                            type:
+                              - string
+                              - null
+                          code:
+                            type:
+                              - string
+                              - null
+                          flag:
+                            type:
+                              - string
+                              - null
+                        required:
+                          - id
+                          - name
+                          - code
+                          - flag
+                        additionalProperties: false
+                      - 
+                        type: null
+                required:
+                  - id
+                  - name
+                  - logo
+                  - country
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  basketball_teams_statistics:
+    method: GET
+    endpoint: /basketball/teams/statistics
+    description: "Get season statistics for a basketball team including wins, losses, points for/against"
+    input_schema:
+      type: object
+      properties:
+        league:
+          type: number
+          description: League ID (required)
+        season:
+          type: string
+          description: "Season (required, YYYY or YYYY-YYYY)"
+        team:
+          type: number
+          description: Team ID (required)
+        date:
+          type: string
+          description: "Limit date (YYYY-MM-DD)"
+      required:
+        - league
+        - season
+        - team
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            statistics:
+              type: object
+              properties:
+                league: {}
+                country: {}
+                team: {}
+                games: {}
+                points: {}
+              additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  basketball_players:
+    method: GET
+    endpoint: /basketball/players
+    description: "Get basketball player information including position, age, and team"
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: number
+          description: Player ID
+        team:
+          type: number
+          description: Team ID
+        season:
+          type: string
+          description: "Season (YYYY or YYYY-YYYY)"
+        search:
+          type: string
+          minLength: 3
+          description: Search by name (min 3 chars)
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            players:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  name:
+                    type: string
+                  number:
+                    type:
+                      - string
+                      - null
+                  country:
+                    type:
+                      - string
+                      - null
+                  position:
+                    type:
+                      - string
+                      - null
+                  age:
+                    type:
+                      - number
+                      - null
+                required:
+                  - id
+                  - name
+                  - number
+                  - country
+                  - position
+                  - age
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  basketball_games:
+    method: GET
+    endpoint: /basketball/games
+    description: "Get basketball games/matches. Includes live scores, scheduled games, and results. Updated every 15 seconds for live games."
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: number
+          description: Game ID
+        date:
+          type: string
+          description: "Date (YYYY-MM-DD)"
+        league:
+          type: number
+          description: League ID
+        season:
+          type: string
+          description: "Season (YYYY or YYYY-YYYY)"
+        team:
+          type: number
+          description: Team ID
+        timezone:
+          type: string
+          description: Timezone (e.g., "America/New_York")
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            games:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  date:
+                    type: string
+                  time:
+                    type:
+                      - string
+                      - null
+                  timestamp:
+                    type:
+                      - number
+                      - null
+                  timezone:
+                    type:
+                      - string
+                      - null
+                  stage:
+                    type:
+                      - string
+                      - null
+                  week:
+                    type:
+                      - string
+                      - null
+                  venue:
+                    type:
+                      - string
+                      - null
+                  status:
+                    anyOf:
+                      - 
+                        type: object
+                        properties:
+                          long:
+                            type:
+                              - string
+                              - null
+                          short:
+                            type:
+                              - string
+                              - null
+                          timer:
+                            type:
+                              - string
+                              - null
+                        required:
+                          - long
+                          - short
+                          - timer
+                        additionalProperties: false
+                      - 
+                        type: null
+                  league:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  country:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  teams:
+                    anyOf:
+                      - 
+                        type: object
+                        properties:
+                          home:
+                            anyOf:
+                              - 
+
+                              - 
+                                type: null
+                          away:
+                            anyOf:
+                              - 
+
+                              - 
+                                type: null
+                        additionalProperties: false
+                      - 
+                        type: null
+                  scores:
+                    anyOf:
+                      - 
+                        type: object
+                        properties:
+                          home:
+                            anyOf:
+                              - 
+
+                              - 
+                                type: null
+                          away:
+                            anyOf:
+                              - 
+
+                              - 
+                                type: null
+                        additionalProperties: false
+                      - 
+                        type: null
+                required:
+                  - id
+                  - date
+                  - time
+                  - timestamp
+                  - timezone
+                  - stage
+                  - week
+                  - venue
+                  - status
+                  - teams
+                  - scores
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  basketball_games_statistics_teams:
+    method: GET
+    endpoint: /basketball/games/statistics/teams
+    description: "Get team statistics from a specific basketball game including field goals, rebounds, assists"
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: number
+          description: Game ID
+        ids:
+          type: string
+          description: "Multiple game IDs (dash-separated, max 20)"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            statistics:
+              type: array
+              items:
+                type: object
+                properties:
+                  game:
+                    anyOf:
+                      - 
+                        type: object
+                        properties:
+                          id:
+                            type: number
+                        required:
+                          - id
+                        additionalProperties: false
+                      - 
+                        type: null
+                  team:
+                    anyOf:
+                      - 
+                        type: object
+                        properties:
+                          id:
+                            type: number
+                        required:
+                          - id
+                        additionalProperties: false
+                      - 
+                        type: null
+                  field_goals:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  threepoint_goals:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  freethrows_goals:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  rebounds:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  assists:
+                    type:
+                      - number
+                      - null
+                  steals:
+                    type:
+                      - number
+                      - null
+                  blocks:
+                    type:
+                      - number
+                      - null
+                  turnovers:
+                    type:
+                      - number
+                      - null
+                  personal_fouls:
+                    type:
+                      - number
+                      - null
+                required:
+                  - game
+                  - team
+                  - assists
+                  - steals
+                  - blocks
+                  - turnovers
+                  - personal_fouls
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  basketball_games_statistics_players:
+    method: GET
+    endpoint: /basketball/games/statistics/players
+    description: "Get player statistics from a specific basketball game including points, rebounds, assists, minutes"
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: number
+          description: Game ID
+        ids:
+          type: string
+          description: "Multiple game IDs (dash-separated, max 20)"
+        player:
+          type: number
+          description: Player ID
+        season:
+          type: string
+          description: "Season (YYYY or YYYY-YYYY)"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            statistics:
+              type: array
+              items:
+                type: object
+                properties:
+                  game:
+                    anyOf:
+                      - 
+                        type: object
+                        properties:
+                          id:
+                            type: number
+                        required:
+                          - id
+                        additionalProperties: false
+                      - 
+                        type: null
+                  team:
+                    anyOf:
+                      - 
+                        type: object
+                        properties:
+                          id:
+                            type: number
+                        required:
+                          - id
+                        additionalProperties: false
+                      - 
+                        type: null
+                  player:
+                    anyOf:
+                      - 
+                        type: object
+                        properties:
+                          id:
+                            type: number
+                          name:
+                            type: string
+                        required:
+                          - id
+                          - name
+                        additionalProperties: false
+                      - 
+                        type: null
+                  type:
+                    type:
+                      - string
+                      - null
+                  minutes:
+                    type:
+                      - string
+                      - null
+                  field_goals:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  threepoint_goals:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  freethrows_goals:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  rebounds:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  assists:
+                    type:
+                      - number
+                      - null
+                  points:
+                    type:
+                      - number
+                      - null
+                required:
+                  - game
+                  - team
+                  - player
+                  - type
+                  - minutes
+                  - assists
+                  - points
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  basketball_games_h2h:
+    method: GET
+    endpoint: /basketball/games/h2h
+    description: "Get head-to-head history between two basketball teams"
+    input_schema:
+      type: object
+      properties:
+        h2h:
+          type: string
+          description: "Team IDs separated by dash (e.g., \"132-134\", required)"
+        date:
+          type: string
+          description: "Filter by date (YYYY-MM-DD)"
+        league:
+          type: number
+          description: Filter by league ID
+        season:
+          type: string
+          description: Filter by season
+        timezone:
+          type: string
+          description: Timezone
+      required:
+        - h2h
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            games:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  date:
+                    type: string
+                  status:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  league:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  teams:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  scores:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                required:
+                  - id
+                  - date
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  basketball_standings:
+    method: GET
+    endpoint: /basketball/standings
+    description: "Get basketball league standings. For NBA, includes conference standings (Eastern/Western)."
+    input_schema:
+      type: object
+      properties:
+        league:
+          type: number
+          description: League ID (required)
+        season:
+          type: string
+          description: "Season (required, YYYY or YYYY-YYYY)"
+        team:
+          type: number
+          description: Team ID
+        stage:
+          type: string
+          description: "Stage (e.g., \"NBA - Regular Season\")"
+        group:
+          type: string
+          description: Group (e.g., "Eastern Conference")
+      required:
+        - league
+        - season
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            standings:
+              type: array
+              items:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    position:
+                      type:
+                        - number
+                        - null
+                    stage:
+                      type:
+                        - string
+                        - null
+                    group:
+                      anyOf:
+                        - 
+
+                        - 
+                          type: null
+                    team:
+                      anyOf:
+                        - 
+
+                        - 
+                          type: null
+                    league:
+                      anyOf:
+                        - 
+
+                        - 
+                          type: null
+                    country:
+                      anyOf:
+                        - 
+
+                        - 
+                          type: null
+                    games:
+                      anyOf:
+                        - 
+
+                        - 
+                          type: null
+                    points:
+                      anyOf:
+                        - 
+
+                        - 
+                          type: null
+                    form:
+                      type:
+                        - string
+                        - null
+                    description:
+                      type:
+                        - string
+                        - null
+                  required:
+                    - position
+                    - stage
+                    - form
+                    - description
+                  additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  basketball_standings_stages:
+    method: GET
+    endpoint: /basketball/standings/stages
+    description: "Get available stages for basketball standings (e.g., Regular Season, Playoffs)"
+    input_schema:
+      type: object
+      properties:
+        league:
+          type: number
+          description: League ID (required)
+        season:
+          type: string
+          description: "Season (required, YYYY or YYYY-YYYY)"
+      required:
+        - league
+        - season
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            stages:
+              type: array
+              items:
+                type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  basketball_standings_groups:
+    method: GET
+    endpoint: /basketball/standings/groups
+    description: "Get available groups for basketball standings (e.g., Eastern/Western Conference)"
+    input_schema:
+      type: object
+      properties:
+        league:
+          type: number
+          description: League ID (required)
+        season:
+          type: string
+          description: "Season (required, YYYY or YYYY-YYYY)"
+      required:
+        - league
+        - season
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            groups:
+              type: array
+              items:
+                type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  basketball_odds:
+    method: GET
+    endpoint: /basketball/odds
+    description: "Get betting odds for basketball games. Pre-match odds available 1-7 days before games."
+    input_schema:
+      type: object
+      properties:
+        league:
+          type: number
+          description: League ID
+        season:
+          type: string
+          description: "Season (YYYY or YYYY-YYYY)"
+        game:
+          type: number
+          description: Game ID
+        bookmaker:
+          type: number
+          description: Bookmaker ID
+        bet:
+          type: number
+          description: Bet type ID
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            odds:
+              type: array
+              items:
+                type: object
+                properties:
+                  league:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  country:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  game:
+                    anyOf:
+                      - 
+                        type: object
+                        properties:
+                          id:
+                            type: number
+                        required:
+                          - id
+                        additionalProperties: false
+                      - 
+                        type: null
+                  bookmakers:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: number
+                        name:
+                          type: string
+                        bets:
+                          type: array
+                      required:
+                        - id
+                        - name
+                        - bets
+                      additionalProperties: false
+                required:
+                  - game
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  basketball_bookmakers:
+    method: GET
+    endpoint: /basketball/bookmakers
+    description: "Get available bookmakers for basketball betting odds"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            bookmakers:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  name:
+                    type: string
+                required:
+                  - id
+                  - name
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

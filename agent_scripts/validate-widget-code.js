@@ -3,7 +3,7 @@
 /**
  * Widget Code Validator
  *
- * Scans JSX files for miyagiAPI.get() and miyagiAPI.post() calls,
+ * Scans JSX files for mcapi.get() and mcapi.post() calls,
  * validates that endpoints exist in McAPI.yaml.
  *
  * Usage:
@@ -217,7 +217,7 @@ function findJsxFiles(roomDir) {
 }
 
 /**
- * Extract miyagiAPI calls from file content.
+ * Extract mcapi calls from file content.
  * Returns array of { endpoint, method, line, column }
  */
 function extractApiCalls(content, filePath) {
@@ -225,11 +225,11 @@ function extractApiCalls(content, filePath) {
   const lines = content.split('\n');
 
   // Pattern matches:
-  //   miyagiAPI.post('/endpoint', ...)
-  //   miyagiAPI.get("endpoint", ...)
-  //   miyagiAPI.post(`/endpoint`, ...)
-  //   await miyagiAPI.post('/endpoint', ...)
-  const pattern = /miyagiAPI\.(get|post)\s*\(\s*['"`]([^'"`]+)['"`]/g;
+  //   mcapi.post('/endpoint', ...)
+  //   mcapi.get("endpoint", ...)
+  //   miyagiAPI.post('/endpoint', ...) (legacy)
+  //   await mcapi.post('/endpoint', ...)
+  const pattern = /(?:mcapi|miyagiAPI)\.(get|post)\s*\(\s*['"`]([^'"`]+)['"`]/g;
 
   let lineNum = 0;
   for (const line of lines) {
@@ -321,16 +321,16 @@ async function validateRoom(roomPath, validEndpoints) {
 function formatEndpointErrors(invalid) {
   if (invalid.length === 0) return null;
 
-  const lines = ['The following miyagiAPI calls use invalid endpoints that do not exist in McAPI.yaml:\n'];
+  const lines = ['The following mcapi calls use invalid endpoints that do not exist in McAPI.yaml:\n'];
 
   for (const call of invalid) {
-    lines.push(`  ❌ ${call.relativeFile}:${call.line} - miyagiAPI.${call.method.toLowerCase()}('${call.endpoint}')`);
+    lines.push(`  ❌ ${call.relativeFile}:${call.line} - mcapi.${call.method.toLowerCase()}('${call.endpoint}')`);
     lines.push(`     Normalized: '${call.normalizedEndpoint}' is not a valid endpoint\n`);
   }
 
   lines.push('\nPlease fix these by:');
   lines.push('1. Reading McAPI.yaml to find the correct endpoint names');
-  lines.push('2. Updating the miyagiAPI calls to use valid endpoints');
+  lines.push('2. Updating the mcapi calls to use valid endpoints');
   lines.push('3. If the functionality is not available, implement an alternative approach');
 
   return lines.join('\n');

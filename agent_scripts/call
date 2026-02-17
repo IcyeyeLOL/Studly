@@ -127,10 +127,10 @@ async function describeTool(context, toolName) {
 
 async function executeTool(context, toolName, params) {
   const url = `${context.siteUrl}/api/tools/execute/${context.roomId}`;
-  
+
   const response = await makeRequest(url, {
     method: 'POST',
-    body: { tool: toolName, params },
+    body: { tool: toolName, params, userId: context.userId },
   });
   
   const result = response.data;
@@ -202,18 +202,41 @@ Usage:
 
 Examples:
   call --list
-  call --describe storage.write
+  call schema.list
+  call schema.describe collection=tasks
+  call records.query collection=tasks
+  call records.query collection=tasks where='{"status":"todo"}' limit=10
+  call records.get collection=tasks recordId=abc123
+  call records.create collection=tasks data='{"title":"New task","status":"todo"}'
+  call records.update collection=tasks recordId=abc123 data='{"status":"done"}'
+  call records.delete collection=tasks recordId=abc123
+  call user.current
+  call user.list
   call storage.list scope=global
   call storage.read scope=global keys=todos,settings
   call storage.write scope=global data='{"todos":[]}'
-  call storage.delete scope=global keys=oldKey
 
 Parameter Syntax:
   - Simple values:    key=value
   - Arrays:           keys=a,b,c
   - JSON objects:     data='{"key":"value"}'
 
-Built-in Storage Tools:
+Record Tools (structured collections with RBAC):
+  records.query    Query records with filters, ordering, limits
+  records.get      Get a single record by ID
+  records.create   Create a new record
+  records.update   Update an existing record
+  records.delete   Delete a record
+
+Schema Tools:
+  schema.list      List all collection schemas
+  schema.describe  Describe a collection's fields and permissions
+
+User Tools:
+  user.current     Get current user profile
+  user.list        List all users in this room
+
+Storage Tools (legacy key-value):
   storage.list     List keys in a scope
   storage.read     Read one or more keys (batch)
   storage.write    Write key-value pairs (batch)

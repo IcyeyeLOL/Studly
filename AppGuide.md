@@ -204,7 +204,7 @@ DeepSpace connects to 24+ external services:
 
 ## How Widgets Communicate
 
-**Shared Storage**: Widgets can share data across the canvas using global storage. Multiple widgets can read from and write to the same data.
+**Shared Storage**: Widgets share data via collections defined in `schemas.json`, using `useQuery` to read and `useMutations` to write. Multiple widgets can subscribe to the same collection for real-time sync.
 
 **Connected Widgets**: Draw a connection from one widget's output to another's input. Data flows through the connection automatically.
 

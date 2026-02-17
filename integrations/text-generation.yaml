@@ -1,9 +1,9 @@
 # text-generation integration endpoints
 # Auto-generated from route-owned Zod schemas
 
-# USAGE: Call using miyagiAPI:
-#   miyagiAPI.post('/endpoint', { ...params })
-#   miyagiAPI.get('/endpoint', { ...params })
+# USAGE: import { mcapi } from '@spaces/sdk'
+#   mcapi.post('/endpoint', { ...params })
+#   mcapi.get('/endpoint', { ...params })
 
 tools:
 
@@ -31,9 +31,11 @@ tools:
             - gpt-5-nano
             - gpt-5-mini
             - gpt-5
-            - claude-3-5-haiku-20241022
-            - claude-sonnet-4-20250514
-            - claude-opus-4-20250514
+            - o3-mini
+            - o4-mini
+            - claude-haiku-4-5-20251001
+            - claude-sonnet-4-5-20250929
+            - claude-opus-4-6
           default: "gpt-4o-mini"
         max_tokens:
           type: integer

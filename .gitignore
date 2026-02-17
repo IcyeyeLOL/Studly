@@ -93,7 +93,6 @@ Thumbs.db
 *.swo
 *~
 
-**/template.html
 .wrangler/
 
 # Temporary chat attachments

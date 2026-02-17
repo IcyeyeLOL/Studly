@@ -1,16 +1,16 @@
 # email integration endpoints
 # Auto-generated from route-owned Zod schemas
 
-# USAGE: Call using miyagiAPI:
-#   miyagiAPI.post('/endpoint', { ...params })
-#   miyagiAPI.get('/endpoint', { ...params })
+# USAGE: import { mcapi } from '@spaces/sdk'
+#   mcapi.post('/endpoint', { ...params })
+#   mcapi.get('/endpoint', { ...params })
 
 tools:
 
   miniapp_send_email:
     method: POST
     endpoint: /miniapp-send-email
-    description: "Send transactional email from a miniapp. Emails are sent from noreply@{miniappId}.spaces.site with rate limiting."
+    description: "Send transactional email from a miniapp. Emails are sent from noreply@{miniappId}.app.space with rate limiting."
     input_schema:
       type: object
       properties:

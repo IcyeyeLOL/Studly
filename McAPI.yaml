@@ -1,9 +1,9 @@
 # miyagi-integrations
 # Auto-generated summary - see integrations/*.yaml for full specs
 
-# USAGE: Call using miyagiAPI:
-#   miyagiAPI.post('/endpoint', { ...params })
-#   miyagiAPI.get('/endpoint', { ...params })
+# USAGE: import { mcapi } from '@spaces/sdk'
+#   mcapi.post('/endpoint', { ...params })
+#   mcapi.get('/endpoint', { ...params })
 
 # Full endpoint specifications are in integrations/*.yaml
 # This file contains names and descriptions for quick reference
@@ -30,6 +30,114 @@ categories:
         method: POST
         endpoint: /speech-to-text
         description: "Transcribe speech audio to text"
+  baseball:
+    file: integrations/baseball.yaml
+    endpoint_count: 11
+    endpoints:
+      - name: baseball_countries
+        method: GET
+        endpoint: /baseball/countries
+        description: "Get all available countries for baseball leagues"
+      - name: baseball_leagues
+        method: GET
+        endpoint: /baseball/leagues
+        description: "Get baseball leagues including MLB, minor leagues (AAA, AA), and international leagues"
+      - name: baseball_teams
+        method: GET
+        endpoint: /baseball/teams
+        description: "Get baseball team information"
+      - name: baseball_teams_statistics
+        method: GET
+        endpoint: /baseball/teams/statistics
+        description: "Get season statistics for a baseball team (wins, losses, games played)"
+      - name: baseball_standings
+        method: GET
+        endpoint: /baseball/standings
+        description: "Get baseball league standings. For MLB includes AL/NL divisions."
+      - name: baseball_standings_stages
+        method: GET
+        endpoint: /baseball/standings/stages
+        description: "Get available stages for baseball standings"
+      - name: baseball_standings_groups
+        method: GET
+        endpoint: /baseball/standings/groups
+        description: "Get available groups for baseball standings (e.g., AL East, NL West)"
+      - name: baseball_games
+        method: GET
+        endpoint: /baseball/games
+        description: "Get baseball games with live scores. Includes inning-by-inning scores."
+      - name: baseball_games_h2h
+        method: GET
+        endpoint: /baseball/games/h2h
+        description: "Get head-to-head history between two baseball teams"
+      - name: baseball_odds
+        method: GET
+        endpoint: /baseball/odds
+        description: "Get betting odds for baseball games"
+      - name: baseball_bookmakers
+        method: GET
+        endpoint: /baseball/bookmakers
+        description: "Get available bookmakers for baseball betting odds"
+  basketball:
+    file: integrations/basketball.yaml
+    endpoint_count: 14
+    endpoints:
+      - name: basketball_countries
+        method: GET
+        endpoint: /basketball/countries
+        description: "Get all available countries for basketball leagues and competitions"
+      - name: basketball_leagues
+        method: GET
+        endpoint: /basketball/leagues
+        description: "Get basketball leagues and competitions. Includes NBA, NCAA, EuroLeague, and 426+ other leagues."
+      - name: basketball_teams
+        method: GET
+        endpoint: /basketball/teams
+        description: "Get basketball team information. Use league and season to find teams in a specific competition."
+      - name: basketball_teams_statistics
+        method: GET
+        endpoint: /basketball/teams/statistics
+        description: "Get season statistics for a basketball team including wins, losses, points for/against"
+      - name: basketball_players
+        method: GET
+        endpoint: /basketball/players
+        description: "Get basketball player information including position, age, and team"
+      - name: basketball_games
+        method: GET
+        endpoint: /basketball/games
+        description: "Get basketball games/matches. Includes live scores, scheduled games, and results. Updated every 15 seconds for live games."
+      - name: basketball_games_statistics_teams
+        method: GET
+        endpoint: /basketball/games/statistics/teams
+        description: "Get team statistics from a specific basketball game including field goals, rebounds, assists"
+      - name: basketball_games_statistics_players
+        method: GET
+        endpoint: /basketball/games/statistics/players
+        description: "Get player statistics from a specific basketball game including points, rebounds, assists, minutes"
+      - name: basketball_games_h2h
+        method: GET
+        endpoint: /basketball/games/h2h
+        description: "Get head-to-head history between two basketball teams"
+      - name: basketball_standings
+        method: GET
+        endpoint: /basketball/standings
+        description: "Get basketball league standings. For NBA, includes conference standings (Eastern/Western)."
+      - name: basketball_standings_stages
+        method: GET
+        endpoint: /basketball/standings/stages
+        description: "Get available stages for basketball standings (e.g., Regular Season, Playoffs)"
+      - name: basketball_standings_groups
+        method: GET
+        endpoint: /basketball/standings/groups
+        description: "Get available groups for basketball standings (e.g., Eastern/Western Conference)"
+      - name: basketball_odds
+        method: GET
+        endpoint: /basketball/odds
+        description: "Get betting odds for basketball games. Pre-match odds available 1-7 days before games."
+      - name: basketball_bookmakers
+        method: GET
+        endpoint: /basketball/bookmakers
+        description: "Get available bookmakers for basketball betting odds"
   booking:
     file: integrations/booking.yaml
     endpoint_count: 1
@@ -73,7 +181,87 @@ categories:
       - name: miniapp_send_email
         method: POST
         endpoint: /miniapp-send-email
-        description: "Send transactional email from a miniapp. Emails are sent from noreply@{miniappId}.spaces.site with rate limiting."
+        description: "Send transactional email from a miniapp. Emails are sent from noreply@{miniappId}.app.space with rate limiting."
+  football:
+    file: integrations/football.yaml
+    endpoint_count: 19
+    endpoints:
+      - name: football_countries
+        method: GET
+        endpoint: /football/countries
+        description: "Get all countries available in the API-Football database"
+      - name: football_leagues
+        method: GET
+        endpoint: /football/leagues
+        description: "Get all football leagues and competitions. Use to find league IDs for other endpoints."
+      - name: football_teams
+        method: GET
+        endpoint: /football/teams
+        description: "Get football team information including name, logo, venue, and country"
+      - name: football_teams_statistics
+        method: GET
+        endpoint: /football/teams/statistics
+        description: "Get detailed team statistics for a specific league and season"
+      - name: football_fixtures
+        method: GET
+        endpoint: /football/fixtures
+        description: "Get football fixtures (matches) by date, league, team, or live status. Returns match details, scores, and status."
+      - name: football_fixtures_headtohead
+        method: GET
+        endpoint: /football/fixtures/headtohead
+        description: "Get head-to-head match history between two teams"
+      - name: football_fixtures_statistics
+        method: GET
+        endpoint: /football/fixtures/statistics
+        description: "Get detailed match statistics (shots, possession, passes, etc.)"
+      - name: football_fixtures_events
+        method: GET
+        endpoint: /football/fixtures/events
+        description: "Get match events (goals, cards, substitutions, VAR decisions)"
+      - name: football_fixtures_lineups
+        method: GET
+        endpoint: /football/fixtures/lineups
+        description: "Get match lineups including starting XI, formation, and substitutes"
+      - name: football_standings
+        method: GET
+        endpoint: /football/standings
+        description: "Get league standings table with points, wins, draws, losses, goals"
+      - name: football_players_topscorers
+        method: GET
+        endpoint: /football/players/topscorers
+        description: "Get top goal scorers for a league and season"
+      - name: football_players_topassists
+        method: GET
+        endpoint: /football/players/topassists
+        description: "Get top assist providers for a league and season"
+      - name: football_players
+        method: GET
+        endpoint: /football/players
+        description: "Get player information and statistics"
+      - name: football_players_squads
+        method: GET
+        endpoint: /football/players/squads
+        description: "Get current team squad/roster with player details"
+      - name: football_transfers
+        method: GET
+        endpoint: /football/transfers
+        description: "Get player transfer history"
+      - name: football_injuries
+        method: GET
+        endpoint: /football/injuries
+        description: "Get current player injuries"
+      - name: football_predictions
+        method: GET
+        endpoint: /football/predictions
+        description: "Get AI-powered match predictions including win probability and advice"
+      - name: football_coachs
+        method: GET
+        endpoint: /football/coachs
+        description: "Get coach/manager information and career history"
+      - name: football_venues
+        method: GET
+        endpoint: /football/venues
+        description: "Get stadium/venue information including capacity and location"
   formula1:
     file: integrations/formula1.yaml
     endpoint_count: 13
@@ -390,6 +578,30 @@ categories:
         method: POST
         endpoint: /linkedin-analyze-profile-url
         description: "Analyze LinkedIn profile from URL"
+  livekit:
+    file: integrations/livekit.yaml
+    endpoint_count: 5
+    endpoints:
+      - name: livekit_create_room
+        method: POST
+        endpoint: /livekit-create-room
+        description: "Create a LiveKit room with upfront billing based on max participants and duration. Returns admin token."
+      - name: livekit_join_room
+        method: POST
+        endpoint: /livekit-join-room
+        description: "Generate a participant token for an existing LiveKit room. Returns a JWT token with TTL based on remaining room time. IMPORTANT: This does NOT connect you to the room — you must use the returned participantToken with a LiveKit client SDK to actually join. Free operation."
+      - name: livekit_delete_room
+        method: POST
+        endpoint: /livekit-delete-room
+        description: "Force-close a LiveKit room. Only the room creator can delete. Refund for unused time is applied automatically based on actual duration."
+      - name: livekit_get_participant
+        method: POST
+        endpoint: /livekit-get-participant
+        description: "Get information about a specific participant in a LiveKit room. Participant must be connected via a LiveKit client SDK to be found. Free operation."
+      - name: livekit_list_participants
+        method: POST
+        endpoint: /livekit-list-participants
+        description: "List all participants in a LiveKit room. Free operation."
   market:
     file: integrations/market.yaml
     endpoint_count: 3
@@ -470,6 +682,66 @@ categories:
         method: POST
         endpoint: /news-search
         description: "Search news articles"
+  nfl:
+    file: integrations/nfl.yaml
+    endpoint_count: 14
+    endpoints:
+      - name: nfl_leagues
+        method: GET
+        endpoint: /nfl/leagues
+        description: "Get NFL and NCAA football leagues. NFL is league ID 1, NCAA is league ID 2."
+      - name: nfl_teams
+        method: GET
+        endpoint: /nfl/teams
+        description: "Get NFL and NCAA football teams including stadium, coach, and city information"
+      - name: nfl_players
+        method: GET
+        endpoint: /nfl/players
+        description: "Get NFL and NCAA football player information including position, college, salary"
+      - name: nfl_players_statistics
+        method: GET
+        endpoint: /nfl/players/statistics
+        description: "Get NFL player season statistics by group (Passing, Rushing, Receiving, Defense, etc.)"
+      - name: nfl_injuries
+        method: GET
+        endpoint: /nfl/injuries
+        description: "Get current NFL/NCAA player injuries. No historical data - only currently injured players."
+      - name: nfl_games
+        method: GET
+        endpoint: /nfl/games
+        description: "Get NFL and NCAA football games. Includes live scores updated every 30 seconds."
+      - name: nfl_games_events
+        method: GET
+        endpoint: /nfl/games/events
+        description: "Get game events (touchdowns, field goals, etc.) for a specific NFL/NCAA game"
+      - name: nfl_games_statistics_teams
+        method: GET
+        endpoint: /nfl/games/statistics/teams
+        description: "Get team statistics from a specific NFL/NCAA game (yards, first downs, turnovers, etc.)"
+      - name: nfl_games_statistics_players
+        method: GET
+        endpoint: /nfl/games/statistics/players
+        description: "Get player statistics from a game by group (passing, rushing, receiving, defensive, etc.)"
+      - name: nfl_standings
+        method: GET
+        endpoint: /nfl/standings
+        description: "Get NFL/NCAA standings by conference and division"
+      - name: nfl_standings_conferences
+        method: GET
+        endpoint: /nfl/standings/conferences
+        description: "Get available conferences for NFL/NCAA standings (AFC, NFC, etc.)"
+      - name: nfl_standings_divisions
+        method: GET
+        endpoint: /nfl/standings/divisions
+        description: "Get available divisions for NFL/NCAA standings (East, West, North, South)"
+      - name: nfl_odds
+        method: GET
+        endpoint: /nfl/odds
+        description: "Get betting odds for NFL/NCAA games. Pre-match odds available 1-7 days before games."
+      - name: nfl_bookmakers
+        method: GET
+        endpoint: /nfl/bookmakers
+        description: "Get available bookmakers for NFL/NCAA betting odds"
   polymarket:
     file: integrations/polymarket.yaml
     endpoint_count: 12
@@ -750,6 +1022,26 @@ categories:
         method: POST
         endpoint: /weather-forecast
         description: "Get 5-day forecast"
+  web-scraping:
+    file: integrations/web-scraping.yaml
+    endpoint_count: 4
+    endpoints:
+      - name: firecrawl_scrape
+        method: POST
+        endpoint: /firecrawl-scrape
+        description: "Scrape a single URL and extract its content as markdown/HTML. Handles JavaScript rendering and anti-bot measures. 1 credit per page."
+      - name: firecrawl_crawl
+        method: POST
+        endpoint: /firecrawl-crawl
+        description: "Crawl a website starting from a URL, following links to discover and scrape multiple pages. 1 credit per page crawled."
+      - name: firecrawl_map
+        method: POST
+        endpoint: /firecrawl-map
+        description: "Map a website to get a list of all its URLs without scraping content. Fast way to discover site structure. 1 credit per page in results."
+      - name: firecrawl_search
+        method: POST
+        endpoint: /firecrawl-search
+        description: "Search the web and get full scraped content from top results. Combines search with scraping. 2 credits per 10 results + scrape costs."
   wikipedia:
     file: integrations/wikipedia.yaml
     endpoint_count: 4

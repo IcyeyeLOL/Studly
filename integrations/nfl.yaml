@@ -1,0 +1,908 @@
+# nfl integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: import { mcapi } from '@spaces/sdk'
+#   mcapi.post('/endpoint', { ...params })
+#   mcapi.get('/endpoint', { ...params })
+
+tools:
+
+  nfl_leagues:
+    method: GET
+    endpoint: /nfl/leagues
+    description: "Get NFL and NCAA football leagues. NFL is league ID 1, NCAA is league ID 2."
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            leagues:
+              type: array
+              items:
+                type: object
+                properties:
+                  league:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                      name:
+                        type: string
+                      logo:
+                        type:
+                          - string
+                          - null
+                    required:
+                      - id
+                      - name
+                      - logo
+                    additionalProperties: false
+                  country:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  seasons:
+                    type: array
+                required:
+                  - league
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  nfl_teams:
+    method: GET
+    endpoint: /nfl/teams
+    description: "Get NFL and NCAA football teams including stadium, coach, and city information"
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: number
+          description: Team ID
+        league:
+          type: number
+          description: League ID (1=NFL, 2=NCAA)
+        season:
+          type: number
+          description: Season year
+        name:
+          type: string
+          description: Team name
+        code:
+          type: string
+          description: Team code (e.g., "KC", "NYG")
+        search:
+          type: string
+          minLength: 3
+          description: Search term (min 3 chars)
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            teams:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  name:
+                    type: string
+                  code:
+                    type:
+                      - string
+                      - null
+                  city:
+                    type:
+                      - string
+                      - null
+                  coach:
+                    type:
+                      - string
+                      - null
+                  owner:
+                    type:
+                      - string
+                      - null
+                  stadium:
+                    type:
+                      - string
+                      - null
+                  established:
+                    type:
+                      - number
+                      - null
+                  logo:
+                    type:
+                      - string
+                      - null
+                  country:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                required:
+                  - id
+                  - name
+                  - code
+                  - city
+                  - coach
+                  - owner
+                  - stadium
+                  - established
+                  - logo
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  nfl_players:
+    method: GET
+    endpoint: /nfl/players
+    description: "Get NFL and NCAA football player information including position, college, salary"
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: number
+          description: Player ID
+        name:
+          type: string
+          description: Player name
+        team:
+          type: number
+          description: Team ID
+        season:
+          type: number
+          description: Season year
+        search:
+          type: string
+          minLength: 3
+          description: Search term (min 3 chars)
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            players:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  name:
+                    type: string
+                  age:
+                    type:
+                      - number
+                      - null
+                  height:
+                    type:
+                      - string
+                      - null
+                  weight:
+                    type:
+                      - string
+                      - null
+                  college:
+                    type:
+                      - string
+                      - null
+                  group:
+                    type:
+                      - string
+                      - null
+                  position:
+                    type:
+                      - string
+                      - null
+                  number:
+                    type:
+                      - number
+                      - null
+                  salary:
+                    type:
+                      - string
+                      - null
+                  experience:
+                    type:
+                      - number
+                      - null
+                  image:
+                    type:
+                      - string
+                      - null
+                required:
+                  - id
+                  - name
+                  - age
+                  - height
+                  - weight
+                  - college
+                  - group
+                  - position
+                  - number
+                  - salary
+                  - experience
+                  - image
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  nfl_players_statistics:
+    method: GET
+    endpoint: /nfl/players/statistics
+    description: "Get NFL player season statistics by group (Passing, Rushing, Receiving, Defense, etc.)"
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: number
+          description: Player ID
+        team:
+          type: number
+          description: Team ID
+        season:
+          type: number
+          description: Season year (required, data from 2022+)
+      required:
+        - season
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            statistics:
+              type: array
+              items:
+                type: object
+                properties:
+                  player:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  teams:
+                    type: array
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  nfl_injuries:
+    method: GET
+    endpoint: /nfl/injuries
+    description: "Get current NFL/NCAA player injuries. No historical data - only currently injured players."
+    input_schema:
+      type: object
+      properties:
+        player:
+          type: number
+          description: Player ID
+        team:
+          type: number
+          description: Team ID
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            injuries:
+              type: array
+              items:
+                type: object
+                properties:
+                  player:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  team:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  date:
+                    type:
+                      - string
+                      - null
+                  status:
+                    type:
+                      - string
+                      - null
+                  description:
+                    type:
+                      - string
+                      - null
+                required:
+                  - date
+                  - status
+                  - description
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  nfl_games:
+    method: GET
+    endpoint: /nfl/games
+    description: "Get NFL and NCAA football games. Includes live scores updated every 30 seconds."
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: number
+          description: Game ID
+        date:
+          type: string
+          description: "Date (YYYY-MM-DD)"
+        league:
+          type: number
+          description: League ID (1=NFL, 2=NCAA)
+        season:
+          type: number
+          description: Season year
+        team:
+          type: number
+          description: Team ID
+        h2h:
+          type: string
+          description: "Head-to-head (format: \"teamId-teamId\")"
+        live:
+          type: string
+          description: Get live games ("all")
+        timezone:
+          type: string
+          description: Timezone
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            games:
+              type: array
+              items:
+                type: object
+                properties:
+                  game:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                      stage:
+                        type:
+                          - string
+                          - null
+                      week:
+                        type:
+                          - string
+                          - null
+                      date:
+                        anyOf:
+                          - 
+
+                          - 
+                            type: null
+                      venue:
+                        anyOf:
+                          - 
+
+                          - 
+                            type: null
+                      status:
+                        anyOf:
+                          - 
+
+                          - 
+                            type: null
+                    required:
+                      - id
+                      - stage
+                      - week
+                    additionalProperties: false
+                  league:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  teams:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  scores:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                required:
+                  - game
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  nfl_games_events:
+    method: GET
+    endpoint: /nfl/games/events
+    description: "Get game events (touchdowns, field goals, etc.) for a specific NFL/NCAA game"
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: number
+          description: Game ID (required)
+      required:
+        - id
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            events:
+              type: array
+              items:
+                type: object
+                properties:
+                  quarter:
+                    type:
+                      - string
+                      - null
+                  minute:
+                    type:
+                      - string
+                      - null
+                  team:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  player:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  type:
+                    type:
+                      - string
+                      - null
+                  comment:
+                    type:
+                      - string
+                      - null
+                  score:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                required:
+                  - quarter
+                  - minute
+                  - type
+                  - comment
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  nfl_games_statistics_teams:
+    method: GET
+    endpoint: /nfl/games/statistics/teams
+    description: "Get team statistics from a specific NFL/NCAA game (yards, first downs, turnovers, etc.)"
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: number
+          description: Game ID (required)
+        team:
+          type: number
+          description: Team ID
+      required:
+        - id
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            statistics:
+              type: array
+              items:
+                type: object
+                properties:
+                  team:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  statistics:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  nfl_games_statistics_players:
+    method: GET
+    endpoint: /nfl/games/statistics/players
+    description: "Get player statistics from a game by group (passing, rushing, receiving, defensive, etc.)"
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: number
+          description: Game ID (required)
+        team:
+          type: number
+          description: Team ID
+        player:
+          type: number
+          description: Player ID
+        group:
+          type: string
+          description: Stats group (defensive, passing, rushing, receiving, etc.)
+      required:
+        - id
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            statistics:
+              type: array
+              items:
+                type: object
+                properties:
+                  team:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  groups:
+                    type: array
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  nfl_standings:
+    method: GET
+    endpoint: /nfl/standings
+    description: "Get NFL/NCAA standings by conference and division"
+    input_schema:
+      type: object
+      properties:
+        league:
+          type: number
+          description: League ID (required, 1=NFL, 2=NCAA)
+        season:
+          type: number
+          description: Season year (required)
+        team:
+          type: number
+          description: Team ID
+        conference:
+          type: string
+          description: Conference name
+        division:
+          type: string
+          description: Division name
+      required:
+        - league
+        - season
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            standings:
+              type: array
+              items:
+                type: object
+                properties:
+                  league:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  conference:
+                    type:
+                      - string
+                      - null
+                  division:
+                    type:
+                      - string
+                      - null
+                  position:
+                    type:
+                      - number
+                      - null
+                  team:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  won:
+                    type:
+                      - number
+                      - null
+                  lost:
+                    type:
+                      - number
+                      - null
+                  ties:
+                    type:
+                      - number
+                      - null
+                  points:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  records:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  streak:
+                    type:
+                      - string
+                      - null
+                required:
+                  - conference
+                  - division
+                  - position
+                  - won
+                  - lost
+                  - ties
+                  - streak
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  nfl_standings_conferences:
+    method: GET
+    endpoint: /nfl/standings/conferences
+    description: "Get available conferences for NFL/NCAA standings (AFC, NFC, etc.)"
+    input_schema:
+      type: object
+      properties:
+        league:
+          type: number
+          description: League ID (required)
+        season:
+          type: number
+          description: Season year (required)
+      required:
+        - league
+        - season
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            conferences:
+              type: array
+              items:
+                type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  nfl_standings_divisions:
+    method: GET
+    endpoint: /nfl/standings/divisions
+    description: "Get available divisions for NFL/NCAA standings (East, West, North, South)"
+    input_schema:
+      type: object
+      properties:
+        league:
+          type: number
+          description: League ID (required)
+        season:
+          type: number
+          description: Season year (required)
+      required:
+        - league
+        - season
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            divisions:
+              type: array
+              items:
+                type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  nfl_odds:
+    method: GET
+    endpoint: /nfl/odds
+    description: "Get betting odds for NFL/NCAA games. Pre-match odds available 1-7 days before games."
+    input_schema:
+      type: object
+      properties:
+        game:
+          type: number
+          description: Game ID (required)
+        bookmaker:
+          type: number
+          description: Bookmaker ID
+        bet:
+          type: number
+          description: Bet type ID
+      required:
+        - game
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            odds:
+              type: array
+              items:
+                type: object
+                properties:
+                  game:
+                    anyOf:
+                      - 
+                        type: object
+                        properties:
+                          id:
+                            type: number
+                        required:
+                          - id
+                        additionalProperties: false
+                      - 
+                        type: null
+                  league:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  country:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  update:
+                    type:
+                      - string
+                      - null
+                  bookmakers:
+                    type: array
+                required:
+                  - game
+                  - update
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  nfl_bookmakers:
+    method: GET
+    endpoint: /nfl/bookmakers
+    description: "Get available bookmakers for NFL/NCAA betting odds"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            bookmakers:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  name:
+                    type: string
+                required:
+                  - id
+                  - name
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

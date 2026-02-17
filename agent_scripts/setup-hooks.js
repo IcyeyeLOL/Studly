@@ -12,13 +12,6 @@ const preCommitHook = `#!/bin/sh
 # Miyagi Canvas Repository Pre-commit Hook
 echo "🔨 Running Miyagi pre-commit hook..."
 
-# Bundle JSX templates to HTML with esbuild
-node agent_scripts/bundle-templates.js
-if [ $? -ne 0 ]; then
-  echo "❌ Bundling failed"
-  exit 1
-fi
-
 # Generate canvas-state.json for all rooms
 node agent_scripts/generate-canvas.js
 if [ $? -ne 0 ]; then
@@ -45,7 +38,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # Note: No need to bundle templates - the pre-commit hook ensures all commits
-# have up-to-date template.html files, so pulling/merging gives us bundled files.
+# have up-to-date canvas-state.json files, so pulling/merging gives us bundled files.
 
 echo "✅ Post-merge hook completed successfully"
 exit 0`;

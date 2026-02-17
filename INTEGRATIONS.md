@@ -185,11 +185,12 @@ tools:
 
 ## How the AI Agent Uses Integrations
 
-The agent reads `McAPI.yaml` to discover available endpoints, then calls them via `miyagiAPI`:
+The agent reads `McAPI.yaml` to discover available endpoints, then calls them via `mcapi`:
 
 ```typescript
-// Agent code
-const weather = await miyagiAPI.post('/current-weather', {
+import { mcapi } from '@spaces/sdk';
+
+const weather = await mcapi.post('/current-weather', {
   location: 'San Francisco',
   units: 'metric'
 })

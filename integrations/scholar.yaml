@@ -1,9 +1,9 @@
 # scholar integration endpoints
 # Auto-generated from route-owned Zod schemas
 
-# USAGE: Call using miyagiAPI:
-#   miyagiAPI.post('/endpoint', { ...params })
-#   miyagiAPI.get('/endpoint', { ...params })
+# USAGE: import { mcapi } from '@spaces/sdk'
+#   mcapi.post('/endpoint', { ...params })
+#   mcapi.get('/endpoint', { ...params })
 
 tools:
 

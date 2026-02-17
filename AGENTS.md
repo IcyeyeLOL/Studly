@@ -15,15 +15,14 @@ Make sure you read the full content of AGENTS.md (this file) as well as all the 
 - integrations/*.yaml — full endpoint specs with input/output schemas (one file per category)
 - AllowedCommands.md — permitted commands and agent constraints
 - RoomStructure.md — file/folder layout of a canvas room
-- IO.md — widget-to-widget communication via useInput/useOutput
 - DO_DONT.md — best practices and common pitfalls
-- Storage.md — useStorage with scope option, useFiles patterns
-- FileEditing.md — how to edit files for useFiles-based widgets
+- Storage.md — data schemas, collections, and permissions (schemas defined in `src/schemas.ts`)
 - ImageAssets.md — working with images on the canvas
 - DocumentAssets.md — working with documents (PDF, DOCX) on canvas
 - Hooks.md — quick reference for all available hooks
-- McAPI.md — miyagiAPI usage patterns and examples
+- McAPI.md — mcapi usage patterns and examples
 - Styling.md — rules for when to apply or preserve widget styling
+- SkeletonGuide.md — how the widget skeleton works, what each file does, the build sequence
 
 ---
 
@@ -58,7 +57,7 @@ For simple requests (single widget changes, small fixes), skip steps 1-3 and jus
   - Never modify files outside the current room.
 
 - **Outputs are auto-managed by hooks**:
-  - Do not attempt to run bundlers; `template.html` is generated automatically.
+  - Do not attempt to run bundlers; widget output is generated automatically.
 
 - **Preserve existing data**: Never lose user's current information when modifying widgets.
 
@@ -75,7 +74,7 @@ For simple requests (single widget changes, small fixes), skip steps 1-3 and jus
 
 ---
 
-## API Integration System (miyagiAPI)
+## API Integration System (mcapi)
 
 - **CRITICAL**: Before you use an integration, read McAPI.md
 - **CRITICAL**: DO NOT HALLUCINATE API CALLS — only use endpoints listed in McAPI.yaml
@@ -101,7 +100,7 @@ A **Canvas** is a collaborative workspace where users can place and interact wit
 
 - **Room ID**: Unique identifier for the collaborative space
 - **Widgets**: Interactive React components positioned on pages
-- **Storage Systems**: Three types of data persistence (global, file, local)
+- **Storage**: RecordRoom-based persistent data with schemas, collections, and RBAC permissions
 - **Sub-canvases**: optional
 
 ### Widget Architecture
@@ -110,82 +109,95 @@ Widgets are **iframe-based React applications** that run independently and commu
 
 - Runs in its own isolated iframe for security
 - Has a unique `shapeId` and `widgetId`
-- Contains React JSX source code that defines its functionality
+- Contains a `src/` directory with TypeScript/React source code that defines its functionality
 - Has position (x, y) and size (width, height) properties (stored in properties.json)
-- Can store data locally, globally, or as files
+- Can store data in collections defined by `src/schemas.ts`
 
 ### Widget Communication
 
-- **CRITICAL**: Before building multi-widget data flows, read IO.md
-- **CRITICAL**: Use the correct hook for your use case:
-  - `useInput/useOutput` — point-to-point data pipelines between connected widgets
-  - `useGlobalStorage` — broadcast shared state to all widgets
+- **CRITICAL**: Use `useQuery/useMutations` for shared persistent data via collections (see Storage.md)
 
 ---
 
 ### What This Means for Widget Development
 
-#### Recommended imports + available globals
+#### Imports
 
-- Recommended: explicitly import React and any hooks you use:
+Everything must be explicitly imported. Nothing is available as a global.
 
-  ```jsx
-  import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-  ```
+```jsx
+// React
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 
-- The bundler resolves `react` / `react-dom` imports to window globals, so these imports are safe and light.
-- Globals still available at runtime: `useStorage`, `useFiles`, `miyagiAPI`, `useInput`, `useOutput`, `useGlobalStorage` (alias).
+// Storage hooks — from '@spaces/sdk/storage'
+import { useQuery, useMutations, useYjsText, useYjsField, useUser, useUsers, useTeams } from '@spaces/sdk/storage';
+
+// API client — from '@spaces/sdk'
+import { mcapi } from '@spaces/sdk';
+```
+
+| Import | From | Purpose |
+|--------|------|---------|
+| `useQuery`, `useMutations` | `@spaces/sdk/storage` | Read/write collection data |
+| `useYjsText`, `useYjsField` | `@spaces/sdk/storage` | Real-time Yjs sync |
+| `useUser`, `useUsers`, `useTeams` | `@spaces/sdk/storage` | User/team info |
+| `mcapi` | `@spaces/sdk` | API calls (`mcapi.post()`, `mcapi.get()`) |
+
+- Legacy hooks (deprecated, for old widgets only): `useStorage`, `useFiles`, `useGlobalStorage`, `useUserStorage`, `useInput`, `useOutput`.
 
 #### Template Library (reusable widgets)
 
 - The full library of reusable widget sources is available on disk at:
   - `/app/workspace/repo/agent_scripts/templates/`
-  - Each folder under this path is a template ID: `/app/workspace/repo/agent_scripts/templates/<template-id>/` (contains `template.jsx`, `components/`, `utils/`).
+  - Each folder under this path is a template ID: `/app/workspace/repo/agent_scripts/templates/<template-id>/` (contains the `src/` directory structure with `App.tsx`, `main.tsx`, `schemas.ts`, `constants.ts`, `styles.css`, `pages/`, `components/`, `hooks/`).
 
 - Reuse flow (when applicable):
   - Inspect the library path above to choose the matching `<template-id>` for the user's request.
   - Use your existing "create widget <template-id>" action. The system will scaffold the widget from the library automatically (and bundle it via hooks).
 
 - Notes:
-  - Keep helper imports within `./components` (and `./utils` if needed) to ensure portability and reuse.
+  - Keep helper imports within `./components`, `./pages`, `./hooks` (and `./constants.ts`, `./schemas.ts` if needed) to ensure portability and reuse.
   - Avoid cross-widget relative imports.
 
 #### Automatic Features
 
-- **Storage persistence** - Data through useStorage and useFiles survives widget reloads
-- **Real-time sync** - Global storage updates all widgets instantly
-- **Authentication** - API calls are automatically authenticated
+- **Storage persistence** - Data in collections survives widget reloads
+- **Real-time sync** - `useQuery` subscriptions update all users instantly via WebSocket
+- **RBAC permissions** - Server enforces read/write/delete permissions per role per collection
+- **Authentication** - API calls and storage are automatically authenticated
 - **Error handling** - Built-in API error management
-- **JSON serialization** - Storage values automatically serialized/deserialized
 
 ---
 
-### JSX Bundling Process
+### Widget Bundling Process
 
 #### How It Works
 
-1. **JSX Source** → You modify `template.jsx` (prefer explicit imports) or other jsx files under the widget folder
-2. **Bundling** → esbuild bundles the widget (supports multi-file imports)
-3. **Shims** → `react`/`react-dom` imports map to window globals; storage/API globals injected
+1. **TypeScript Source** → You modify files in the widget's `src/` directory (`App.tsx` is the main component, `main.tsx` is the entry point)
+2. **Bundling** → The build system bundles the widget from `src/main.tsx` (supports multi-file imports across the `src/` directory)
+3. **CSS** → `src/styles.css` is compiled via Tailwind CLI (supports `@apply` and custom classes)
 4. **HTML Output** → Final HTML with an IIFE bundle and auto-render scaffold is generated
 5. **Widget Rendering** → HTML loads in iframe and renders your component
 
-#### Why JSX Only
+#### Why TypeScript Projects
 
-- **Compilation Pipeline** - JSX gets transformed to React.createElement calls
+- **Full project structure** - Widgets are organized TypeScript projects with `src/` directory
+- **Type safety** - TypeScript catches errors at build time
+- **Modular architecture** - Pages, components, hooks, constants, and schemas are well-separated
 - **Script Injection** - Runtime scripts are automatically added during compilation
-- **Template System** - HTML templates are processed and enhanced automatically
 
 ---
 
 ## Storage System
 
 - **CRITICAL**: Before implementing persistent state, read Storage.md
-- **CRITICAL**: Use the correct storage scope:
-  - `useStorage(key, default)` — SHARED with everybody (default). Multiplayer, collaboration.
-  - `useStorage(key, default, { scope: 'user' })` — PRIVATE to current user. Personal notes, preferences.
-  - `useFiles(path)` — SHARED file storage. Agent can modify files directly.
-- **CRITICAL**: If using `useFiles`, read FileEditing.md. Do NOT modify global storage directly for file-based widgets.
+- **CRITICAL**: When creating a widget that needs data, define schemas in `src/schemas.ts`
+- **CRITICAL**: Use the correct hooks:
+  - `useQuery(collection, options?)` — read data from a collection (real-time sync)
+  - `useMutations(collection)` — returns `{ create, put, remove }` for writing data
+  - `useYjsText(collection, recordId, field)` — collaborative text editing
+  - `useUser()` — current user with role
+- **CRITICAL**: Permissions are defined in `src/schemas.ts` per collection and enforced server-side
 
 ---
 
@@ -193,7 +205,7 @@ Widgets are **iframe-based React applications** that run independently and commu
 
 - **CRITICAL**: Before adding/modifying images on canvas, read ImageAssets.md
 - **CRITICAL**: Key rules:
-  - Use `miyagiAPI.getImageUrl(imageId)` to get image URLs
+  - Use `inspect document` or `inspect image` commands to access canvas images
   - Never hardcode image paths or URLs
 
 ---
@@ -202,9 +214,12 @@ Widgets are **iframe-based React applications** that run independently and commu
 
 - **CRITICAL**: Before using DeepSpace-specific hooks, read Hooks.md
 - **CRITICAL**: Available hooks:
-  - `useStorage(key, default, options?)` — unified storage with scope option
-  - `useFiles(path, options?)` — file-system storage with scope option
-  - `useInput`, `useOutput` — widget communication
+  - `useUser()` — current user profile and role
+  - `useQuery(collection, options?)` — real-time query subscriptions
+  - `useMutations(collection)` — `{ create, put, remove }` for CRUD
+  - `useYjsText(collection, recordId, field)` — collaborative text editing
+  - `useUsers()` — all users in room + role management
+- **CRITICAL**: Do NOT use deprecated hooks (`useStorage`, `useFiles`, `useGlobalStorage`, `useInput`, `useOutput`) for new widgets
 
 ---
 
@@ -214,7 +229,7 @@ You can only use these console commands:
 
 **`create widget ${TEMPLATE_ID}`**
 - If the template is a known template from `/app/workspace/repo/agent_scripts/templates`, the tool will do all the work
-- If the template is not under `/app/workspace/repo/agent_scripts/templates`, the tool will do just scaffolding, and you will need to modify template.jsx and any other components
+- If the template is not under `/app/workspace/repo/agent_scripts/templates`, the tool will do just scaffolding, and you will need to modify files in the `src/` directory (starting with `src/App.tsx`)
 
 **`inspect document ${ASSET_ID} [options]`**
 - Fetches and processes documents from canvas
@@ -237,15 +252,19 @@ You can only use these console commands:
 ## Available React Environment
 
 - **React 18**: Full hooks API (`useState`, `useEffect`, `useMemo`, `useCallback`, etc.)
-- **Storage hooks**: `useStorage(key, default, { scope?: 'global' | 'user' })`, `useFiles(path, { scope? })`
-- **I/O hooks**: `useInput(slotId, default)`, `useOutput(slotId)`
-- **API Access**: `miyagiAPI.post(endpoint, data)`, `miyagiAPI.get(endpoint, params)`
+- **Data hooks**: `useQuery(collection)`, `useMutations(collection)`, `useYjsText(collection, id, field)` — import from `@spaces/sdk/storage`
+- **User hooks**: `useUser()`, `useUsers()`, `useUserLookup()`, `useTeams()` — import from `@spaces/sdk/storage`
+- **I/O hooks (deprecated)**: `useInput(slotId, default)`, `useOutput(slotId)` — still work in old widgets, do not use for new ones
+- **API Access**: `mcapi.post(endpoint, data)`, `mcapi.get(endpoint, params)` — import from `@spaces/sdk`
 - **Modern JavaScript**: ES6+, async/await, destructuring, etc.
 
 ---
 
 ## Widget Creation and Modification
 
-In the widget directory, maintain modularity:
-- Keep central logic in `template.jsx`
-- Use `widget-id/components/` and `widget-id/utils/` for implementation details
+In the widget directory, maintain modularity using the `src/` directory structure:
+- Keep central logic in `src/App.tsx` (main component)
+- Use `src/pages/` for page-level components
+- Use `src/components/ui/` for reusable UI components
+- Use `src/hooks/` for custom React hooks
+- Use `src/constants.ts` for constants and `src/schemas.ts` for collection schemas

@@ -5,7 +5,7 @@ This repository enforces strict agent constraints. Read this document together w
 ---
 
 ## Agent Constraints (Important)
-- Allowed commands only: `create`
+- Allowed commands only: `create widget` and `inspect document`
   - Do not use raw shell (e.g., `node`, `npm`, etc.).
   - Do not chain commands (no `&&`, `|`, `;`). Send one high‑level command at a time.
 - Room scope only:
@@ -13,7 +13,7 @@ This repository enforces strict agent constraints. Read this document together w
   - Work strictly within `currentRoomPath` (not in nested `room-*` subrooms).
   - Never modify files outside the current room.
 - Outputs are auto‑managed by hooks:
-  - Do not attempt to run bundlers; `template.html` is generated automatically on commit.
+  - Do not attempt to run bundlers; widget output is generated automatically on commit.
   - Do not attempt to run any git commands; this is handled for you automatically when you complete the request
 
 ---
@@ -23,7 +23,7 @@ This repository enforces strict agent constraints. Read this document together w
   - Example: `create widget notepad`
   - Example: `create widget crm-workflow-guide`
 - After creation:
-  - Edit `template.jsx` and other .jsx files under the widget folder to implement behavior and UI.
+  - Edit files under the widget's `src/` directory to implement behavior and UI. The main component is `src/App.tsx`.
 - If the template exists in the library, the system scaffolds it; otherwise it creates a stub for you to modify.
 
 ---

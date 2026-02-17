@@ -11,6 +11,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { IndexValidator } = require('./index-validator');
 const { parseStylingMd } = require('./styling-utils');
+const { SOURCE_EXTENSIONS, ROOT_LEVEL_WIDGET_FILES } = require('./widget-constants');
 
 class CanvasStateGenerator {
   constructor(rootDir = process.cwd()) {
@@ -123,9 +124,8 @@ class CanvasStateGenerator {
     console.log(`📄 Generating canvas state for room: ${roomName}`);
 
     try {
-      // Step 1: Load room metadata and storage
+      // Step 1: Load room metadata
       const canvasMetadata = await this.loadCanvasMetadata(roomDir);
-      const globalStorage = await this.loadGlobalStorage(roomDir);
       
       if (!canvasMetadata) {
         console.log(`⚠️ No canvas metadata found in ${roomName} - skipping`);
@@ -133,7 +133,7 @@ class CanvasStateGenerator {
       }
 
       // Step 2: Load widgets from widget-* directories
-      const { widgets, widgetStorage } = await this.loadRoomWidgets(roomDir);
+      const widgets = await this.loadRoomWidgets(roomDir);
 
       // Step 3: Load general objects (shapes, assets, canvas-links) from *-*.json files
       const { generalObjects, canvasLinks } = await this.loadGeneralObjects(roomDir);
@@ -142,10 +142,9 @@ class CanvasStateGenerator {
       // await this.ensureCanvasLinksForSubrooms(roomDir, canvasLinks, canvasMetadata);
 
       // Step 5: Generate tldraw RoomSnapshot
+      // Note: canvas_storage is no longer generated - storage is handled by RecordRoom/Yjs
       const roomSnapshot = this.generateRoomSnapshot({
         canvasMetadata,
-        globalStorage,
-        widgetStorage,
         widgets,
         canvasLinks,
         generalObjects
@@ -154,12 +153,6 @@ class CanvasStateGenerator {
       // Step 6: Write canvas-state.json to this room directory
       const canvasStatePath = path.join(roomDir, 'canvas-state.json');
       fs.writeFileSync(canvasStatePath, JSON.stringify(roomSnapshot, null, 2), 'utf8');
-      
-      // Step 6b: Also update global-storage.json to stay in sync with files/ folder
-      // This allows developers to inspect/debug the packed storage without parsing canvas-state.json
-      // and ensures global-storage.json reflects the current filesystem state
-      const globalStoragePath = path.join(roomDir, 'global-storage.json');
-      fs.writeFileSync(globalStoragePath, JSON.stringify(globalStorage, null, 2), 'utf8');
       
       console.log(`✅ Generated canvas-state.json for ${roomName} with ${widgets.length} widgets, ${canvasLinks.length} canvas-links, and ${generalObjects.length} general objects`);
       return true;
@@ -188,90 +181,6 @@ class CanvasStateGenerator {
   }
 
   /**
-   * Load global storage for a room
-   * Priority: files/ folder > global-storage.json
-   * 
-   * If files/ folder exists, it packs files into global storage keys
-   * Otherwise falls back to global-storage.json
-   */
-  async loadGlobalStorage(roomDir) {
-    const filesDir = path.join(roomDir, 'files');
-    const globalStoragePath = path.join(roomDir, 'global-storage.json');
-    
-    // First, load the base global-storage.json (for system keys like __widget_io_configs)
-    let baseStorage = {};
-    if (fs.existsSync(globalStoragePath)) {
-      try {
-        baseStorage = JSON.parse(fs.readFileSync(globalStoragePath, 'utf8'));
-      } catch (error) {
-        console.error(`❌ Error loading global-storage.json from ${roomDir}:`, error);
-      }
-    }
-    
-    // If files/ folder exists, pack from filesystem and merge
-    if (fs.existsSync(filesDir)) {
-      console.log(`  📄 Packing files from: ${path.relative(this.rootDir, filesDir)}/`);
-      const packedFiles = await this.packFilesFromFilesystem(filesDir);
-      
-      // Merge: filesystem values override base storage
-      // Also remove any old files/* keys that no longer exist in filesystem
-      const merged = {};
-      
-      // Copy non-files keys from base storage
-      for (const [key, value] of Object.entries(baseStorage)) {
-        if (!key.startsWith('files/')) {
-          merged[key] = value;
-        }
-      }
-      
-      // Add all files from filesystem
-      for (const [key, content] of Object.entries(packedFiles)) {
-        // JSON stringify the value to match the expected format
-        merged[key] = JSON.stringify(content);
-      }
-      
-      return merged;
-    }
-    
-    return baseStorage;
-  }
-
-  /**
-   * Recursively pack all files from files/ folder into global storage keys
-   * Returns: { 'files/notes/note.md': '# content', ... }
-   */
-  async packFilesFromFilesystem(filesDir) {
-    const result = {};
-    
-    const processDir = (dir, keyPrefix) => {
-      const entries = fs.readdirSync(dir, { withFileTypes: true });
-      
-      for (const entry of entries) {
-        // Skip hidden files (e.g., .DS_Store on macOS, .gitkeep, etc.)
-        if (entry.name.startsWith('.')) {
-          continue;
-        }
-        
-        const fullPath = path.join(dir, entry.name);
-        
-        if (entry.isDirectory()) {
-          // Recurse into directory
-          processDir(fullPath, keyPrefix + entry.name + '/');
-        } else if (entry.isFile()) {
-          // Read file content
-          const key = keyPrefix + entry.name;
-          const content = fs.readFileSync(fullPath, 'utf8');
-          result[key] = content; // Raw file content
-        }
-      }
-    };
-    
-    processDir(filesDir, 'files/');
-    console.log(`    📦 Packed ${Object.keys(result).length} files`);
-    return result;
-  }
-
-  /**
    * Load all widgets from widget-* directories in a room
    */
   async loadRoomWidgets(roomDir) {
@@ -283,53 +192,33 @@ class CanvasStateGenerator {
     console.log(`  🧩 Found ${shapeDirectories.length} widget directories in ${path.basename(roomDir)}`);
 
     const widgets = [];
-    const widgetStorage = {};
 
     for (const shapeDir of shapeDirectories) {
       const widget = await this.loadWidget(roomDir, shapeDir);
       if (widget) {
         widgets.push(widget);
-        
-        // Add widget storage to the room's widget storage map
-        const shapeId = widget.properties?.shapeId || widget.properties?.id || widget.shapeId;
-        if (widget.storage && shapeId) {
-          widgetStorage[shapeId] = widget.storage;
-        }
       }
     }
 
-    return { widgets, widgetStorage };
+    return widgets;
   }
 
+  // SOURCE_EXTENSIONS and ROOT_LEVEL_WIDGET_FILES imported from ./widget-constants.js
+
   /**
-   * Load a single widget from widget-* directory
+   * Load a single widget from widget-* directory.
+   * Reads all source files from the src/ subdirectory into a unified sources map.
    */
   async loadWidget(roomDir, shapeDir) {
     const widgetDir = path.join(roomDir, shapeDir);
     const shapeId = shapeDir.replace('widget-', 'shape:');
     
     try {
-      // Load all widget files
+      // Load properties
       const propertiesPath = path.join(widgetDir, 'properties.json');
-      const jsxPath = path.join(widgetDir, 'template.jsx');
-      const htmlPath = path.join(widgetDir, 'template.html');
-      const storagePath = path.join(widgetDir, 'storage.json');
-
       const properties = fs.existsSync(propertiesPath) 
         ? JSON.parse(fs.readFileSync(propertiesPath, 'utf8')) 
         : null;
-      
-      const jsxContent = fs.existsSync(jsxPath) 
-        ? fs.readFileSync(jsxPath, 'utf8') 
-        : '';
-      
-      const htmlContent = fs.existsSync(htmlPath) 
-        ? fs.readFileSync(htmlPath, 'utf8') 
-        : '';
-      
-      const storage = fs.existsSync(storagePath)
-        ? JSON.parse(fs.readFileSync(storagePath, 'utf8'))
-        : {};
 
       // Read styling.md if it exists
       const stylingPath = path.join(widgetDir, 'styling.md');
@@ -339,54 +228,58 @@ class CanvasStateGenerator {
         styleFromMd = parseStylingMd(stylingContent);
       }
 
-      // Collect additional source files (preserving directory structure)
-      // Scans the widget directory for any .jsx, .tsx, .js, .ts files
-      // Excludes template.jsx/html and properties/storage.json
-      let sources = null;
+      // Collect all source files into a unified map.
+      // Scans src/ directory recursively for all editable file types.
+      const sources = {};
       const collectSources = (dir, relBase = '') => {
+        if (!fs.existsSync(dir)) return;
         const entries = fs.readdirSync(dir, { withFileTypes: true });
-        const fileSources = {};
         
         for (const entry of entries) {
           const abs = path.join(dir, entry.name);
           const rel = relBase ? path.join(relBase, entry.name) : entry.name;
           
           if (entry.isDirectory()) {
-            // Skip node_modules and hidden directories
             if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
-            // Recursively collect from subdirectories
-            Object.assign(fileSources, collectSources(abs, rel));
+            collectSources(abs, rel);
           } else if (entry.isFile()) {
-            // Skip the main template and metadata files
-            if (entry.name === 'template.jsx' || 
-                entry.name === 'template.html' || 
-                entry.name === 'properties.json' || 
-                entry.name === 'storage.json') continue;
+            const ext = path.extname(entry.name).toLowerCase();
+            if (!SOURCE_EXTENSIONS.has(ext)) continue;
+            if (entry.name.endsWith('.d.ts')) continue;
             
-            // Only include source files
-            const ext = path.extname(entry.name);
-            if (['.jsx', '.tsx', '.js', '.ts'].includes(ext)) {
-              try {
-                const code = fs.readFileSync(abs, 'utf8');
-                fileSources[rel] = code;
-              } catch (e) {
-                console.warn(`⚠️ Failed to read source file ${rel}:`, e.message);
-              }
+            try {
+              sources[rel] = fs.readFileSync(abs, 'utf8');
+            } catch (e) {
+              console.warn(`⚠️ Failed to read source file ${rel}:`, e.message);
             }
           }
         }
-        
-        return fileSources;
       };
       
-      const collectedSources = collectSources(widgetDir);
-      if (Object.keys(collectedSources).length > 0) {
-        sources = collectedSources;
+      // Collect from src/ directory (new format)
+      const srcDir = path.join(widgetDir, 'src');
+      if (fs.existsSync(srcDir)) {
+        collectSources(srcDir, 'src');
+      }
+
+      // Collect root-level widget-owned files (e.g. tailwind.config.js)
+      for (const filename of ROOT_LEVEL_WIDGET_FILES) {
+        const filePath = path.join(widgetDir, filename);
+        if (fs.existsSync(filePath)) {
+          try {
+            sources[filename] = fs.readFileSync(filePath, 'utf8');
+          } catch (e) {
+            console.warn(`⚠️ Failed to read root-level file ${filename}:`, e.message);
+          }
+        }
+      }
+      
+      if (Object.keys(sources).length > 0) {
         console.log(`      📦 Collected ${Object.keys(sources).length} source files: ${Object.keys(sources).join(', ')}`);
       }
 
-      // Properties, jsxContent, htmlContent is required
-      if (!properties || !jsxContent || !htmlContent) {
+      // Properties and sources are required
+      if (!properties || Object.keys(sources).length === 0) {
         console.log(`⚠️ Skipping incomplete widget: ${shapeDir}`);
         return null;
       }
@@ -394,10 +287,7 @@ class CanvasStateGenerator {
       return {
         shapeId,
         properties,
-        jsxContent,
-        htmlContent,
-        storage,
-        ...(sources ? { sources } : {}),
+        sources,
         ...(styleFromMd ? { style: styleFromMd } : {})
       };
 
@@ -590,9 +480,10 @@ class CanvasStateGenerator {
 
   /**
    * Generate tldraw RoomSnapshot from room data
+   * Note: canvas_storage is no longer generated
    */
   generateRoomSnapshot(roomData) {
-    const { canvasMetadata, globalStorage, widgetStorage, widgets, canvasLinks, generalObjects } = roomData;
+    const { canvasMetadata, widgets, canvasLinks, generalObjects } = roomData;
     
     // Use complete document and pages from metadata
     const documentState = canvasMetadata.document;
@@ -612,17 +503,7 @@ class CanvasStateGenerator {
           state,
           lastChangedClock: lastChangedClock || 0
         };
-      }),
-      // Canvas storage record - CRITICAL for per-room storage
-      {
-        state: {
-          widgets: widgetStorage, // Per-room widget storage
-          global: globalStorage,  // Per-room global storage
-          id: 'canvas_storage:main',
-          typeName: 'canvas_storage'
-        },
-        lastChangedClock: widgets.length + canvasLinks.length + generalObjects.length + pages.length + 2
-      }
+      })
     ];
 
     // Add widget shape records
@@ -650,14 +531,14 @@ class CanvasStateGenerator {
             templateHandle: props.templateHandle || 'notepad-react-test',
             ...(props.templateName ? { templateName: props.templateName } : {}),
             ...(props.icon ? { icon: props.icon } : {}),
-            htmlContent: widget.htmlContent,
+            sources: widget.sources,
             ...(props.isFullscreen !== undefined ? { isFullscreen: props.isFullscreen } : {}),
-            ...(props.savedJsxContentHash !== undefined ? { savedJsxContentHash: props.savedJsxContentHash } : {}),
-            jsxContent: widget.jsxContent,
-            ...(widget.sources ? { sources: widget.sources } : {}),
+            ...(props.savedContentHash !== undefined ? { savedContentHash: props.savedContentHash } : {}),
             color: props.color || 'black',
             zoomScale: props.zoomScale || 1,
-            ...(widget.style ? { style: widget.style } : {})
+            ...(widget.style ? { style: widget.style } : {}),
+            ...(props.templateDescription ? { templateDescription: props.templateDescription } : {}),
+            ...(props.templateCategory ? { templateCategory: props.templateCategory } : {})
           }
         },
         lastChangedClock: props.lastChangedClock || (shapeIndex + 2)

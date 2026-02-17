@@ -53,8 +53,9 @@ function deleteWidget(widgetDir) {
   }
 
   // Additional validation - check if it contains expected widget files
-  const expectedFiles = ['properties.json', 'storage.json', 'template.jsx'];
-  const hasWidgetFiles = expectedFiles.some(file => fs.existsSync(path.join(widgetPath, file)));
+  const expectedFiles = ['properties.json'];
+  const hasSrcDir = fs.existsSync(path.join(widgetPath, 'src'));
+  const hasWidgetFiles = hasSrcDir || expectedFiles.some(file => fs.existsSync(path.join(widgetPath, file)));
   
   if (!hasWidgetFiles) {
     console.warn(`Warning: Directory ${dirName} doesn't contain expected widget files, but proceeding with deletion...`);

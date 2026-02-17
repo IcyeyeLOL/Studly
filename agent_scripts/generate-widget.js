@@ -5,6 +5,7 @@ const path = require('path');
 const { IndexValidator } = require('./index-validator');
 const { defaultSizeForTemplate, computePlacement, collectRoomWidgetRectangles } = require('./widget-positioning');
 const { generateStylingMd } = require('./styling-utils');
+const { SOURCE_EXTENSIONS, ROOT_LEVEL_WIDGET_FILES, BASE_TEMPLATE_DIR } = require('./widget-constants');
 
 /**
  * Generate a random shape ID similar to tldraw's format with template handle prefix
@@ -71,6 +72,75 @@ function getCanvasMode(roomPath) {
 function getNextWidgetIndex(roomPath) {
   const validator = new IndexValidator();
   return validator.getNextWidgetIndex(roomPath);
+}
+
+/**
+ * Recursively read all files from a directory, returning paths relative to a base.
+ * Skips node_modules, dist, .wrangler, and declaration files.
+ * @param {string} dir - The directory to read
+ * @param {string} relBase - The relative path prefix
+ * @returns {Array<{relativePath: string, absolutePath: string}>}
+ */
+function readSourceFiles(dir, relBase = '') {
+  const results = [];
+  if (!fs.existsSync(dir)) return results;
+
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const abs = path.join(dir, entry.name);
+    const rel = relBase ? path.join(relBase, entry.name) : entry.name;
+
+    if (entry.isDirectory()) {
+      if (['node_modules', 'dist', '.wrangler'].includes(entry.name)) continue;
+      results.push(...readSourceFiles(abs, rel));
+    } else if (entry.isFile()) {
+      const ext = path.extname(entry.name).toLowerCase();
+      if (!SOURCE_EXTENSIONS.has(ext)) continue;
+      if (entry.name.endsWith('.d.ts')) continue;
+      results.push({ relativePath: rel, absolutePath: abs });
+    }
+  }
+  return results;
+}
+
+/**
+ * Copy the base template files into a widget directory.
+ * Reads all source files from the synced template's src/ directory
+ * plus root-level widget-owned files (like tailwind.config.js).
+ *
+ * @param {string} widgetDir - The widget directory to populate
+ * @returns {number} Number of files copied
+ */
+function copyTemplateSources(widgetDir) {
+  const srcDir = path.join(BASE_TEMPLATE_DIR, 'src');
+  if (!fs.existsSync(srcDir)) {
+    console.error(`Error: Base template src/ not found at ${srcDir}`);
+    process.exit(1);
+  }
+
+  const files = readSourceFiles(srcDir, 'src');
+  let count = 0;
+
+  for (const { relativePath, absolutePath } of files) {
+    const destPath = path.join(widgetDir, relativePath);
+    const destDir = path.dirname(destPath);
+    if (!fs.existsSync(destDir)) {
+      fs.mkdirSync(destDir, { recursive: true });
+    }
+    fs.copyFileSync(absolutePath, destPath);
+    count++;
+  }
+
+  // Copy root-level widget-owned files
+  for (const filename of ROOT_LEVEL_WIDGET_FILES) {
+    const srcPath = path.join(BASE_TEMPLATE_DIR, filename);
+    if (fs.existsSync(srcPath)) {
+      fs.copyFileSync(srcPath, path.join(widgetDir, filename));
+      count++;
+    }
+  }
+
+  return count;
 }
 
 /**
@@ -161,99 +231,10 @@ function generateWidget(templateHandle, roomPath) {
     console.warn(`Directory ${dirName} already exists, files will be overwritten`);
   }
 
-  // If a library template with this handle exists, copy its sources
-  const libRoot = path.join('/app/workspace/repo', 'agent_scripts', 'templates');
-  const libWidgetPath = path.join(libRoot, templateHandle);
-  let usedLibrary = false;
-  if (fs.existsSync(libWidgetPath) && fs.statSync(libWidgetPath).isDirectory()) {
-    console.log(`📚 Using library template: ${templateHandle}`);
-    // copy everything except compiled html and library properties.json
-    const copyDir = (src, dest) => {
-      const entries = fs.readdirSync(src, { withFileTypes: true });
-      for (const e of entries) {
-        const s = path.join(src, e.name);
-        const d = path.join(dest, e.name);
-        if (e.isDirectory()) {
-          if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
-          copyDir(s, d);
-        } else if (e.isFile()) {
-          if (e.name === 'template.html' || e.name === 'properties.json') continue;
-          fs.copyFileSync(s, d);
-        }
-      }
-    };
-    copyDir(libWidgetPath, dirPath);
-    usedLibrary = true;
-  } else {
-    console.log(`🧩 No library template found for '${templateHandle}'. Creating a minimal skeleton.`);
-    // Minimal template skeleton (explicit imports)
-    const skeleton = `import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-
-function ${toComponentName(templateHandle)}() {
-  const [tailwindLoaded, setTailwindLoaded] = useState(false);
-  const [state, setState] = useState(null);
-
-  useEffect(() => {
-    // Load Tailwind CSS
-    if (!document.getElementById('tailwind-script')) {
-      const tailwindScript = document.createElement('script');
-      tailwindScript.id = 'tailwind-script';
-      tailwindScript.src = 'https://cdn.tailwindcss.com';
-      tailwindScript.onload = () => {
-        // Give Tailwind a moment to process the DOM
-        setTimeout(() => setTailwindLoaded(true), 100);
-      };
-      document.head.appendChild(tailwindScript);
-    } else {
-      setTailwindLoaded(true);
-    }
-  }, []);
-
-  // ⚠️ IMPORTANT: For ANY background (including white) on scrollable widgets,
-  // Tailwind's min-h-screen only covers the initial viewport. Scrolling reveals
-  // the iframe's default background. Apply backgrounds to document.body instead:
-  // useEffect(() => {
-  //   document.body.style.background = '#ffffff'; // or any color/gradient
-  //   document.documentElement.style.minHeight = '100%';
-  //   return () => { document.body.style.background = ''; document.documentElement.style.minHeight = ''; };
-  // }, []);
-
-  // ⚠️ FORM ELEMENTS: For dropdown/select functionality, always build custom
-  // dropdown components rather than native <select> elements. Native selects
-  // render differently across Safari, Chrome, and Firefox. Use buttons/divs
-  // with state management and click-outside handling for full styling control.
-
-  if (!tailwindLoaded) {
-    return <div style={{ padding: '20px', textAlign: 'center' }}>Loading...</div>;
-  }
-
-  return (
-    <div className="p-4">
-      <h3 className="text-lg font-bold mb-2">${templateHandle}</h3>
-      <div className="text-sm text-gray-600">
-        Replace this with your widget UI. Make sure you are modular and keep the code DRY. 
-        You can add additional components inside the widget directory.
-      </div>
-    </div>
-  );
-}
-
-export default ${toComponentName(templateHandle)};
-`;
-    fs.writeFileSync(path.join(dirPath, 'template.jsx'), skeleton);
-  }
-
-  // Create storage.json with widget config
-  const widgetConfig = {
-    roomId: roomId,
-    pageId: pageId,
-    shapeId: shapeId,
-    templateHandle: templateHandle
-  };
-
-  const storageJson = {
-    "__widget_config": JSON.stringify(widgetConfig)
-  };
+  // Copy source files from the base template
+  console.log(`🧩 Copying base template source files...`);
+  const fileCount = copyTemplateSources(dirPath);
+  console.log(`   Copied ${fileCount} source files from base template`);
 
   // Create properties.json
   const canvasMode = getCanvasMode(roomPath);
@@ -276,7 +257,7 @@ export default ${toComponentName(templateHandle)};
     isLocked: false,
     color: "black",
     zoomScale: 1,
-    savedJsxContentHash: "initial",
+    savedContentHash: "initial",
     meta: {
       initializationState: "ready"
     },
@@ -287,8 +268,6 @@ export default ${toComponentName(templateHandle)};
 
   // Write files
   try {
-    // storage.json: carry widget config (optional for debugging)
-    fs.writeFileSync(path.join(dirPath, 'storage.json'), JSON.stringify(storageJson, null, 2));
     fs.writeFileSync(path.join(dirPath, 'properties.json'), JSON.stringify(propertiesJson, null, 2));
 
     // Create styling.md with style information
@@ -297,32 +276,17 @@ export default ${toComponentName(templateHandle)};
 
     console.log('\n✅ Widget files created successfully:');
     console.log(`📁 Directory: ${dirPath}`);
-    console.log(`📄 template.jsx - React component ${usedLibrary ? '(from library)' : '(skeleton)'} `);
-    console.log(`📄 storage.json - Widget storage configuration`);
+    console.log(`📄 src/       - ${fileCount} source files from base template`);
     console.log(`📄 properties.json - Widget properties and metadata`);
     console.log(`📄 styling.md - Widget style configuration`);
     console.log(`\n🎯 Next steps:`);
-    console.log(`1. Edit template.jsx to implement your widget logic.`);
+    console.log(`1. Edit src/App.tsx to implement your widget logic.`);
     console.log(`2. Commit changes. Hooks will bundle and update canvas-state automatically.`);
     console.log(`3. Shape ID: ${shapeId}`);
 
   } catch (error) {
     console.error('Error creating files:', error);
     process.exit(1);
-  }
-}
-
-function toComponentName(handle) {
-  try {
-    const base = String(handle || 'Widget')
-      .replace(/[^a-zA-Z0-9]+/g, ' ')
-      .trim()
-      .split(/\s+/)
-      .map(s => s.charAt(0).toUpperCase() + s.slice(1))
-      .join('');
-    return /[A-Za-z]/.test(base.charAt(0)) ? base : `W${base}`;
-  } catch {
-    return 'Widget';
   }
 }
 

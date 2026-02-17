@@ -1,0 +1,268 @@
+# livekit integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: import { mcapi } from '@spaces/sdk'
+#   mcapi.post('/endpoint', { ...params })
+#   mcapi.get('/endpoint', { ...params })
+
+tools:
+
+  livekit_create_room:
+    method: POST
+    endpoint: /livekit-create-room
+    description: "Create a LiveKit room with upfront billing based on max participants and duration. Returns admin token."
+    input_schema:
+      type: object
+      properties:
+        roomName:
+          type: string
+          minLength: 1
+          description: Unique name for the room
+        maxParticipants:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: "Maximum number of participants allowed (1-100)"
+        durationMinutes:
+          type: integer
+          minimum: 1
+          maximum: 1440
+          description: "Room duration in minutes (1-1440, max 24 hours)"
+        metadata:
+          type: string
+          description: Optional metadata to attach to the room
+      required:
+        - roomName
+        - maxParticipants
+        - durationMinutes
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            roomSid:
+              type: string
+              description: LiveKit room SID (unique identifier)
+            roomName:
+              type: string
+              description: Room name
+            adminToken:
+              type: string
+              description: Admin access token for the room creator
+            livekitUrl:
+              type: string
+              description: LiveKit server URL to connect to
+            expiresAt:
+              type: number
+              description: Unix timestamp (ms) when the room expires
+            cost:
+              type: object
+              properties:
+                billingUnits:
+                  type: number
+                unitCost:
+                  type: number
+                totalCost:
+                  type: number
+                breakdown: {}
+              required:
+                - billingUnits
+                - unitCost
+                - totalCost
+              additionalProperties: false
+            usageId:
+              type: string
+              description: Usage record ID for tracking
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  livekit_join_room:
+    method: POST
+    endpoint: /livekit-join-room
+    description: "Generate a participant token for an existing LiveKit room. Returns a JWT token with TTL based on remaining room time. IMPORTANT: This does NOT connect you to the room — you must use the returned participantToken with a LiveKit client SDK to actually join. Free operation."
+    input_schema:
+      type: object
+      properties:
+        roomSid:
+          type: string
+          minLength: 1
+          description: LiveKit room SID to join
+        displayName:
+          type: string
+          description: Display name for the participant
+      required:
+        - roomSid
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            participantToken:
+              type: string
+              description: JWT participant access token — use with a LiveKit client SDK to connect (e.g., room.connect(livekitUrl, participantToken))
+            livekitUrl:
+              type: string
+              description: LiveKit server URL to connect to
+            roomName:
+              type: string
+              description: Room name
+            expiresAt:
+              type: number
+              description: Unix timestamp (ms) when the room expires
+            remainingSeconds:
+              type: number
+              description: Seconds remaining until room expires
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  livekit_delete_room:
+    method: POST
+    endpoint: /livekit-delete-room
+    description: "Force-close a LiveKit room. Only the room creator can delete. Refund for unused time is applied automatically based on actual duration."
+    input_schema:
+      type: object
+      properties:
+        roomSid:
+          type: string
+          minLength: 1
+          description: LiveKit room SID to delete
+      required:
+        - roomSid
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  livekit_get_participant:
+    method: POST
+    endpoint: /livekit-get-participant
+    description: "Get information about a specific participant in a LiveKit room. Participant must be connected via a LiveKit client SDK to be found. Free operation."
+    input_schema:
+      type: object
+      properties:
+        roomSid:
+          type: string
+          minLength: 1
+          description: LiveKit room SID
+        participantIdentity:
+          type: string
+          minLength: 1
+          description: Identity of the participant to look up
+      required:
+        - roomSid
+        - participantIdentity
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            participant:
+              type: object
+              properties:
+                sid:
+                  type: string
+                  description: Participant SID
+                identity:
+                  type: string
+                  description: Participant identity
+                name:
+                  type: string
+                  description: Participant display name
+                state:
+                  type: string
+                  description: "Connection state: JOINING, JOINED, ACTIVE, or DISCONNECTED"
+                joinedAt:
+                  type: number
+                  description: Unix timestamp (ms) when participant joined
+                metadata:
+                  type: string
+                  description: Participant metadata
+              required:
+                - sid
+                - identity
+                - state
+              additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  livekit_list_participants:
+    method: POST
+    endpoint: /livekit-list-participants
+    description: "List all participants in a LiveKit room. Free operation."
+    input_schema:
+      type: object
+      properties:
+        roomSid:
+          type: string
+          minLength: 1
+          description: LiveKit room SID
+      required:
+        - roomSid
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            participants:
+              type: array
+              items:
+                type: object
+                properties:
+                  sid:
+                    type: string
+                    description: Participant SID
+                  identity:
+                    type: string
+                    description: Participant identity
+                  name:
+                    type: string
+                    description: Participant display name
+                  state:
+                    type: string
+                    description: Connection state
+                  joinedAt:
+                    type: number
+                    description: Unix timestamp (ms) when participant joined
+                required:
+                  - sid
+                  - identity
+                  - state
+                additionalProperties: false
+            participantCount:
+              type: number
+              description: Total number of participants
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
