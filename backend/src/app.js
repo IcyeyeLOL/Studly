@@ -8,10 +8,15 @@ import { projectsRouter } from './routes/projects.js';
 import { recentQuestionsRouter } from './routes/recent-questions.js';
 import { uploadRouter } from './routes/upload.js';
 import { solveRouter } from './routes/solve.js';
+import { checkoutRouter, stripeWebhookHandler } from './routes/stripe.js';
 
 const app = express();
 
 app.use(cors({ origin: true }));
+
+// Stripe webhook needs raw body for signature verification (must be before express.json())
+app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }), stripeWebhookHandler);
+
 app.use(express.json());
 
 // Health check before Clerk so it works without any auth config
@@ -27,6 +32,7 @@ app.use('/api/projects', projectsRouter);
 app.use('/api/recent-questions', recentQuestionsRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api/solve', solveRouter);
+app.use('/api/stripe', checkoutRouter);
 
 app.use((err, req, res, next) => {
   console.error(err);

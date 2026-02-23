@@ -495,7 +495,52 @@ function postProcessAnswer(text) {
   return out;
 }
 
+const FREE_DAILY_QUESTION_LIMIT = 5;
+
+/**
+ * Check subscription: Pro (monthly/yearly and not expired) = unlimited.
+ * Free or expired = limit to FREE_DAILY_QUESTION_LIMIT per day (UTC).
+ * Returns null if allowed, or { status, error } to send back.
+ */
+async function checkSubscriptionLimit(supabase, profileId) {
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('subscription_plan, subscription_expires_at')
+    .eq('id', profileId)
+    .single();
+
+  if (profileError) return null; // allow on DB error to avoid blocking
+
+  const plan = profile?.subscription_plan;
+  const expiresAt = profile?.subscription_expires_at;
+  const isPro = (plan === 'monthly' || plan === 'yearly') && expiresAt && new Date(expiresAt) > new Date();
+  if (isPro) return null;
+
+  const todayStart = new Date();
+  todayStart.setUTCHours(0, 0, 0, 0);
+  const { count, error: countError } = await supabase
+    .from('recent_questions')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', profileId)
+    .gte('created_at', todayStart.toISOString());
+
+  if (countError || count == null) return null;
+  if (count >= FREE_DAILY_QUESTION_LIMIT) {
+    return {
+      status: 402,
+      error: 'Daily limit reached. Upgrade to Studly Pro for unlimited questions.',
+      code: 'subscription_required',
+    };
+  }
+  return null;
+}
+
 router.post('/', requireAuth, async (req, res) => {
+  const limitResult = await checkSubscriptionLimit(supabase, req.profileId);
+  if (limitResult) {
+    return res.status(limitResult.status).json({ error: limitResult.error, code: limitResult.code });
+  }
+
   const { question, subject, attachment_urls, output_preference } = req.body;
   if (!question || !String(question).trim()) {
     return res.status(400).json({ error: 'question required' });
@@ -568,6 +613,12 @@ router.post('/', requireAuth, async (req, res) => {
     answerText = `Sample solution for: ${String(question).slice(0, 80)}…\n\nSteps and derivation would appear here. Set ANTHROPIC_API_KEY in backend .env for real AI solutions.`;
   }
 
+  await supabase.from('recent_questions').insert({
+    user_id: req.profileId,
+    title: String(question).trim().slice(0, 200),
+    subject: subj,
+  });
+
   res.json({
     question: String(question).trim(),
     subject: subj,
@@ -578,6 +629,11 @@ router.post('/', requireAuth, async (req, res) => {
 
 // Streaming solve: same as POST / but streams text chunks as NDJSON: { t: "chunk" } then { done: true, answerText }
 router.post('/stream', requireAuth, async (req, res) => {
+  const limitResult = await checkSubscriptionLimit(supabase, req.profileId);
+  if (limitResult) {
+    return res.status(limitResult.status).json({ error: limitResult.error, code: limitResult.code });
+  }
+
   const { question, subject, attachment_urls, output_preference } = req.body;
   if (!question || !String(question).trim()) {
     return res.status(400).json({ error: 'question required' });
@@ -657,6 +713,11 @@ router.post('/stream', requireAuth, async (req, res) => {
     const finalMessage = await stream.finalMessage();
     const textBlock = finalMessage.content?.find((b) => b.type === 'text');
     const raw = textBlock?.text ?? '';
+    await supabase.from('recent_questions').insert({
+      user_id: req.profileId,
+      title: String(question).trim().slice(0, 200),
+      subject: subj,
+    });
     send({ done: true, answerText: postProcessAnswer(raw), question: String(question).trim(), subject: subj, outputPreference: outputPref });
   } catch (err) {
     console.error('Stream error:', err);
