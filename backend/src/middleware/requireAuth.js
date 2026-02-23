@@ -46,6 +46,9 @@ export async function requireAuth(req, res, next) {
     }
     return res.status(500).json({ error: 'Failed to create profile' });
   }
+  if (!newProfile?.id) {
+    return res.status(500).json({ error: 'Failed to create profile (no id returned)' });
+  }
   req.profileId = newProfile.id;
   req.clerkUserId = clerkUserId;
   next();

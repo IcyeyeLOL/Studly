@@ -8,7 +8,7 @@ Express API with Clerk auth and Supabase. Used by the Studly mobile app.
    ```bash
    cp .env.example .env
    ```
-   Fill in: `CLERK_SECRET_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`. Optional: `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `PORT`. For Studly Pro: `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, and optionally `STRIPE_PRICE_ID_PRO_MONTHLY`, `STRIPE_PRICE_ID_PRO_YEARLY` (or use product IDs `STRIPE_PRODUCT_ID_PRO_MONTHLY`, `STRIPE_PRODUCT_ID_PRO_YEARLY` to look up prices).
+   Fill in: `CLERK_SECRET_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`. Optional: `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `PORT`, `FREE_DAILY_QUESTION_LIMIT` (default 5 for free tier), `SERPER_API_KEY` (for web search — get at serper.dev). For Studly Pro: `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, and optionally `STRIPE_PRICE_ID_PRO_MONTHLY`, `STRIPE_PRICE_ID_PRO_YEARLY`, `STRIPE_PRODUCT_ID_PRO_DISCOUNT` (or `STRIPE_PRICE_ID_PRO_DISCOUNT`) for the special-offer product; or use product IDs `STRIPE_PRODUCT_ID_PRO_MONTHLY`, `STRIPE_PRODUCT_ID_PRO_YEARLY` to look up prices.
 
 ## Switching AI models
 
@@ -63,10 +63,10 @@ Get the token in the app with Clerk’s `getToken()` (e.g. from `useAuth()`) and
 | POST | `/api/recent-questions` | Add recent question |
 | POST | `/api/upload/avatar` | Upload avatar (multipart) |
 | POST | `/api/upload/attachment` | Upload attachment (multipart) |
-| POST | `/api/stripe/create-checkout-session` | Create Stripe Checkout session for Studly Pro (body: `{ "plan": "monthly" \| "yearly" }`). Returns `{ url, sessionId }`. |
+| POST | `/api/stripe/create-checkout-session` | Create Stripe Checkout session for Studly Pro (body: `{ "plan": "monthly" \| "yearly" \| "discount" }`). Returns `{ url, sessionId }`. Use `discount` for the special-offer product (set `STRIPE_PRODUCT_ID_PRO_DISCOUNT` or `STRIPE_PRICE_ID_PRO_DISCOUNT`). |
 | GET | `/api/stripe/redirect` | Redirects to app deep link `studly://subscription-success` or `studly://subscription-cancel` (used as Stripe success/cancel URL). |
 | POST | `/api/webhooks/stripe` | Stripe webhook (raw body). Configure in Stripe Dashboard with signing secret in `STRIPE_WEBHOOK_SECRET`. |
-| POST | `/api/solve` | Get AI solution (question, subject, etc.). Free tier: 5 questions/day; Pro unlimited. |
+| POST | `/api/solve` | Get AI solution (question, subject, etc.). Free tier: 5 questions/day (configurable via `FREE_DAILY_QUESTION_LIMIT`); Pro unlimited. |
 | POST | `/api/solve/stream` | Same as above but streams the response in real time (NDJSON: `{ "t": "chunk" }` then `{ "done": true, "answerText": "..." }`). |
 
 All except `/api/health` require a valid Clerk Bearer token.

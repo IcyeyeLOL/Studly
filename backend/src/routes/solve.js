@@ -417,7 +417,8 @@ THIS IS CRITICAL — the app renders your text in a mobile UI. You must follow t
 - For numbered lists, use "1. ", "2. ", etc.
 - Start immediately with content. Never open with "Great question!", "Sure!", "Of course!", "Let me explain", or any preamble.
 - Use blank lines between steps/sections for readability.
-- CHARTS (optional): When a graph or chart would clearly help, you may include exactly one chart. Use only when it truly adds value.
+- CHARTS: Whenever a graph, chart, or visual comparison would help illustrate the topic, INCLUDE ONE OR MORE CHARTS. Be generous with charts — this is an academic tool and visual learning is critical.
+  You may include MULTIPLE charts in a single answer when covering different aspects of a topic.
   Types: type=line, type=bar, type=area, type=pie, type=donut (pie with hole), type=barh (horizontal bars), type=scatter (xy points).
   Basic format:
   [CHART type=line]
@@ -431,7 +432,19 @@ THIS IS CRITICAL — the app renders your text in a mobile UI. You must follow t
   Scatter plot (numeric x and y): use xValues: 1,2,3,4 and yValues: 10,20,15,25; for multiple series use yValues: 10,20,30 | 5,15,25
   Horizontal bar (barh): labels = categories, values = bar lengths.
   Donut: same as pie; use type=donut for a ring chart.
-  Pie/donut: 4–6 slices; labels and values. Keep all chart data short (4–8 points for line/bar).
+  Pie/donut: 4–8 slices. Line/bar/area/scatter: up to 12 data points per series, up to 8 series.
+
+  USE MULTI-SERIES CHARTS for comparison topics. Be thorough — include ALL relevant curves/categories, not just a few.
+  Examples of when to use rich multi-series charts:
+  - Big O notation: Show ALL common complexities (O(1), O(log n), O(n), O(n log n), O(n^2), O(n^3), O(2^n)) on ONE chart with 10+ data points so curves clearly separate.
+  - Economics supply/demand: Multiple curves with shifts.
+  - Physics: Velocity, acceleration, displacement on the same or separate charts.
+  - Statistics: Normal distributions with different means/standard deviations.
+  - Biology: Population growth models (exponential vs logistic vs Malthusian).
+  - Chemistry: Reaction rates at different temperatures.
+  - Finance: Compound interest at different rates over time.
+  Always use enough data points that the shape of each curve is clearly visible. For exponential/polynomial comparisons, use at least 8-10 points.
+  Log scale: When values span huge ranges (e.g. Big O with both O(1) and O(2^n)), add logScale: true so smaller curves remain visible.
 </formatting_rules>
 
 <quality_guardrails>
@@ -510,6 +523,82 @@ const GOAL_LABELS = {
   save_time: 'wants to save time',
 };
 
+const FREE_DAILY_QUESTION_LIMIT = parseInt(process.env.FREE_DAILY_QUESTION_LIMIT || '5', 10) || 5;
+
+async function searchWeb(query) {
+  const apiKey = process.env.SERPER_API_KEY?.trim();
+  if (!apiKey) return null;
+  try {
+    const res = await fetch('https://google.serper.dev/search', {
+      method: 'POST',
+      headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ q: String(query).slice(0, 500), num: 8 }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (_) {
+    return null;
+  }
+}
+
+function formatWebSearchContext(data) {
+  if (!data) return '';
+  const parts = [];
+  if (data.knowledgeGraph?.description) {
+    parts.push(`[Knowledge] ${data.knowledgeGraph.title || 'Summary'}: ${data.knowledgeGraph.description}`);
+    if (data.knowledgeGraph.descriptionLink) parts.push(`Source: ${data.knowledgeGraph.descriptionLink}`);
+  }
+  const organic = data.organic || [];
+  if (organic.length > 0) {
+    parts.push('\n[Web results]');
+    organic.slice(0, 8).forEach((r, i) => {
+      parts.push(`${i + 1}. ${r.title || 'Untitled'}\n   ${r.snippet || ''}\n   ${r.link || ''}`);
+    });
+  }
+  const paa = data.peopleAlsoAsk || [];
+  if (paa.length > 0) {
+    parts.push('\n[Related]');
+    paa.slice(0, 3).forEach((p) => {
+      parts.push(`Q: ${p.question}\nA: ${p.snippet || ''} (${p.link || ''})`);
+    });
+  }
+  if (parts.length === 0) return '';
+  return '\n\n<web_search_context>\nUse this real-time web data to inform your answer. Cite sources when using specific facts (e.g. "According to [source]...").\n\n' + parts.join('\n\n') + '\n</web_search_context>\n';
+}
+
+async function checkSubscriptionLimit(profileId) {
+  try {
+    const { data: profile, error: profileErr } = await supabase
+      .from('profiles')
+      .select('subscription_plan, subscription_expires_at')
+      .eq('id', profileId)
+      .single();
+    if (profileErr || !profile) return { allowed: true };
+    const plan = profile.subscription_plan || 'free';
+    const expiresAt = profile.subscription_expires_at;
+    const isPro = (plan === 'monthly' || plan === 'yearly') && expiresAt && new Date(expiresAt) > new Date();
+    if (isPro) return { allowed: true };
+
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
+    const { count, error: countErr } = await supabase
+      .from('recent_questions')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', profileId)
+      .gte('created_at', todayStart.toISOString());
+    if (countErr) return { allowed: true };
+    if ((count || 0) >= FREE_DAILY_QUESTION_LIMIT) {
+      return {
+        allowed: false,
+        error: `Free tier limit: ${FREE_DAILY_QUESTION_LIMIT} questions per day. Upgrade to Studly Pro for unlimited questions.`,
+      };
+    }
+    return { allowed: true };
+  } catch (_) {
+    return { allowed: true };
+  }
+}
+
 async function buildOnboardingContext(profileId) {
   try {
     const { data: profile } = await supabase
@@ -534,7 +623,7 @@ async function buildOnboardingContext(profileId) {
 }
 
 router.post('/', requireAuth, async (req, res) => {
-  const { question, subject, attachment_urls, output_preference } = req.body;
+  const { question, subject, attachment_urls, output_preference, web_search } = req.body;
   if (!question || !String(question).trim()) {
     return res.status(400).json({ error: 'question required' });
   }
@@ -544,7 +633,19 @@ router.post('/', requireAuth, async (req, res) => {
 
   const subj = subject || 'Other';
   const outputPref = output_preference || 'handwritten';
+  const useWebSearch = !!web_search;
+
+  const limitCheck = await checkSubscriptionLimit(req.profileId);
+  if (!limitCheck.allowed) {
+    return res.status(403).json({ error: limitCheck.error });
+  }
+
   const onboardingContext = await buildOnboardingContext(req.profileId);
+  let webSearchContext = '';
+  if (useWebSearch) {
+    const searchData = await searchWeb(question.trim());
+    webSearchContext = formatWebSearchContext(searchData);
+  }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   let answerText = '';
@@ -557,11 +658,12 @@ router.post('/', requireAuth, async (req, res) => {
       const userContent = await buildUserContent(question.trim(), subj, outputPref, attachment_urls);
 
       const model = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
+      const systemPrompt = SYSTEM_PROMPT + onboardingContext + webSearchContext;
       const message = await client.messages.create({
         model,
         max_tokens: 4096,
         temperature: 0.2,
-        system: SYSTEM_PROMPT + onboardingContext,
+        system: systemPrompt,
         messages: [{ role: 'user', content: userContent }],
       });
 
@@ -593,7 +695,7 @@ router.post('/', requireAuth, async (req, res) => {
 
 // Streaming solve: same as POST / but streams text chunks as NDJSON: { t: "chunk" } then { done: true, answerText }
 router.post('/stream', requireAuth, async (req, res) => {
-  const { question, subject, attachment_urls, output_preference } = req.body;
+  const { question, subject, attachment_urls, output_preference, web_search } = req.body;
   if (!question || !String(question).trim()) {
     return res.status(400).json({ error: 'question required' });
   }
@@ -603,7 +705,20 @@ router.post('/stream', requireAuth, async (req, res) => {
 
   const subj = subject || 'Other';
   const outputPref = output_preference || 'handwritten';
+  const useWebSearch = !!web_search;
+
+  const limitCheck = await checkSubscriptionLimit(req.profileId);
+  if (!limitCheck.allowed) {
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(403).json({ error: limitCheck.error });
+  }
+
   const onboardingContext = await buildOnboardingContext(req.profileId);
+  let webSearchContext = '';
+  if (useWebSearch) {
+    const searchData = await searchWeb(question.trim());
+    webSearchContext = formatWebSearchContext(searchData);
+  }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   res.setHeader('Content-Type', 'application/x-ndjson');
@@ -628,12 +743,13 @@ router.post('/stream', requireAuth, async (req, res) => {
     const client = new Anthropic({ apiKey });
     const userContent = await buildUserContent(question.trim(), subj, outputPref, attachment_urls);
     const model = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
+    const systemPrompt = SYSTEM_PROMPT + onboardingContext + webSearchContext;
 
     const stream = client.messages.stream({
       model,
       max_tokens: 4096,
       temperature: 0.2,
-      system: SYSTEM_PROMPT + onboardingContext,
+      system: systemPrompt,
       messages: [{ role: 'user', content: userContent }],
     }).on('text', (text) => {
       send({ t: text });

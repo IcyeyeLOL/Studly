@@ -26,6 +26,8 @@ const PRICE_MONTHLY = process.env.STRIPE_PRICE_ID_PRO_MONTHLY?.trim();
 const PRICE_YEARLY = process.env.STRIPE_PRICE_ID_PRO_YEARLY?.trim();
 const PRODUCT_MONTHLY = process.env.STRIPE_PRODUCT_ID_PRO_MONTHLY?.trim();
 const PRODUCT_YEARLY = process.env.STRIPE_PRODUCT_ID_PRO_YEARLY?.trim();
+const PRODUCT_DISCOUNT = process.env.STRIPE_PRODUCT_ID_PRO_DISCOUNT?.trim();
+const PRICE_DISCOUNT = process.env.STRIPE_PRICE_ID_PRO_DISCOUNT?.trim();
 
 function getBaseUrl(req) {
   const host = req.headers['x-forwarded-host'] || req.headers.host || '';
@@ -36,16 +38,34 @@ function getBaseUrl(req) {
 /**
  * Resolve Stripe Price ID for plan. Uses env STRIPE_PRICE_ID_* if set;
  * otherwise fetches prices for the product and picks the recurring price.
+ * Plan: 'monthly' | 'yearly' | 'discount' (special offer product).
  */
 async function getPriceId(plan) {
+  if (plan === 'discount') {
+    if (PRICE_DISCOUNT) return PRICE_DISCOUNT;
+    if (!stripe || !PRODUCT_DISCOUNT) return null;
+    try {
+      const { data } = await stripe.prices.list({ product: PRODUCT_DISCOUNT, active: true });
+      const recurring = data.find((p) => p.recurring && p.recurring.interval === 'year') ?? data.find((p) => p.recurring);
+      return recurring?.id ?? data[0]?.id ?? null;
+    } catch (err) {
+      console.error('Stripe getPriceId (discount) error:', err.message);
+      return null;
+    }
+  }
   const isYearly = plan === 'yearly';
   const priceId = isYearly ? PRICE_YEARLY : PRICE_MONTHLY;
   if (priceId) return priceId;
   const productId = isYearly ? PRODUCT_YEARLY : PRODUCT_MONTHLY;
   if (!stripe || !productId) return null;
-  const { data } = await stripe.prices.list({ product: productId, active: true });
-  const recurring = data.find((p) => p.recurring && (isYearly ? p.recurring.interval === 'year' : p.recurring.interval === 'month'));
-  return recurring?.id ?? data[0]?.id ?? null;
+  try {
+    const { data } = await stripe.prices.list({ product: productId, active: true });
+    const recurring = data.find((p) => p.recurring && (isYearly ? p.recurring.interval === 'year' : p.recurring.interval === 'month'));
+    return recurring?.id ?? data[0]?.id ?? null;
+  } catch (err) {
+    console.error('Stripe getPriceId error:', err.message);
+    return null;
+  }
 }
 
 // ─── Create Checkout Session (auth required) ─────────────────────────────
@@ -58,6 +78,7 @@ checkoutRouter.get('/status', (req, res) => {
     hasWebhookSecret: !!WEBHOOK_SECRET,
     hasProductMonthly: !!PRODUCT_MONTHLY,
     hasProductYearly: !!PRODUCT_YEARLY,
+    hasProductDiscount: !!PRODUCT_DISCOUNT,
   });
 });
 
@@ -68,10 +89,19 @@ checkoutRouter.post('/create-checkout-session', requireAuth, async (req, res) =>
     });
   }
 
-  const plan = req.body.plan === 'yearly' ? 'yearly' : 'monthly';
+  const plan = (req.body.plan === 'discount' || req.body.plan === 'yearly_discount')
+    ? 'discount'
+    : req.body.plan === 'yearly'
+      ? 'yearly'
+      : 'monthly';
   const priceId = await getPriceId(plan);
   if (!priceId) {
-    return res.status(400).json({ error: 'Invalid plan or missing Stripe price. Set STRIPE_PRICE_ID_PRO_MONTHLY and STRIPE_PRICE_ID_PRO_YEARLY (or product IDs).' });
+    return res.status(400).json({
+      error: plan === 'discount'
+        ? 'No price found for discount product. Add a recurring Price to the discount product in Stripe, or set STRIPE_PRICE_ID_PRO_DISCOUNT.'
+        : 'Invalid plan or missing Stripe price. Set STRIPE_PRICE_ID_PRO_MONTHLY and STRIPE_PRICE_ID_PRO_YEARLY (or product IDs).',
+      code: 'no_price',
+    });
   }
 
   const baseUrl = getBaseUrl(req);
@@ -86,8 +116,10 @@ checkoutRouter.post('/create-checkout-session', requireAuth, async (req, res) =>
       .single();
 
     if (profileError) {
-      console.error('Stripe checkout profile lookup error:', profileError.message);
-      return res.status(500).json({ error: 'Profile not found' });
+      console.error('Stripe checkout profile lookup error:', profileError.message, 'code:', profileError.code);
+      return res.status(500).json({
+        error: 'Profile lookup failed. Check that Vercel has SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY set, and that the profiles table has columns: id, email, display_name, stripe_customer_id.',
+      });
     }
     if (!profile) {
       return res.status(404).json({ error: 'Profile not found' });
@@ -117,14 +149,15 @@ checkoutRouter.post('/create-checkout-session', requireAuth, async (req, res) =>
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: successUrl,
       cancel_url: cancelUrl,
-      metadata: { profile_id: req.profileId },
-      subscription_data: { metadata: { profile_id: req.profileId } },
+      metadata: { profile_id: req.profileId, plan: plan === 'discount' ? 'yearly' : plan },
+      subscription_data: { metadata: { profile_id: req.profileId, plan: plan === 'discount' ? 'yearly' : plan } },
     });
 
     res.json({ url: session.url, sessionId: session.id });
   } catch (err) {
-    console.error('Stripe checkout error:', err);
-    res.status(500).json({ error: err.message || 'Failed to create checkout session' });
+    console.error('Stripe checkout error:', err.message || err);
+    const msg = err.type === 'StripeInvalidRequestError' ? err.message : 'Failed to create checkout session. Check Vercel logs.';
+    res.status(500).json({ error: msg, code: 'checkout_failed' });
   }
 });
 
