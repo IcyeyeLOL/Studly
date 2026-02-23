@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Environment and secrets (never commit)
+.env
+.env.*
+!.env.example
+
+# Logs and OS
+*.log
+.DS_Store
+
+# Build / IDE
+.expo/
+dist/
+web-build/
+.vercel/
+
+# Optional: uncomment if you want to ignore native build folders when pushing
+# /mobile/ios
+# /mobile/android
