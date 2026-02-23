@@ -31,6 +31,19 @@ export async function requireAuth(req, res, next) {
     .single();
 
   if (insertError) {
+    // Race condition: another request may have inserted first (unique constraint on clerk_user_id)
+    if (insertError.code === '23505') {
+      const { data: retryProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('clerk_user_id', clerkUserId)
+        .single();
+      if (retryProfile) {
+        req.profileId = retryProfile.id;
+        req.clerkUserId = clerkUserId;
+        return next();
+      }
+    }
     return res.status(500).json({ error: 'Failed to create profile' });
   }
   req.profileId = newProfile.id;

@@ -63,8 +63,12 @@ checkoutRouter.post('/create-checkout-session', requireAuth, async (req, res) =>
       .eq('id', req.profileId)
       .single();
 
-    if (profileError || !profile) {
+    if (profileError) {
+      console.error('Stripe checkout profile lookup error:', profileError.message);
       return res.status(500).json({ error: 'Profile not found' });
+    }
+    if (!profile) {
+      return res.status(404).json({ error: 'Profile not found' });
     }
 
     let customerId = profile.stripe_customer_id || null;
@@ -75,13 +79,14 @@ checkoutRouter.post('/create-checkout-session', requireAuth, async (req, res) =>
         metadata: { profile_id: profile.id, clerk_user_id: req.clerkUserId },
       });
       customerId = customer.id;
-      await supabase
+      const { error: custErr } = await supabase
         .from('profiles')
         .update({
           stripe_customer_id: customerId,
           updated_at: new Date().toISOString(),
         })
         .eq('id', req.profileId);
+      if (custErr) console.error('Failed to save stripe_customer_id:', custErr.message);
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -145,7 +150,7 @@ export function stripeWebhookHandler(req, res) {
         const plan = interval === 'year' ? 'yearly' : 'monthly';
         const profileId = session.metadata?.profile_id || sub.metadata?.profile_id;
         if (!profileId) break;
-        await supabase
+        const { error: checkoutErr } = await supabase
           .from('profiles')
           .update({
             subscription_plan: plan,
@@ -153,6 +158,7 @@ export function stripeWebhookHandler(req, res) {
             updated_at: new Date().toISOString(),
           })
           .eq('id', profileId);
+        if (checkoutErr) console.error('Webhook: failed to update subscription after checkout:', checkoutErr.message);
         break;
       }
       case 'customer.subscription.updated':
@@ -164,7 +170,7 @@ export function stripeWebhookHandler(req, res) {
         const expiresAt = sub.status === 'active' && sub.current_period_end
           ? new Date(sub.current_period_end * 1000).toISOString()
           : null;
-        await supabase
+        const { error: subErr } = await supabase
           .from('profiles')
           .update({
             subscription_plan: plan,
@@ -172,6 +178,7 @@ export function stripeWebhookHandler(req, res) {
             updated_at: new Date().toISOString(),
           })
           .eq('id', profileId);
+        if (subErr) console.error('Webhook: failed to update subscription status:', subErr.message);
         break;
       }
       default:

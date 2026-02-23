@@ -16,7 +16,8 @@ router.get('/', requireAuth, async (req, res) => {
 
 router.post('/', requireAuth, async (req, res) => {
   const { question, subject, answer_text, output_preference } = req.body;
-  if (!question) return res.status(400).json({ error: 'question required' });
+  if (!question || !String(question).trim()) return res.status(400).json({ error: 'question required' });
+  if (String(question).length > 5000) return res.status(400).json({ error: 'question too long (max 5000 characters)' });
   const { data, error } = await supabase
     .from('saved_solutions')
     .insert({

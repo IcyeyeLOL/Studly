@@ -5,11 +5,37 @@ import { supabase } from '../lib/supabase.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB
 
-router.post('/avatar', requireAuth, upload.single('file'), async (req, res) => {
+const AVATAR_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+const ATTACHMENT_MIME_TYPES = new Set([
+  'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+  'application/pdf', 'text/plain',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+]);
+const ALLOWED_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf', '.txt', '.doc', '.docx']);
+
+function sanitizeExt(originalname) {
+  const ext = path.extname(path.basename(originalname || '')).toLowerCase();
+  return ALLOWED_EXTENSIONS.has(ext) ? ext : '';
+}
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+
+function handleMulterError(err, req, res, next) {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'File too large (max 5 MB)' });
+    return res.status(400).json({ error: err.message });
+  }
+  next(err);
+}
+
+router.post('/avatar', requireAuth, upload.single('file'), handleMulterError, async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file' });
-  const ext = path.extname(req.file.originalname) || '.jpg';
+  if (!AVATAR_MIME_TYPES.has(req.file.mimetype)) {
+    return res.status(400).json({ error: 'Only image files are allowed for avatars (JPEG, PNG, GIF, WebP)' });
+  }
+  const ext = sanitizeExt(req.file.originalname) || '.jpg';
   const name = `${req.profileId}${ext}`;
   const { data: uploadData, error: uploadError } = await supabase.storage
     .from('avatars')
@@ -25,9 +51,12 @@ router.post('/avatar', requireAuth, upload.single('file'), async (req, res) => {
   res.json({ url });
 });
 
-router.post('/attachment', requireAuth, upload.single('file'), async (req, res) => {
+router.post('/attachment', requireAuth, upload.single('file'), handleMulterError, async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file' });
-  const ext = path.extname(req.file.originalname) || '';
+  if (!ATTACHMENT_MIME_TYPES.has(req.file.mimetype)) {
+    return res.status(400).json({ error: 'Unsupported file type. Allowed: images, PDF, TXT, DOC/DOCX' });
+  }
+  const ext = sanitizeExt(req.file.originalname) || '';
   const name = `${req.profileId}/${Date.now()}${ext}`;
   const { data, error } = await supabase.storage
     .from('attachments')

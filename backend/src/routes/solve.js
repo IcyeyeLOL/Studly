@@ -495,6 +495,44 @@ function postProcessAnswer(text) {
   return out;
 }
 
+const STRUGGLE_LABELS = {
+  understand: "doesn't understand the material",
+  time: 'has limited time',
+  notes: 'struggles with note-taking',
+  motivation: 'has motivation challenges',
+  help: 'lacks access to help',
+  overwhelmed: 'feels overwhelmed',
+};
+const GOAL_LABELS = {
+  pass: 'wants to pass exams',
+  straight_a: "aims for straight A's",
+  understand: 'wants deep understanding',
+  save_time: 'wants to save time',
+};
+
+async function buildOnboardingContext(profileId) {
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('onboarding_data')
+      .eq('id', profileId)
+      .single();
+    const od = profile?.onboarding_data;
+    if (!od || typeof od !== 'object') return '';
+    const parts = [];
+    if (Array.isArray(od.struggles) && od.struggles.length > 0) {
+      const labels = od.struggles.map((s) => STRUGGLE_LABELS[s] || s).join(', ');
+      parts.push(`Student context: ${labels}.`);
+    }
+    if (od.goal) {
+      parts.push(`Goal: ${GOAL_LABELS[od.goal] || od.goal}.`);
+    }
+    return parts.length > 0 ? '\n\n<student_context>' + parts.join(' ') + '</student_context>' : '';
+  } catch (_) {
+    return '';
+  }
+}
+
 const FREE_DAILY_QUESTION_LIMIT = 5;
 
 /**
@@ -545,43 +583,13 @@ router.post('/', requireAuth, async (req, res) => {
   if (!question || !String(question).trim()) {
     return res.status(400).json({ error: 'question required' });
   }
+  if (String(question).length > 10000) {
+    return res.status(400).json({ error: 'question too long (max 10 000 characters)' });
+  }
 
   const subj = subject || 'Other';
   const outputPref = output_preference || 'handwritten';
-
-  let onboardingContext = '';
-  try {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('onboarding_data')
-      .eq('id', req.profileId)
-      .single();
-    const od = profile?.onboarding_data;
-    if (od && typeof od === 'object') {
-      const struggles = od.struggles;
-      const goal = od.goal;
-      const parts = [];
-      if (Array.isArray(struggles) && struggles.length > 0) {
-        const struggleLabels = {
-          understand: "doesn't understand the material",
-          time: 'has limited time',
-          notes: 'struggles with note-taking',
-          motivation: 'has motivation challenges',
-          help: 'lacks access to help',
-          overwhelmed: 'feels overwhelmed',
-        };
-        const labels = struggles.map((s) => struggleLabels[s] || s).join(', ');
-        parts.push(`Student context: ${labels}.`);
-      }
-      if (goal) {
-        const goalLabels = { pass: 'wants to pass exams', straight_a: "aims for straight A's", understand: 'wants deep understanding', save_time: 'wants to save time' };
-        parts.push(`Goal: ${goalLabels[goal] || goal}.`);
-      }
-      if (parts.length > 0) {
-        onboardingContext = '\n\n<student_context>' + parts.join(' ') + '</student_context>';
-      }
-    }
-  } catch (_) {}
+  const onboardingContext = await buildOnboardingContext(req.profileId);
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   let answerText = '';
@@ -607,17 +615,18 @@ router.post('/', requireAuth, async (req, res) => {
       answerText = postProcessAnswer(raw);
     } catch (err) {
       console.error('Anthropic error:', err);
-      answerText = `Error calling AI: ${err.message || 'Unknown error'}. Check ANTHROPIC_API_KEY and try again.`;
+      answerText = 'Something went wrong generating a solution. Please try again.';
     }
   } else {
     answerText = `Sample solution for: ${String(question).slice(0, 80)}…\n\nSteps and derivation would appear here. Set ANTHROPIC_API_KEY in backend .env for real AI solutions.`;
   }
 
-  await supabase.from('recent_questions').insert({
+  const { error: insertErr } = await supabase.from('recent_questions').insert({
     user_id: req.profileId,
     title: String(question).trim().slice(0, 200),
     subject: subj,
   });
+  if (insertErr) console.error('Failed to record recent question:', insertErr.message);
 
   res.json({
     question: String(question).trim(),
@@ -638,43 +647,13 @@ router.post('/stream', requireAuth, async (req, res) => {
   if (!question || !String(question).trim()) {
     return res.status(400).json({ error: 'question required' });
   }
+  if (String(question).length > 10000) {
+    return res.status(400).json({ error: 'question too long (max 10 000 characters)' });
+  }
 
   const subj = subject || 'Other';
   const outputPref = output_preference || 'handwritten';
-
-  let onboardingContext = '';
-  try {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('onboarding_data')
-      .eq('id', req.profileId)
-      .single();
-    const od = profile?.onboarding_data;
-    if (od && typeof od === 'object') {
-      const struggles = od.struggles;
-      const goal = od.goal;
-      const parts = [];
-      if (Array.isArray(struggles) && struggles.length > 0) {
-        const struggleLabels = {
-          understand: "doesn't understand the material",
-          time: 'has limited time',
-          notes: 'struggles with note-taking',
-          motivation: 'has motivation challenges',
-          help: 'lacks access to help',
-          overwhelmed: 'feels overwhelmed',
-        };
-        const labels = struggles.map((s) => struggleLabels[s] || s).join(', ');
-        parts.push(`Student context: ${labels}.`);
-      }
-      if (goal) {
-        const goalLabels = { pass: 'wants to pass exams', straight_a: "aims for straight A's", understand: 'wants deep understanding', save_time: 'wants to save time' };
-        parts.push(`Goal: ${goalLabels[goal] || goal}.`);
-      }
-      if (parts.length > 0) {
-        onboardingContext = '\n\n<student_context>' + parts.join(' ') + '</student_context>';
-      }
-    }
-  } catch (_) {}
+  const onboardingContext = await buildOnboardingContext(req.profileId);
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   res.setHeader('Content-Type', 'application/x-ndjson');
@@ -713,15 +692,16 @@ router.post('/stream', requireAuth, async (req, res) => {
     const finalMessage = await stream.finalMessage();
     const textBlock = finalMessage.content?.find((b) => b.type === 'text');
     const raw = textBlock?.text ?? '';
-    await supabase.from('recent_questions').insert({
+    const { error: insertErr } = await supabase.from('recent_questions').insert({
       user_id: req.profileId,
       title: String(question).trim().slice(0, 200),
       subject: subj,
     });
+    if (insertErr) console.error('Failed to record recent question:', insertErr.message);
     send({ done: true, answerText: postProcessAnswer(raw), question: String(question).trim(), subject: subj, outputPreference: outputPref });
   } catch (err) {
     console.error('Stream error:', err);
-    send({ error: err.message || 'Stream failed' });
+    send({ error: 'Something went wrong generating a solution. Please try again.' });
   }
   res.end();
 });

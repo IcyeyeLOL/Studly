@@ -15,7 +15,8 @@ router.get('/', requireAuth, async (req, res) => {
 });
 
 router.post('/', requireAuth, async (req, res) => {
-  const name = (req.body.name || 'Untitled').trim() || 'Untitled';
+  const raw = (req.body.name || 'Untitled').trim() || 'Untitled';
+  const name = raw.slice(0, 200);
   const { data, error } = await supabase
     .from('projects')
     .insert({ user_id: req.profileId, name })
@@ -27,7 +28,7 @@ router.post('/', requireAuth, async (req, res) => {
 
 router.patch('/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
-  const name = (req.body.name || '').trim();
+  const name = (req.body.name || '').trim().slice(0, 200);
   if (!name) return res.status(400).json({ error: 'name required' });
   const { data, error } = await supabase
     .from('projects')
@@ -36,6 +37,7 @@ router.patch('/:id', requireAuth, async (req, res) => {
     .eq('user_id', req.profileId)
     .select()
     .single();
+  if (error && error.code === 'PGRST116') return res.status(404).json({ error: 'Project not found' });
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });
