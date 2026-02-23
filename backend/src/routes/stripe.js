@@ -9,7 +9,17 @@ import { supabase } from '../lib/supabase.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 
 const stripeKey = process.env.STRIPE_SECRET_KEY?.trim();
-const stripe = stripeKey ? new Stripe(stripeKey) : null;
+let stripe = null;
+if (stripeKey && stripeKey.startsWith('sk_')) {
+  try {
+    stripe = new Stripe(stripeKey);
+  } catch (err) {
+    console.error('Stripe init failed:', err.message);
+  }
+}
+if (!stripe) {
+  console.warn('Stripe not configured: STRIPE_SECRET_KEY missing or invalid (must start with sk_test_ or sk_live_)');
+}
 
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET?.trim();
 const PRICE_MONTHLY = process.env.STRIPE_PRICE_ID_PRO_MONTHLY?.trim();
@@ -41,9 +51,21 @@ async function getPriceId(plan) {
 // ─── Create Checkout Session (auth required) ─────────────────────────────
 const checkoutRouter = Router();
 
+// Diagnostic: GET /api/stripe/status (no auth) — check if Stripe is configured
+checkoutRouter.get('/status', (req, res) => {
+  res.json({
+    stripeConfigured: !!stripe,
+    hasWebhookSecret: !!WEBHOOK_SECRET,
+    hasProductMonthly: !!PRODUCT_MONTHLY,
+    hasProductYearly: !!PRODUCT_YEARLY,
+  });
+});
+
 checkoutRouter.post('/create-checkout-session', requireAuth, async (req, res) => {
   if (!stripe) {
-    return res.status(503).json({ error: 'Stripe is not configured' });
+    return res.status(503).json({
+      error: 'Stripe is not configured. Add STRIPE_SECRET_KEY to your environment (Vercel: Dashboard → Settings → Environment Variables).',
+    });
   }
 
   const plan = req.body.plan === 'yearly' ? 'yearly' : 'monthly';
