@@ -523,7 +523,7 @@ const GOAL_LABELS = {
   save_time: 'wants to save time',
 };
 
-const FREE_DAILY_QUESTION_LIMIT = parseInt(process.env.FREE_DAILY_QUESTION_LIMIT || '5', 10) || 5;
+const FREE_DAILY_QUESTION_LIMIT = parseInt(process.env.FREE_DAILY_QUESTION_LIMIT || '10', 10) || 10;
 
 async function searchWeb(query) {
   const apiKey = process.env.SERPER_API_KEY?.trim();
