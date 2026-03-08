@@ -85,47 +85,37 @@
   "documents": [
     {
       "state": {
-        "x": 1130.6434023991276,
-        "y": 540,
-        "rotation": 0,
-        "isLocked": false,
-        "opacity": 1,
+        "gridSize": 10,
+        "name": "DeepSpace",
         "meta": {
-          "dockOrder": 11,
-          "showDefaultHandles": false
+          "roomId": "room-9d4c1679-c38d-4c4d-aa0f-da084da61985",
+          "canvasMode": "dock",
+          "canvasName": "DeepSpace",
+          "canvasSpace": {
+            "spaceType": "dock",
+            "config": {
+              "type": "dock",
+              "name": "Dock Space",
+              "description": "Dock mode with macOS-style dock bar for widgets (zoom locked at 50% via DOCK_MODE_ZOOM constant)"
+            },
+            "lastUpdated": 1772999966210
+          },
+          "publishedSpaceHandle": "deepspace-lime17451",
+          "__canvas_storage": {
+            "__widget_io_configs": {
+              "shape:community-essay-W2BwQOOCVqpM7Ca8": {
+                "inputs": [],
+                "outputs": []
+              },
+              "shape:deepspace-hello-NnlEhrL1cLnYBKJ1": {
+                "inputs": [],
+                "outputs": []
+              }
+            }
+          }
         },
-        "id": "shape:2UFxqgIbsiAvkr5xjKSbB",
-        "type": "file",
-        "props": {
-          "w": 200,
-          "h": 120,
-          "assetId": "asset:GuAnpniOVkyi1_cL3eu35"
-        },
-        "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
-        "index": "aXTB2QbV",
-        "typeName": "shape"
-      },
-      "lastChangedClock": 11861
-    },
-    {
-      "state": {
-        "meta": {
-          "isFileAsset": true,
-          "originalMimeType": "application/pdf",
-          "originalFileName": "DeepSpace_Penetration_Test_Report.docx.pdf"
-        },
-        "id": "asset:GuAnpniOVkyi1_cL3eu35",
-        "type": "image",
-        "typeName": "asset",
-        "props": {
-          "name": "DeepSpace_Penetration_Test_Report.docx.pdf",
-          "src": "https://miyagi-canvas-sync.eudaimonicincorporated.workers.dev/api/uploads/6ea7ad4e-285a-4c0c-b6df-0b07a9650bca",
-          "w": 200,
-          "h": 120,
-          "fileSize": 381629,
-          "mimeType": "application/pdf",
-          "isAnimated": false
-        }
+        "id": "document:document",
+        "typeName": "document"
       },
       "lastChangedClock": 11861
     },
@@ -136,39 +126,6 @@
         "name": "Page 1",
         "index": "a1",
         "typeName": "page"
-      },
-      "lastChangedClock": 11861
-    },
-    {
-      "state": {
-        "id": "shape:nCg1Sj3SAxFsb3kp",
-        "typeName": "shape",
-        "type": "canvas-link",
-        "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
-        "index": "aWDLUHwG",
-        "x": -50000,
-        "y": -50000,
-        "rotation": 0,
-        "isLocked": false,
-        "opacity": 1,
-        "meta": {
-          "justCreated": false,
-          "createdAt": 1770151546373,
-          "showDefaultHandles": false,
-          "dockOrder": 12,
-          "isDockedHidden": true,
-          "hiddenAt": 1770151551312,
-          "originalX": 347.65539803707736,
-          "originalY": 553.762268266085
-        },
-        "props": {
-          "w": 400,
-          "h": 400,
-          "targetCanvasId": "room-6ab35ced-ca14-4ccb-927e-33e87313ba1e",
-          "label": "New Desktop 3",
-          "linkType": "realfile",
-          "targetSpaceType": "dock"
-        }
       },
       "lastChangedClock": 11861
     },
@@ -243,8 +200,7 @@
           "style": {
             "id": "clean-light",
             "name": "Clean Light"
-          },
-          "siteUrl": "https://deepspacesites.com/deepspace-hello_1773000151102/?v=kry3yj"
+          }
         }
       },
       "lastChangedClock": 11861
@@ -284,234 +240,49 @@
     },
     {
       "state": {
-        "gridSize": 10,
-        "name": "DeepSpace",
         "meta": {
-          "roomId": "room-9d4c1679-c38d-4c4d-aa0f-da084da61985",
-          "canvasMode": "dock",
-          "canvasName": "DeepSpace",
-          "canvasSpace": {
-            "spaceType": "dock",
-            "config": {
-              "type": "dock",
-              "name": "Dock Space",
-              "description": "Dock mode with macOS-style dock bar for widgets (zoom locked at 50% via DOCK_MODE_ZOOM constant)"
-            },
-            "lastUpdated": 1772999966210
-          },
-          "publishedSpaceHandle": "deepspace-lime17451",
-          "__canvas_storage": {
-            "__widget_io_configs": {
-              "shape:community-essay-W2BwQOOCVqpM7Ca8": {
-                "inputs": [],
-                "outputs": []
-              },
-              "shape:deepspace-hello-NnlEhrL1cLnYBKJ1": {
-                "inputs": [],
-                "outputs": []
-              }
-            }
-          }
+          "isFileAsset": true,
+          "originalMimeType": "application/pdf",
+          "originalFileName": "DeepSpace_Penetration_Test_Report.docx.pdf"
         },
-        "id": "document:document",
-        "typeName": "document"
+        "id": "asset:GuAnpniOVkyi1_cL3eu35",
+        "type": "image",
+        "typeName": "asset",
+        "props": {
+          "name": "DeepSpace_Penetration_Test_Report.docx.pdf",
+          "src": "https://miyagi-canvas-sync.eudaimonicincorporated.workers.dev/api/uploads/6ea7ad4e-285a-4c0c-b6df-0b07a9650bca",
+          "w": 200,
+          "h": 120,
+          "fileSize": 381629,
+          "mimeType": "application/pdf",
+          "isAnimated": false
+        }
       },
-      "lastChangedClock": 11861
+      "lastChangedClock": 5
     },
     {
       "state": {
-        "widgets": {
-          "shape:community-essay-W2BwQOOCVqpM7Ca8": {
-            "__widget_config": "{\"roomId\":\"room-9d4c1679-c38d-4c4d-aa0f-da084da61985\",\"pageId\":\"page:ryfD_vTjBIH4xjvQ2a2vu\",\"shapeId\":\"shape:community-essay-W2BwQOOCVqpM7Ca8\",\"templateHandle\":\"community-essay\"}"
-          },
-          "shape:css-gradient-generator-EJ1gQvsCKLAmoW6Sp0-5v": {
-            "__widget_config": "{\"roomId\":\"room-9d4c1679-c38d-4c4d-aa0f-da084da61985\",\"pageId\":\"page:ryfD_vTjBIH4xjvQ2a2vu\",\"shapeId\":\"shape:css-gradient-generator-EJ1gQvsCKLAmoW6Sp0-5v\",\"templateHandle\":\"css-gradient-generator\"}"
-          },
-          "shape:css-gradient-generator-eSQmLO5NDxOe1HSGvqskN": {
-            "__widget_config": "{\"roomId\":\"room-9d4c1679-c38d-4c4d-aa0f-da084da61985\",\"pageId\":\"page:ryfD_vTjBIH4xjvQ2a2vu\",\"shapeId\":\"shape:css-gradient-generator-eSQmLO5NDxOe1HSGvqskN\",\"templateHandle\":\"css-gradient-generator\"}"
-          },
-          "shape:financial-command-center-9Z55s5KtZPiBgUibmQN3y": {
-            "__widget_config": "{\"roomId\":\"room-9d4c1679-c38d-4c4d-aa0f-da084da61985\",\"pageId\":\"page:ryfD_vTjBIH4xjvQ2a2vu\",\"shapeId\":\"shape:financial-command-center-9Z55s5KtZPiBgUibmQN3y\",\"templateHandle\":\"financial-command-center\"}"
-          },
-          "shape:fps-QFKMOVlCTzH29Bjn7h3CQ": {
-            "__widget_config": "{\"roomId\":\"room-9d4c1679-c38d-4c4d-aa0f-da084da61985\",\"pageId\":\"page:ryfD_vTjBIH4xjvQ2a2vu\",\"shapeId\":\"shape:fps-QFKMOVlCTzH29Bjn7h3CQ\",\"templateHandle\":\"fps\"}"
-          },
-          "shape:hue-GQICO8EsTvIVYhNIc7xKv": {
-            "__widget_config": "{\"roomId\":\"room-9d4c1679-c38d-4c4d-aa0f-da084da61985\",\"pageId\":\"page:ryfD_vTjBIH4xjvQ2a2vu\",\"shapeId\":\"shape:hue-GQICO8EsTvIVYhNIc7xKv\",\"templateHandle\":\"hue\"}"
-          },
-          "shape:instagram-recipe-extractor-ANZhrZMPAKbHNan5CZ8KG": {
-            "__widget_config": "{\"roomId\":\"room-9d4c1679-c38d-4c4d-aa0f-da084da61985\",\"pageId\":\"page:ryfD_vTjBIH4xjvQ2a2vu\",\"shapeId\":\"shape:instagram-recipe-extractor-ANZhrZMPAKbHNan5CZ8KG\",\"templateHandle\":\"instagram-recipe-extractor\"}"
-          },
-          "shape:may_the_force_be_with_you-XhfJFRaJohm9ZXaWl8IaC": {
-            "__widget_config": "{\"roomId\":\"room-9d4c1679-c38d-4c4d-aa0f-da084da61985\",\"pageId\":\"page:ryfD_vTjBIH4xjvQ2a2vu\",\"shapeId\":\"shape:may_the_force_be_with_you-XhfJFRaJohm9ZXaWl8IaC\",\"templateHandle\":\"may_the_force_be_with_you\"}"
-          },
-          "shape:wavelength-9bGw90ctWcv34v87sk97T": {
-            "__widget_config": "{\"roomId\":\"room-9d4c1679-c38d-4c4d-aa0f-da084da61985\",\"pageId\":\"page:ryfD_vTjBIH4xjvQ2a2vu\",\"shapeId\":\"shape:wavelength-9bGw90ctWcv34v87sk97T\",\"templateHandle\":\"wavelength\"}"
-          }
+        "x": 1130.6434023991276,
+        "y": 540,
+        "rotation": 0,
+        "isLocked": false,
+        "opacity": 1,
+        "meta": {
+          "dockOrder": 11,
+          "showDefaultHandles": false
         },
-        "global": {
-          "user_scoped_storage": {
-            "user_38p3fn6iTbV25TyWCNcFJ0Dxrx5": {
-              "tiling-view-active": false,
-              "tiling-view-config": {
-                "layout": {
-                  "type": "window",
-                  "tileId": "tile-1769878791449-1",
-                  "widgetId": null,
-                  "screenId": 2
-                },
-                "focusedTileId": "tile-1769878791449-1",
-                "screens": {
-                  "1": {
-                    "type": "window",
-                    "tileId": "tile-1769482861656-1",
-                    "widgetId": "shape:fps-QFKMOVlCTzH29Bjn7h3CQ",
-                    "screenId": 1
-                  },
-                  "2": {
-                    "type": "window",
-                    "tileId": "tile-1769878791449-1",
-                    "widgetId": null,
-                    "screenId": 2
-                  },
-                  "3": null
-                },
-                "activeScreen": 2,
-                "spacing": 14
-              }
-            },
-            "user_372YbfVWbJ8jQKwzJOtWszZJyy2": {
-              "tiling-view-active": false,
-              "tiling-view-config": {
-                "layout": {
-                  "type": "window",
-                  "tileId": "tile-1769809310087-1",
-                  "widgetId": null,
-                  "screenId": 1
-                },
-                "focusedTileId": "tile-1769809310087-1",
-                "screens": {
-                  "1": {
-                    "type": "window",
-                    "tileId": "tile-1769809310087-1",
-                    "widgetId": null,
-                    "screenId": 1
-                  },
-                  "2": null,
-                  "3": null
-                },
-                "activeScreen": 1,
-                "spacing": 14
-              }
-            },
-            "user_37tKsgveyHVRfYYO5FVrTOYJ9Uj": {
-              "tiling-view-active": false,
-              "tiling-view-config": {
-                "layout": {
-                  "type": "window",
-                  "tileId": "tile-1769823608128-1",
-                  "widgetId": null,
-                  "screenId": 1
-                },
-                "focusedTileId": "tile-1769823608128-1",
-                "screens": {
-                  "1": {
-                    "type": "window",
-                    "tileId": "tile-1769823608128-1",
-                    "widgetId": null,
-                    "screenId": 1
-                  },
-                  "2": null,
-                  "3": null
-                },
-                "activeScreen": 1,
-                "spacing": 14
-              }
-            },
-            "guest_v6i6pmemc": {
-              "tiling-view-config": {
-                "layout": {
-                  "type": "window",
-                  "tileId": "tile-1769878791449-1",
-                  "widgetId": null,
-                  "screenId": 2
-                },
-                "focusedTileId": "tile-1769878791449-1",
-                "screens": {
-                  "1": {
-                    "type": "window",
-                    "tileId": "tile-1769482861656-1",
-                    "widgetId": "shape:fps-QFKMOVlCTzH29Bjn7h3CQ",
-                    "screenId": 1
-                  },
-                  "2": {
-                    "type": "window",
-                    "tileId": "tile-1769878791449-1",
-                    "widgetId": null,
-                    "screenId": 2
-                  },
-                  "3": null
-                },
-                "activeScreen": 2,
-                "spacing": 14
-              }
-            },
-            "user_37tpg4NdcT8h5G55T4zZaMcyhud": {
-              "tiling-view-active": false,
-              "tiling-view-config": {
-                "layout": {
-                  "type": "window",
-                  "tileId": "tile-1770402723660-1",
-                  "widgetId": null,
-                  "screenId": 1
-                },
-                "focusedTileId": "tile-1770402723660-1",
-                "screens": {
-                  "1": {
-                    "type": "window",
-                    "tileId": "tile-1770402723660-1",
-                    "widgetId": null,
-                    "screenId": 1
-                  },
-                  "2": null,
-                  "3": null
-                },
-                "activeScreen": 1,
-                "spacing": 14
-              }
-            }
-          },
-          "__widget_io_configs": "{\"shape:fps-QFKMOVlCTzH29Bjn7h3CQ\":{\"inputs\":[],\"outputs\":[]},\"shape:css-gradient-generator-EJ1gQvsCKLAmoW6Sp0-5v\":{\"inputs\":[],\"outputs\":[]},\"shape:css-gradient-generator-eSQmLO5NDxOe1HSGvqskN\":{\"inputs\":[],\"outputs\":[]},\"shape:wavelength-9bGw90ctWcv34v87sk97T\":{\"inputs\":[],\"outputs\":[]},\"shape:instagram-recipe-extractor-ANZhrZMPAKbHNan5CZ8KG\":{\"inputs\":[],\"outputs\":[]},\"shape:may_the_force_be_with_you-XhfJFRaJohm9ZXaWl8IaC\":{\"inputs\":[],\"outputs\":[]},\"shape:hue-GQICO8EsTvIVYhNIc7xKv\":{\"inputs\":[],\"outputs\":[]},\"shape:financial-command-center-9Z55s5KtZPiBgUibmQN3y\":{\"inputs\":[],\"outputs\":[]},\"shape:community-essay-W2BwQOOCVqpM7Ca8\":{\"inputs\":[],\"outputs\":[]}}",
-          "__widget_connections": "[]",
-          "fcc-dark-mode": "true",
-          "fcc-watchlists": "[{\"id\":\"default\",\"name\":\"My Watchlist\",\"tickers\":[]}]",
-          "fcc-followed-accounts": "[]",
-          "fcc-last-check": "2026-01-27T03:40:08.580Z",
-          "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.watchlist": "[]",
-          "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.positions": "{}",
-          "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.lastAlertCheck": "2026-01-28T03:16:35.197Z",
-          "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.followedAccounts": "[]",
-          "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.stockInfo": "{}",
-          "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.widgetTheme": "dark",
-          "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.priceAlertEmailEnabled": "true",
-          "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.priceAlertPollingEnabled": "true",
-          "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.priceAlertRules": "[]",
-          "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.tickerNotes": "{}",
-          "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.selectedCatalysts": "[]",
-          "__user:user_37tKsgveyHVRfYYO5FVrTOYJ9Uj:financial.widgetTheme": "dark",
-          "__user:user_37tKsgveyHVRfYYO5FVrTOYJ9Uj:financial.selectedCatalysts": "[]",
-          "mobile_icon_order_room-9d4c1679-c38d-4c4d-aa0f-da084da61985": "[\"shape:financial-command-center-1Xhrt5jTAK6Nu03nrvzql\"]",
-          "wavelength.game": "{\"phase\":\"clue\",\"currentPrompt\":{\"left\":\"Easy to learn\",\"right\":\"Hard to learn\"},\"targetPosition\":62,\"clue\":\"\",\"guessPosition\":50,\"score\":0,\"round\":1,\"roundScores\":[]}",
-          "__user:user_37tpg4NdcT8h5G55T4zZaMcyhud:financial.widgetTheme": "dark",
-          "files/slides/config.json": "\"{\\r\\n  \\\"currentDeckId\\\": \\\"welcome-deck\\\",\\r\\n  \\\"deckOrder\\\": [\\r\\n    \\\"welcome-deck\\\"\\r\\n  ]\\r\\n}\"",
-          "files/slides/welcome-deck/deck.json": "\"{\\r\\n  \\\"title\\\": \\\"Welcome Presentation\\\",\\r\\n  \\\"themeId\\\": \\\"modern\\\",\\r\\n  \\\"currentSlideIndex\\\": 1,\\r\\n  \\\"slideOrder\\\": [\\r\\n    \\\"slide-1\\\",\\r\\n    \\\"slide-2\\\"\\r\\n  ],\\r\\n  \\\"createdAt\\\": 1769483252674,\\r\\n  \\\"updatedAt\\\": 1769483252674\\r\\n}\"",
-          "files/slides/welcome-deck/slide-1.html": "\"<div style=\\\"display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 60px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\\\">\\r\\n  <h1 style=\\\"font-size: 56px; font-weight: 700; color: white; margin: 0 0 24px 0; text-shadow: 0 2px 4px rgba(0,0,0,0.2);\\\">Welcome to Slide Deck</h1>\\r\\n  <p style=\\\"font-size: 24px; color: rgba(255,255,255,0.9); max-width: 600px; line-height: 1.6;\\\">Create beautiful presentations with HTML slides</p>\\r\\n</div>\"",
-          "files/slides/welcome-deck/slide-2.html": "\"<div style=\\\"padding: 60px; height: 100%; background: #1e293b;\\\">\\r\\n  <h2 style=\\\"font-size: 42px; font-weight: 700; color: white; margin: 0 0 32px 0;\\\">Getting Started</h2>\\r\\n  <ul style=\\\"font-size: 24px; color: #94a3b8; line-height: 2; list-style: none; padding: 0; margin: 0;\\\">\\r\\n    <li style=\\\"margin-bottom: 16px;\\\">✨ Edit slides using the HTML editor</li>\\r\\n    <li style=\\\"margin-bottom: 16px;\\\">🎨 Create multiple presentations</li>\\r\\n    <li style=\\\"margin-bottom: 16px;\\\">📺 Present in fullscreen mode</li>\\r\\n    <li style=\\\"margin-bottom: 16px;\\\">📄 Export to PDF</li>\\r\\n  </ul>\\r\\n</div>\""
+        "id": "shape:2UFxqgIbsiAvkr5xjKSbB",
+        "type": "file",
+        "props": {
+          "w": 200,
+          "h": 120,
+          "assetId": "asset:GuAnpniOVkyi1_cL3eu35"
         },
-        "id": "canvas_storage:main",
-        "typeName": "canvas_storage"
+        "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
+        "index": "aXTB2QbV",
+        "typeName": "shape"
       },
-      "lastChangedClock": 11861
+      "lastChangedClock": 6
     }
   ]
 }
