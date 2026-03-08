@@ -23,14 +23,33 @@ widget-{shapeId}/
     ├── components/
     │   └── ui/                  # ✅ PRE-BUILT UI KIT — use these, don't recreate them
     │       ├── index.ts         # Barrel exports
-    │       ├── Button.tsx       # Primary, secondary, danger, ghost variants
-    │       ├── Badge.tsx        # Status/role badges with semantic colors
-    │       ├── Avatar.tsx       # User avatars (image or initials)
-    │       ├── Modal.tsx        # Dialog with Header/Body/Footer sub-components
-    │       ├── Toast.tsx        # Toast notifications (ToastProvider + useToast hook)
-    │       ├── CardGrid.tsx     # Responsive grid + Card with header/body/footer
+    │       ├── utils.ts         # cn() utility for class name merging
+    │       ├── COMPONENTS.md    # Full JSX usage examples for every component
+    │       ├── RECIPES.md       # Common composition patterns
+    │       ├── Button.tsx       # cva variants: default, destructive, outline, secondary, ghost, link
+    │       ├── Badge.tsx        # cva variants: default, secondary, destructive, success, warning, info
+    │       ├── Input.tsx        # Styled <input> with forwardRef
+    │       ├── Textarea.tsx     # Styled <textarea> with forwardRef
+    │       ├── Select.tsx       # Radix Select: Select, SelectTrigger, SelectContent, SelectItem
+    │       ├── Checkbox.tsx     # Radix Checkbox with check indicator
+    │       ├── Switch.tsx       # Radix Switch toggle
+    │       ├── Label.tsx        # Radix Label with auto htmlFor association
+    │       ├── Dialog.tsx       # Radix Dialog: Dialog, DialogContent, DialogHeader, DialogTitle, etc.
+    │       ├── Modal.tsx        # Backward-compatible wrapper around Dialog
+    │       ├── DropdownMenu.tsx # Radix DropdownMenu with keyboard nav
+    │       ├── Tabs.tsx         # Radix Tabs: Tabs, TabsList, TabsTrigger, TabsContent
+    │       ├── Tooltip.tsx      # Radix Tooltip with portal
+    │       ├── Avatar.tsx       # Radix Avatar with image loading fallback
+    │       ├── Card.tsx         # Compound: Card, CardHeader, CardTitle, CardContent, CardFooter
+    │       ├── Table.tsx        # Compound: Table, TableHeader, TableBody, TableRow, etc.
+    │       ├── Alert.tsx        # Alert with variants: default, destructive, success, warning, info
+    │       ├── Progress.tsx     # Radix Progress bar
+    │       ├── Separator.tsx    # Radix Separator (horizontal/vertical)
+    │       ├── SearchInput.tsx  # Input + search icon + clear button
+    │       ├── CardGrid.tsx     # Responsive grid + GridCard with sub-components
     │       ├── EmptyState.tsx   # Empty state variants (Items, Search, Error, etc.)
-    │       └── Skeleton.tsx     # Loading skeletons (Text, Card, List, Table, Avatar)
+    │       ├── Skeleton.tsx     # Loading skeletons (Text, Card, List, Table, Avatar)
+    │       └── Toast.tsx        # Toast notifications (ToastProvider + useToast hook)
     └── hooks/
         └── index.ts             # ✅ Your custom hooks go here
 ```
@@ -56,9 +75,9 @@ These files handle auth bootstrapping, React rendering, SDK wiring, and base sty
 
 Do NOT rewrite App.tsx from scratch. Do NOT remove or "simplify" existing infrastructure — even for simple single-page widgets. The Navigation component, `ProtectedRoute`, user loading states, and role handling cost nothing when unused but provide the foundation for future expansion. Do NOT remove the auth plumbing (`useAuth`, `DeepSpacePill`, `isWidgetContext`, `fetchUserViaPostMessage`), the `RecordProvider` wrapper, the `ToastProvider`, or the `ProtectedRoute` component. Removing working infrastructure to "simplify" wastes tokens and destroys the expansion path.
 
-**`RecordProvider roomId` is dynamic — do NOT hardcode it.** The `getWidgetRoomId()` function reads the canvas `roomId` from URL search params (injected by the parent canvas). This ensures per-canvas data isolation — each canvas gets its own RecordRoom Durable Object. Do NOT change `roomId={getWidgetRoomId()}` to a static string like `roomId="my-app"`. The dynamic roomId is critical for multi-user/multi-canvas isolation.
+**`RecordProvider roomId` is dynamic — do NOT hardcode it.** The `getWidgetRoomId()` function reads the canvas `roomId` from URL search params (injected by the parent canvas into the iframe src). This ensures per-canvas data isolation — each canvas gets its own RecordRoom Durable Object. Do NOT change `roomId={getWidgetRoomId()}` to a static string like `roomId="my-app"`. The dynamic roomId is critical for multi-user/multi-canvas isolation.
 
-**`styles.css` contains the theme and base styles.** The `@theme` block defines all semantic design tokens (colors, shadows, animations). The `@layer base` block contains global styles (scrollbar, focus states, font stack). To customize the visual style, modify the `@theme` CSS variables. Add custom CSS inside the `@layer base` block — never add unlayered CSS, as it overrides Tailwind utility classes.
+**`styles.css` contains the theme and base styles.** The `@theme` block defines all semantic design tokens (colors, shadows, animations) using shadcn/ui-compatible CSS variable names. The `@layer base` block contains global styles (scrollbar, focus states, font stack). To customize the visual style, modify the `@theme` CSS variables. Add custom CSS inside the `@layer base` block — never add unlayered CSS, as it overrides Tailwind utility classes.
 
 **Never use inline `style={}` for colors, backgrounds, or shadows.** Define custom design tokens in the `@theme` block in `styles.css` and use Tailwind classes instead. For example, if a style needs a specific background color, add it as `--color-surface: #e0e5ec;` in `@theme` and use `bg-surface` in JSX — not `style={{ background: '#e0e5ec' }}`.
 
@@ -155,28 +174,67 @@ Last step. Import your pages and connect them:
 
 ## The Pre-Built UI Kit
 
-The `src/components/ui/` directory contains production-ready components. **Use them — do not recreate buttons, modals, badges, cards, or loading states from scratch.**
+The `src/components/ui/` directory contains production-ready components built on shadcn/ui (Radix primitives + Tailwind + `cn()` utility). **Use them — do not recreate buttons, inputs, modals, badges, cards, selects, or loading states from scratch.**
 
 Import from the barrel:
 ```tsx
-import { Button, Badge, Modal, Card, CardGrid, useToast, EmptyItems, LoadingSpinner } from '../components/ui'
+import { Button, Badge, Input, Textarea, Select, SelectTrigger, SelectContent, SelectItem, SelectValue, Dialog, DialogContent, DialogHeader, DialogTitle, Tabs, TabsList, TabsTrigger, TabsContent, Card, CardHeader, CardContent, CardGrid, useToast, EmptyItems, LoadingSpinner, cn } from '../components/ui'
 ```
 
 ### What's available
 
 | Component | Use for |
 |-----------|---------|
-| `Button` | Actions. Variants: `primary`, `secondary`, `danger`, `ghost`. Sizes: `sm`, `md`, `lg`. |
-| `Badge` | Status indicators, role labels. Colors: `primary`, `success`, `warning`, `danger`, `info`, `muted`. |
-| `Avatar` | User profile images. Falls back to initials. Sizes: `sm`, `md`, `lg`. |
-| `Modal` | Dialogs. Compound: `Modal.Header`, `Modal.Title`, `Modal.Body`, `Modal.Footer`. Sizes: `sm`–`xl`. |
+| `cn()` | Merge Tailwind classes conditionally. `cn('text-sm', isActive && 'font-bold', className)` |
+| `Button` | Actions. Variants: `default`, `destructive`, `outline`, `secondary`, `ghost`, `link`. Sizes: `default`, `sm`, `lg`, `icon`. Has `loading` and `asChild` props. |
+| `Badge` | Status indicators, role labels. Variants: `default`, `secondary`, `destructive`, `success`, `warning`, `info`, `outline`. |
+| `Input` | Text input. Just a styled `<input>` with `forwardRef`. Use for all text fields. |
+| `Textarea` | Multi-line input. Styled `<textarea>` with `forwardRef`. |
+| `Select` | Custom select dropdown. Compound: `Select`, `SelectTrigger`, `SelectValue`, `SelectContent`, `SelectItem`, `SelectGroup`, `SelectLabel`. |
+| `Checkbox` | Radix checkbox with check indicator. |
+| `Switch` | Toggle switch. `role="switch"` with state management. |
+| `Label` | Form labels. Auto `htmlFor`/`id` association. |
+| `Dialog` | Accessible modal dialog (Radix). Compound: `Dialog`, `DialogTrigger`, `DialogContent`, `DialogHeader`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose`. Prop: `open`. |
+| `Modal` | Backward-compatible wrapper around Dialog. Compound: `Modal.Header`, `Modal.Title`, `Modal.Body`, `Modal.Footer`. Prop: `open`. |
 | `ConfirmModal` | Quick confirm/cancel dialogs. |
-| `ToastProvider` + `useToast()` | Notifications. Methods: `success()`, `error()`, `warning()`, `info()`. |
-| `CardGrid` + `Card` | Responsive grid layouts. Card has `Card.Header`, `Card.Body`, `Card.Footer`. |
+| `DropdownMenu` | Context menus / action menus. Compound: `DropdownMenu`, `DropdownMenuTrigger`, `DropdownMenuContent`, `DropdownMenuItem`, etc. |
+| `Tabs` | Tabbed content. Compound: `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`. |
+| `Tooltip` | Hover tooltips. Compound: `TooltipProvider`, `Tooltip`, `TooltipTrigger`, `TooltipContent`. |
+| `Avatar` | Radix avatar with image loading states. Compound: `Avatar`, `AvatarImage`, `AvatarFallback`. |
+| `Card` | Content cards. Compound: `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`. |
+| `Table` | Data tables. Compound: `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell`, `TableCaption`. |
+| `Alert` | Alert banners. Variants: `default`, `destructive`, `success`, `warning`, `info`. Compound: `Alert`, `AlertTitle`, `AlertDescription`. |
+| `Progress` | Progress bar. `value` prop (0-100). |
+| `Separator` | Visual divider. `orientation="horizontal"` or `"vertical"`. |
+| `SearchInput` | Input with search icon and clear button. |
+| `CardGrid` + `GridCard` | Responsive grid layouts. GridCard has `.Header`, `.Title`, `.Content`, `.Footer`, `.Image`, `.Badge`, `.Actions`. |
 | `EmptyState` | Empty views. Pre-built: `EmptyItems`, `EmptySearch`, `EmptyDocuments`, `EmptyProjects`, `EmptyTeam`, `EmptyError`. |
 | `Skeleton*` | Loading placeholders. `SkeletonText`, `SkeletonCard`, `SkeletonList`, `SkeletonTable`, `SkeletonAvatar`. |
 | `LoadingSpinner` | Spinner. |
 | `LoadingOverlay` | Full-screen loading overlay. |
+| `ToastProvider` + `useToast()` | Notifications. Methods: `success()`, `error()`, `warning()`, `info()`. |
+
+### Color Token Quick Reference
+
+Use these semantic classes instead of hardcoded Tailwind colors:
+
+| Token Class | What it's for |
+|-------------|---------------|
+| `bg-background` | Page/app background |
+| `text-foreground` | Primary text |
+| `bg-card` / `text-card-foreground` | Card/elevated surface backgrounds |
+| `bg-popover` / `text-popover-foreground` | Dropdown/popover backgrounds |
+| `bg-muted` / `text-muted-foreground` | Subtle backgrounds / secondary text |
+| `bg-accent` / `text-accent-foreground` | Hover/active states |
+| `bg-primary` / `text-primary` / `text-primary-foreground` | Primary accent color |
+| `bg-secondary` / `text-secondary-foreground` | Secondary backgrounds |
+| `bg-destructive` / `text-destructive` | Danger/error states |
+| `bg-success` / `text-success` | Success states |
+| `bg-warning` / `text-warning` | Warning states |
+| `bg-info` / `text-info` | Info states |
+| `border-border` | Standard borders |
+| `border-input` | Form input borders |
+| `ring-ring` | Focus rings |
 
 All components use the semantic color system from the `@theme` block in `styles.css`. They automatically match whatever theme is configured.
 
@@ -216,7 +274,7 @@ For most apps, the default three roles are sufficient. Use **teams** (via `useTe
 ## Key Principles
 
 1. **schemas.ts is the starting point.** If you don't know what data the feature needs, you're not ready to code.
-2. **Use the UI kit.** Building a custom button when `Button` exists is wasted effort.
+2. **Use the UI kit.** Building a custom button when `Button` exists is wasted effort. Read `COMPONENTS.md` for usage examples.
 3. **Don't rewrite infrastructure.** `main.tsx`, auth plumbing, `RecordProvider`, `getWidgetRoomId()` — these work. Leave them alone. Never replace the dynamic `roomId={getWidgetRoomId()}` with a hardcoded string.
 4. **Build for the current task.** The skeleton's structure (pages/, components/, hooks/) IS the future-proofing. You don't need to add abstractions "for later."
 5. **Grow organically.** Start with everything in one page. Extract components when you reuse them, not before.

@@ -33,7 +33,28 @@ All responses follow this structure:
 
 ---
 
-## API Usage Pattern:
+## Direct Shell Access
+
+Integrations can also be called directly from the agent shell using the `mcapi` command.
+Use this to gather information, validate data, or answer user questions — without writing widget code.
+
+```bash
+mcapi generate-text prompt="Hello" provider=openai model=gpt-4o-mini
+mcapi current-weather location="NYC"
+mcapi wikipedia-summary title="React (JavaScript library)"
+mcapi firecrawl-scrape url="https://example.com"
+mcapi exa-search query="React best practices" numResults=5
+```
+
+**Important:** Always run `mcapi --describe <endpoint>` to see exact parameter names before calling.
+
+**Note:** `search-web`, `search-web-raw`, `search-web-ai`, `search-pdfs`, and `advanced-web-search` are NOT supported via `mcapi`. For web search, use `firecrawl-search`, `exa-search`, or `exa-answer` instead.
+
+See AllowedCommands.md for full documentation.
+
+---
+
+## API Usage Pattern (in widget code):
 ```javascript
 import { mcapi } from '@spaces/sdk';
 

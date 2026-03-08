@@ -1,17 +1,12 @@
-/**
- * Empty State Components
- * 
- * Uses semantic theme colors from tailwind.config.js
- */
-
 import React, { ReactNode, JSX } from 'react'
 import { FileText, Search, Inbox, Plus, FolderOpen, Users, AlertCircle } from 'lucide-react'
+import { cn } from './utils'
 
 // ============================================================================
 // EmptyState - Customizable empty state component
 // ============================================================================
 
-interface EmptyStateProps {
+interface EmptyStateProps extends React.HTMLAttributes<HTMLDivElement> {
   icon?: ReactNode
   title: string
   description?: string
@@ -23,7 +18,6 @@ interface EmptyStateProps {
     label: string
     onClick: () => void
   }
-  className?: string
 }
 
 export function EmptyState({
@@ -33,24 +27,25 @@ export function EmptyState({
   action,
   secondaryAction,
   className = '',
+  ...rest
 }: EmptyStateProps): JSX.Element {
   return (
-    <div className={`flex flex-col items-center justify-center py-16 px-4 text-center ${className}`}>
+    <div className={cn('flex flex-col items-center justify-center py-16 px-4 text-center', className)} {...rest}>
       {icon && (
-        <div className="w-16 h-16 rounded-2xl bg-surface-overlay/50 border border-border flex items-center justify-center mb-5">
-          <span className="text-content-muted">{icon}</span>
+        <div className="w-16 h-16 rounded-2xl bg-muted/50 border border-border flex items-center justify-center mb-5">
+          <span className="text-muted-foreground">{icon}</span>
         </div>
       )}
-      <h3 className="text-lg font-semibold text-content mb-2">{title}</h3>
+      <h3 className="text-lg font-semibold text-foreground mb-2">{title}</h3>
       {description && (
-        <p className="text-content-secondary text-sm max-w-sm mb-6">{description}</p>
+        <p className="text-muted-foreground text-sm max-w-sm mb-6">{description}</p>
       )}
       {(action || secondaryAction) && (
         <div className="flex items-center gap-3">
           {action && (
             <button
               onClick={action.onClick}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-hover shadow-lg shadow-primary/25 transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:bg-primary/90 shadow-lg shadow-primary/25 transition-all"
             >
               <Plus className="w-4 h-4" />
               {action.label}
@@ -59,7 +54,7 @@ export function EmptyState({
           {secondaryAction && (
             <button
               onClick={secondaryAction.onClick}
-              className="px-4 py-2 text-sm text-content-secondary hover:text-content transition-colors"
+              className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               {secondaryAction.label}
             </button>
@@ -82,7 +77,6 @@ interface EmptyStateVariantProps {
   className?: string
 }
 
-// No items yet
 export function EmptyItems({ action, className }: EmptyStateVariantProps): JSX.Element {
   return (
     <EmptyState
@@ -95,7 +89,6 @@ export function EmptyItems({ action, className }: EmptyStateVariantProps): JSX.E
   )
 }
 
-// No search results
 interface EmptySearchProps extends EmptyStateVariantProps {
   query?: string
   onClear?: () => void
@@ -113,7 +106,6 @@ export function EmptySearch({ query, onClear, className }: EmptySearchProps): JS
   )
 }
 
-// No documents/notes
 export function EmptyDocuments({ action, className }: EmptyStateVariantProps): JSX.Element {
   return (
     <EmptyState
@@ -126,7 +118,6 @@ export function EmptyDocuments({ action, className }: EmptyStateVariantProps): J
   )
 }
 
-// No projects/folders
 export function EmptyProjects({ action, className }: EmptyStateVariantProps): JSX.Element {
   return (
     <EmptyState
@@ -139,7 +130,6 @@ export function EmptyProjects({ action, className }: EmptyStateVariantProps): JS
   )
 }
 
-// No team members
 export function EmptyTeam({ action, className }: EmptyStateVariantProps): JSX.Element {
   return (
     <EmptyState
@@ -152,7 +142,6 @@ export function EmptyTeam({ action, className }: EmptyStateVariantProps): JSX.El
   )
 }
 
-// Error state
 interface EmptyErrorProps extends EmptyStateVariantProps {
   error?: string
   onRetry?: () => void
@@ -161,7 +150,7 @@ interface EmptyErrorProps extends EmptyStateVariantProps {
 export function EmptyError({ error, onRetry, className }: EmptyErrorProps): JSX.Element {
   return (
     <EmptyState
-      icon={<AlertCircle className="w-8 h-8 text-danger" />}
+      icon={<AlertCircle className="w-8 h-8 text-destructive" />}
       title="Something went wrong"
       description={error || 'An error occurred. Please try again.'}
       action={onRetry ? { label: 'Try again', onClick: onRetry } : undefined}

@@ -160,7 +160,7 @@ categories:
         description: "Create events on the user's Google Calendar with optional video conferencing"
   document:
     file: integrations/document.yaml
-    endpoint_count: 3
+    endpoint_count: 4
     endpoints:
       - name: convert_file
         method: POST
@@ -174,14 +174,30 @@ categories:
         method: POST
         endpoint: /generate-tasks-from-document
         description: "Generate structured travel tasks from extracted document text"
+      - name: latex_compile
+        method: POST
+        endpoint: /latex-compile
+        description: "Compile a multi-file LaTeX project to PDF. Supports pdflatex/xelatex/lualatex, inline content, base64 files, URL resources, and bibliography processing. Returns the compiled PDF as base64."
   email:
     file: integrations/email.yaml
-    endpoint_count: 1
+    endpoint_count: 4
     endpoints:
       - name: miniapp_send_email
         method: POST
         endpoint: /miniapp-send-email
         description: "Send transactional email from a miniapp. Emails are sent from noreply@{miniappId}.app.space with rate limiting."
+      - name: claim_email_handle
+        method: POST
+        endpoint: /claim-email-handle
+        description: "Claim a personal email handle (e.g., \"daniel\" → daniel@app.space). Handle must be 3-30 chars, lowercase alphanumeric with dots/hyphens."
+      - name: my_email_address
+        method: GET
+        endpoint: /my-email-address
+        description: "Get the authenticated user's claimed @app.space email address."
+      - name: send_user_email
+        method: POST
+        endpoint: /send-user-email
+        description: "Send an email from your personal @app.space address. Requires a claimed handle. Rate limited to 30 emails/hour."
   football:
     file: integrations/football.yaml
     endpoint_count: 19
@@ -444,12 +460,12 @@ categories:
         description: "Delete file from Google Drive"
   images:
     file: integrations/images.yaml
-    endpoint_count: 24
+    endpoint_count: 30
     endpoints:
       - name: generate_image
         method: POST
         endpoint: /generate-image
-        description: "Generate image from prompt (async)"
+        description: "[DEPRECATED — prefer using newer models instead like Gemini] Generate image from prompt (async)"
       - name: generate_image_classic
         method: POST
         endpoint: /generate-image-classic
@@ -466,6 +482,14 @@ categories:
         method: POST
         endpoint: /generate-image-flux-pro
         description: "Generate images using Freepik Flux Pro v1.1 model"
+      - name: generate_image_flux_2_pro
+        method: POST
+        endpoint: /generate-image-flux-2-pro
+        description: "Generate images using Freepik Flux 2 Pro model with custom pixel dimensions"
+      - name: generate_image_flux_2_turbo
+        method: POST
+        endpoint: /generate-image-flux-2-turbo
+        description: "Generate images using Freepik Flux 2 Turbo model — fast speed-optimized generation"
       - name: generate_image_hyperflux
         method: POST
         endpoint: /generate-image-hyperflux
@@ -473,15 +497,31 @@ categories:
       - name: generate_image_seedream
         method: POST
         endpoint: /generate-image-seedream
-        description: "Generate images using Freepik Seedream v3 model"
+        description: "[DEPRECATED — prefer Seedream v4 or Seedream 4.5] Generate images using Freepik Seedream v3 model"
       - name: generate_image_seedream_v4
         method: POST
         endpoint: /generate-image-seedream-v4
         description: "Generate images using Freepik Seedream v4 model"
+      - name: generate_image_seedream_v4_5
+        method: POST
+        endpoint: /generate-image-seedream-v4-5
+        description: "Generate images using Freepik Seedream 4.5 model (superior typography, poster composition, up to 4MP)"
+      - name: generate_image_z_image
+        method: POST
+        endpoint: /generate-image-z-image
+        description: "Generate images using Freepik Z-Image turbo model — fast high-quality generation"
+      - name: generate_image_runway
+        method: POST
+        endpoint: /generate-image-runway
+        description: "Generate images using RunWay Gen4 Image model — photorealistic and artistic generation"
       - name: generate_image_gpt
         method: POST
         endpoint: /generate-image-gpt
         description: "Generate images using OpenAI GPT Image models (gpt-image-1.5, gpt-image-1, gpt-image-1-mini)"
+      - name: generate_image_gemini
+        method: POST
+        endpoint: /generate-image-gemini
+        description: "Generate images using Google Gemini 3.1 Flash Image model"
       - name: remove_background
         method: POST
         endpoint: /remove-background
@@ -544,12 +584,16 @@ categories:
         description: "Download a stock video"
   internal:
     file: integrations/internal.yaml
-    endpoint_count: 3
+    endpoint_count: 4
     endpoints:
       - name: usage
         method: GET
         endpoint: /usage
         description: "Get user integration spending summary"
+      - name: lookup_user
+        method: POST
+        endpoint: /lookup-user
+        description: "Look up a DeepSpace user by email or username. Returns userId if found."
       - name: get_canvas_users
         method: POST
         endpoint: /get-canvas-users
@@ -580,8 +624,12 @@ categories:
         description: "Analyze LinkedIn profile from URL"
   livekit:
     file: integrations/livekit.yaml
-    endpoint_count: 5
+    endpoint_count: 6
     endpoints:
+      - name: livekit_token
+        method: POST
+        endpoint: /livekit-token
+        description: "Generate a LiveKit access token for any room. Rooms auto-create when the first participant connects. No billing — use livekit-create-room for billable rooms with duration limits."
       - name: livekit_create_room
         method: POST
         endpoint: /livekit-create-room
@@ -910,26 +958,6 @@ categories:
         method: POST
         endpoint: /instagram-extract-content
         description: "Extract content from Instagram posts (captions and media)"
-  storage:
-    file: integrations/storage.yaml
-    endpoint_count: 4
-    endpoints:
-      - name: shared_user_data_set
-        method: POST
-        endpoint: /shared-user-data-set
-        description: "Set a key-value pair in a user's shared storage. Data is accessible across all miniapps/sites."
-      - name: shared_user_data_get
-        method: POST
-        endpoint: /shared-user-data-get
-        description: "Get a value from a user's shared storage by key."
-      - name: shared_user_data_delete
-        method: POST
-        endpoint: /shared-user-data-delete
-        description: "Delete a key from a user's shared storage."
-      - name: shared_user_data_list
-        method: POST
-        endpoint: /shared-user-data-list
-        description: "List all keys in a user's shared storage."
   submagic:
     file: integrations/submagic.yaml
     endpoint_count: 3

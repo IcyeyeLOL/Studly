@@ -17,12 +17,39 @@ Images placed **on the canvas** are stored as `general-asset-image-{assetId}.jso
 - You see a `general-asset-image-*.json` and need to know what's depicted
 
 ## NOT needed for
-- Images in `.chat-attachments/` — these are already provided in your conversation context
+- Images in `.chat-attachments/` — these are already provided in your conversation context (use `upload file` to get a permanent URL for widget use)
 - Text/code content — use normal file reading
 
 ---
 
-## Example
+## Using images in widgets
+
+Images in `.chat-attachments/` are local files — they can't be referenced by URL in widget code.
+To use them in a widget, upload to R2 first:
+
+1. `upload file .chat-attachments/photo.png` → prints a permanent URL
+2. Use the URL in your widget: `<img src="https://..." />`
+
+This also works for any local file you need a permanent URL for.
+
+### In widget code (useR2Files)
+
+When building a widget that handles user file uploads at runtime (e.g., `<input type="file">`), use `useR2Files`:
+
+```tsx
+import { useR2Files } from '@spaces/sdk/storage'
+
+const { upload } = useR2Files()
+const result = await upload(file, file.name)
+// result.url → permanent URL, store this in a record
+```
+
+Works for all file types: images, PDFs, documents, audio, video, etc.
+Never inline base64 data in records or JSX. See Storage.md for full docs.
+
+---
+
+## Example (canvas asset inspection)
 ```bash
 # Inspect the image (fetches and saves to .canvas-images/)
 inspect image GM2wo-KippGsBKzYPvYv3

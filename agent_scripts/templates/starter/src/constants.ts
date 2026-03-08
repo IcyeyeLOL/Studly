@@ -1,11 +1,14 @@
 /**
  * App Constants
- * 
+ *
  * Define roles, status values, and other constants here.
  * Import feature-specific constants from their directories.
  */
 
-import type { BadgeColor } from './components/ui'
+import type { BadgeProps } from './components/ui'
+
+// Badge variant type extracted from BadgeProps
+type BadgeVariant = NonNullable<BadgeProps['variant']>
 
 // ============================================================================
 // User Roles
@@ -19,20 +22,20 @@ export const ROLES = {
 
 export type Role = typeof ROLES[keyof typeof ROLES]
 
-export const ROLE_CONFIG: Record<Role, { title: string; color: BadgeColor; description: string }> = {
+export const ROLE_CONFIG: Record<Role, { title: string; badgeVariant: BadgeVariant; description: string }> = {
   [ROLES.VIEWER]: {
     title: 'Viewer',
-    color: 'muted',
+    badgeVariant: 'secondary',
     description: 'Read-only access',
   },
   [ROLES.MEMBER]: {
     title: 'Member',
-    color: 'primary',
+    badgeVariant: 'default',
     description: 'Can create and edit own content',
   },
   [ROLES.ADMIN]: {
     title: 'Admin',
-    color: 'warning',
+    badgeVariant: 'warning',
     description: 'Full access to all features',
   },
 }

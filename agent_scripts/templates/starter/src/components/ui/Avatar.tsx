@@ -1,53 +1,48 @@
-/**
- * Avatar Component
- * 
- * Uses semantic theme colors from tailwind.config.js
- */
+import * as React from 'react'
+import * as AvatarPrimitive from '@radix-ui/react-avatar'
 
-import React from 'react'
+import { cn } from './utils'
 
-export type AvatarColor = 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'muted'
+const Avatar = React.forwardRef<
+  React.ElementRef<typeof AvatarPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>
+>(({ className, ...props }, ref) => (
+  <AvatarPrimitive.Root
+    ref={ref}
+    className={cn(
+      'relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full',
+      className
+    )}
+    {...props}
+  />
+))
+Avatar.displayName = AvatarPrimitive.Root.displayName
 
-export interface AvatarProps {
-  name?: string
-  imageUrl?: string
-  color?: AvatarColor
-  size?: 'sm' | 'md' | 'lg'
-}
+const AvatarImage = React.forwardRef<
+  React.ElementRef<typeof AvatarPrimitive.Image>,
+  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
+>(({ className, ...props }, ref) => (
+  <AvatarPrimitive.Image
+    ref={ref}
+    className={cn('aspect-square h-full w-full', className)}
+    {...props}
+  />
+))
+AvatarImage.displayName = AvatarPrimitive.Image.displayName
 
-const colorClasses: Record<AvatarColor, string> = {
-  primary: 'bg-primary shadow-primary/40',
-  success: 'bg-success shadow-success/40',
-  warning: 'bg-warning shadow-warning/40',
-  danger: 'bg-danger shadow-danger/40',
-  info: 'bg-info shadow-info/40',
-  muted: 'bg-surface-overlay shadow-none',
-}
+const AvatarFallback = React.forwardRef<
+  React.ElementRef<typeof AvatarPrimitive.Fallback>,
+  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback>
+>(({ className, ...props }, ref) => (
+  <AvatarPrimitive.Fallback
+    ref={ref}
+    className={cn(
+      'flex h-full w-full items-center justify-center rounded-full bg-muted',
+      className
+    )}
+    {...props}
+  />
+))
+AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName
 
-const sizeClasses = {
-  sm: 'w-6 h-6 text-xs',
-  md: 'w-8 h-8 text-sm',
-  lg: 'w-10 h-10 text-base',
-}
-
-export function Avatar({ name = '', imageUrl, color = 'primary', size = 'md' }: AvatarProps) {
-  const initial = name.charAt(0).toUpperCase() || '?'
-
-  if (imageUrl) {
-    return (
-      <img
-        src={imageUrl}
-        alt={name}
-        className={`${sizeClasses[size]} rounded-full object-cover ring-2 ring-border`}
-      />
-    )
-  }
-
-  return (
-    <div
-      className={`${sizeClasses[size]} rounded-full flex items-center justify-center text-white font-medium shadow-lg ${colorClasses[color]}`}
-    >
-      {initial}
-    </div>
-  )
-}
+export { Avatar, AvatarImage, AvatarFallback }

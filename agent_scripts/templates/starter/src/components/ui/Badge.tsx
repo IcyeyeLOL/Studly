@@ -1,62 +1,42 @@
-/**
- * Badge Component
- * 
- * Uses semantic theme colors from tailwind.config.js
- */
+import * as React from 'react'
+import { cva, type VariantProps } from 'class-variance-authority'
 
-import React from 'react'
+import { cn } from './utils'
 
-export type BadgeColor = 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'muted'
-
-export interface BadgeProps {
-  children: React.ReactNode
-  color?: BadgeColor
-  variant?: 'solid' | 'subtle'
-  size?: 'sm' | 'md'
-}
-
-const colorClasses: Record<BadgeColor, { subtle: string; solid: string }> = {
-  primary: {
-    subtle: 'bg-primary-muted text-primary border-primary-border',
-    solid: 'bg-primary text-white',
-  },
-  success: {
-    subtle: 'bg-success-muted text-success border-success-border',
-    solid: 'bg-success text-white',
-  },
-  warning: {
-    subtle: 'bg-warning-muted text-warning border-warning-border',
-    solid: 'bg-warning text-white',
-  },
-  danger: {
-    subtle: 'bg-danger-muted text-danger border-danger-border',
-    solid: 'bg-danger text-white',
-  },
-  info: {
-    subtle: 'bg-info-muted text-info border-info-border',
-    solid: 'bg-info text-white',
-  },
-  muted: {
-    subtle: 'bg-surface-overlay/50 text-content-secondary border-border',
-    solid: 'bg-surface-overlay text-content',
-  },
-}
-
-export function Badge({ children, color = 'primary', variant = 'subtle', size = 'sm' }: BadgeProps) {
-  const sizeClasses = size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-sm'
-  const colors = colorClasses[color]
-
-  if (variant === 'solid') {
-    return (
-      <span className={`${sizeClasses} font-medium rounded inline-flex items-center shadow-sm ${colors.solid}`}>
-        {children}
-      </span>
-    )
+const badgeVariants = cva(
+  'inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+  {
+    variants: {
+      variant: {
+        default:
+          'border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80',
+        secondary:
+          'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80',
+        destructive:
+          'border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80',
+        outline: 'text-foreground',
+        success:
+          'border-transparent bg-success text-success-foreground shadow hover:bg-success/80',
+        warning:
+          'border-transparent bg-warning text-warning-foreground shadow hover:bg-warning/80',
+        info:
+          'border-transparent bg-info text-info-foreground shadow hover:bg-info/80',
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
+    },
   }
+)
 
+export interface BadgeProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof badgeVariants> {}
+
+function Badge({ className, variant, ...props }: BadgeProps) {
   return (
-    <span className={`${sizeClasses} font-medium rounded inline-flex items-center border ${colors.subtle}`}>
-      {children}
-    </span>
+    <div className={cn(badgeVariants({ variant }), className)} {...props} />
   )
 }
+
+export { Badge, badgeVariants }

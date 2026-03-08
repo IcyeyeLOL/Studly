@@ -9,7 +9,7 @@
  */
 function generateStylingMd(style) {
   if (!style) {
-    return `# Style ID\nnone\n\n# Style Name\nNo Style\n\n# Style Prompt\n\n`;
+    return `# Style ID\nnone\n\n# Style Name\nNo Style\n\n# Style Prompt\nNo style selected — design a custom style based on the [STYLE INSTRUCTION] in your command. See the Design Reference in Styling.md.\n`;
   }
   return `# Style ID\n${style.id}\n\n# Style Name\n${style.name}\n\n# Style Prompt\n${style.prompt || ''}\n`;
 }

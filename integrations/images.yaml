@@ -10,7 +10,7 @@ tools:
   generate_image:
     method: POST
     endpoint: /generate-image
-    description: "Generate image from prompt (async)"
+    description: "[DEPRECATED — prefer using newer models instead like Gemini] Generate image from prompt (async)"
     input_schema:
       type: object
       properties:
@@ -217,6 +217,10 @@ tools:
                   - base64
                   - has_nsfw
                 additionalProperties: false
+            imageUrls:
+              type: array
+              items:
+                type: string
             meta: {}
           additionalProperties: false
         error:
@@ -312,10 +316,9 @@ tools:
                   strength:
                     type: integer
                     minimum: 0
-                    maximum: 100
+                    maximum: 200
                 required:
                   - name
-                  - strength
                 additionalProperties: false
               maxItems: 1
             characters:
@@ -326,12 +329,9 @@ tools:
                   strength:
                     type: integer
                     minimum: 0
-                    maximum: 100
+                    maximum: 200
                   id:
                     type: string
-                required:
-                  - strength
-                  - id
                 additionalProperties: false
               maxItems: 1
             colors:
@@ -364,6 +364,10 @@ tools:
           type: object
           properties:
             imageUrls:
+              type: array
+              items:
+                type: string
+            base64Images:
               type: array
               items:
                 type: string
@@ -536,6 +540,138 @@ tools:
       required:
         - success
 
+  generate_image_flux_2_pro:
+    method: POST
+    endpoint: /generate-image-flux-2-pro
+    description: "Generate images using Freepik Flux 2 Pro model with custom pixel dimensions"
+    input_schema:
+      type: object
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+        width:
+          type: integer
+          minimum: 256
+          maximum: 1440
+        height:
+          type: integer
+          minimum: 256
+          maximum: 1440
+        seed:
+          anyOf:
+            - 
+              type: integer
+            - 
+              type: null
+        prompt_upsampling:
+          type: boolean
+        webhook_url:
+          type: string
+          format: uri
+      required:
+        - prompt
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            imageUrls:
+              type: array
+              items:
+                type: string
+            base64Images:
+              type: array
+              items:
+                type: string
+            taskId:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  generate_image_flux_2_turbo:
+    method: POST
+    endpoint: /generate-image-flux-2-turbo
+    description: "Generate images using Freepik Flux 2 Turbo model — fast speed-optimized generation"
+    input_schema:
+      type: object
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+        guidance_scale:
+          type: number
+          minimum: 1
+          maximum: 20
+        seed:
+          anyOf:
+            - 
+              type: integer
+              minimum: 0
+              maximum: 4294967295
+            - 
+              type: null
+        image_size:
+          anyOf:
+            - 
+              type: object
+              properties:
+                width:
+                  type: integer
+                  minimum: 512
+                  maximum: 2048
+                height:
+                  type: integer
+                  minimum: 512
+                  maximum: 2048
+              required:
+                - width
+                - height
+              additionalProperties: false
+            - 
+              type: null
+        enable_safety_checker:
+          type: boolean
+        output_format:
+          type: string
+          enum:
+            - jpeg
+            - png
+        webhook_url:
+          type: string
+          format: uri
+      required:
+        - prompt
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            imageUrls:
+              type: array
+              items:
+                type: string
+            base64Images:
+              type: array
+              items:
+                type: string
+            taskId:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
   generate_image_hyperflux:
     method: POST
     endpoint: /generate-image-hyperflux
@@ -627,7 +763,7 @@ tools:
   generate_image_seedream:
     method: POST
     endpoint: /generate-image-seedream
-    description: "Generate images using Freepik Seedream v3 model"
+    description: "[DEPRECATED — prefer Seedream v4 or Seedream 4.5] Generate images using Freepik Seedream v3 model"
     input_schema:
       type: object
       properties:
@@ -738,6 +874,187 @@ tools:
       required:
         - success
 
+  generate_image_seedream_v4_5:
+    method: POST
+    endpoint: /generate-image-seedream-v4-5
+    description: "Generate images using Freepik Seedream 4.5 model (superior typography, poster composition, up to 4MP)"
+    input_schema:
+      type: object
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+        webhook_url:
+          type: string
+          format: uri
+        aspect_ratio:
+          type: string
+          enum:
+            - square_1_1
+            - widescreen_16_9
+            - social_story_9_16
+            - portrait_2_3
+            - traditional_3_4
+            - standard_3_2
+            - classic_4_3
+            - cinematic_21_9
+        seed:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+        enable_safety_checker:
+          type: boolean
+      required:
+        - prompt
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            imageUrls:
+              type: array
+              items:
+                type: string
+            base64Images:
+              type: array
+              items:
+                type: string
+            taskId:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  generate_image_z_image:
+    method: POST
+    endpoint: /generate-image-z-image
+    description: "Generate images using Freepik Z-Image turbo model — fast high-quality generation"
+    input_schema:
+      type: object
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+        image_size:
+          type: string
+          enum:
+            - square
+            - square_hd
+            - portrait_3_4
+            - portrait_9_16
+            - landscape_4_3
+            - landscape_16_9
+        num_inference_steps:
+          type: integer
+          minimum: 1
+          maximum: 50
+        seed:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+        output_format:
+          type: string
+          enum:
+            - jpeg
+            - png
+        enable_safety_checker:
+          type: boolean
+        webhook_url:
+          type: string
+          format: uri
+      required:
+        - prompt
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            imageUrls:
+              type: array
+              items:
+                type: string
+            base64Images:
+              type: array
+              items:
+                type: string
+            taskId:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  generate_image_runway:
+    method: POST
+    endpoint: /generate-image-runway
+    description: "Generate images using RunWay Gen4 Image model — photorealistic and artistic generation"
+    input_schema:
+      type: object
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+        ratio:
+          type: string
+          enum:
+            - 1920:1080
+            - 1080:1920
+            - 1024:1024
+            - 1360:768
+            - 1080:1080
+            - 1168:880
+            - 1440:1080
+            - 1080:1440
+            - 1808:768
+            - 2112:912
+            - 1280:720
+            - 720:1280
+            - 720:720
+            - 960:720
+            - 720:960
+            - 1680:720
+        seed:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+        webhook_url:
+          type: string
+          format: uri
+      required:
+        - prompt
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            imageUrls:
+              type: array
+              items:
+                type: string
+            base64Images:
+              type: array
+              items:
+                type: string
+            taskId:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
   generate_image_gpt:
     method: POST
     endpoint: /generate-image-gpt
@@ -790,6 +1107,106 @@ tools:
               type: array
               items:
                 type: string
+            imageUrls:
+              type: array
+              items:
+                type: string
+            usage:
+              type: object
+              properties:
+                inputTokens:
+                  type: number
+                outputTokens:
+                  type: number
+                totalTokens:
+                  type: number
+              required:
+                - inputTokens
+                - outputTokens
+                - totalTokens
+              additionalProperties: false
+            cost:
+              type: object
+              properties:
+                billingUnits:
+                  type: number
+                unitCost:
+                  type: number
+                totalCost:
+                  type: number
+                breakdown:
+                  type: object
+                  additionalProperties: {}
+              required:
+                - billingUnits
+                - unitCost
+                - totalCost
+                - breakdown
+              additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  generate_image_gemini:
+    method: POST
+    endpoint: /generate-image-gemini
+    description: "Generate images using Google Gemini 3.1 Flash Image model"
+    input_schema:
+      type: object
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+        model:
+          type: string
+          const: "gemini-3.1-flash-image-preview"
+          default: "gemini-3.1-flash-image-preview"
+        aspectRatio:
+          type: string
+          enum:
+            - 1:1
+            - 1:4
+            - 1:8
+            - 2:3
+            - 3:2
+            - 3:4
+            - 4:1
+            - 4:3
+            - 4:5
+            - 5:4
+            - 8:1
+            - 9:16
+            - 16:9
+            - 21:9
+        imageSize:
+          type: string
+          enum:
+            - 512px
+            - 1K
+            - 2K
+            - 4K
+      required:
+        - prompt
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            base64Images:
+              type: array
+              items:
+                type: string
+            imageUrls:
+              type: array
+              items:
+                type: string
+            text:
+              type: string
             usage:
               type: object
               properties:

@@ -20,7 +20,7 @@ const SOURCE_EXTENSIONS = new Set(['.tsx', '.ts', '.jsx', '.js', '.css', '.json'
  * These are included in `sources` alongside `src/` files and
  * round-trip through canvas-state.json.
  */
-const ROOT_LEVEL_WIDGET_FILES = ['tsconfig.json'];
+const ROOT_LEVEL_WIDGET_FILES = ['tsconfig.json', 'cron.json', 'agent-description.md', 'agent-prompt.md'];
 
 /**
  * Path to the base template inside the Docker container.

@@ -121,11 +121,13 @@ return (
 
 Create, update, and delete records.
 
-**Returns `{ create, put, remove }` — NOT `createRecord`, NOT `updateRecord`, NOT `deleteRecord`.**
+**Returns `{ create, put, remove, createConfirmed, putConfirmed, removeConfirmed }` — NOT `createRecord`, NOT `updateRecord`, NOT `deleteRecord`.**
 
 ```jsx
-const { create, put, remove } = useMutations(collection);
+const { create, put, remove, createConfirmed, putConfirmed, removeConfirmed } = useMutations(collection);
 ```
+
+### Fire-and-forget (default)
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
@@ -133,11 +135,22 @@ const { create, put, remove } = useMutations(collection);
 | `put(id, data)` | `id: string, data: object` | Update existing record |
 | `remove(id)` | `id: string` | Delete record |
 
-All functions are fire-and-forget — they send a WebSocket message and return immediately. They do **not** await server confirmation and will **not** throw on permission errors. Permission enforcement happens server-side (invalid mutations are silently rejected).
+Fire-and-forget — they send a WebSocket message and return immediately. They do **not** await server confirmation and will **not** throw on permission errors. Permission enforcement happens server-side (invalid mutations are silently rejected).
+
+### Server-acknowledged (confirmed)
+
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `createConfirmed(data)` | `data: object` | Create new record, resolves with recordId on server ACK |
+| `putConfirmed(id, data)` | `id: string, data: object` | Update record, resolves on server ACK |
+| `removeConfirmed(id)` | `id: string` | Delete record, resolves on server ACK |
+
+Confirmed variants wait for the server to process the mutation before resolving. They **reject** on permission errors, validation failures, or timeout (10s). Use these when you need to know the mutation succeeded before proceeding (e.g., create-then-navigate, or showing success/error feedback).
 
 ```jsx
 // ✅ CORRECT
 const { create, put, remove } = useMutations('tasks');
+const { createConfirmed, putConfirmed, removeConfirmed } = useMutations('tasks');
 
 // ❌ WRONG — these do NOT exist
 const { createRecord, updateRecord, deleteRecord } = useMutations('tasks');  // WRONG
@@ -145,8 +158,10 @@ const { add, update, delete: del } = useMutations('tasks');                  // 
 ```
 
 ```jsx
-const { create, put, remove } = useMutations('tasks');
+const { create, put, remove, createConfirmed, putConfirmed, removeConfirmed } = useMutations('tasks');
 const { user } = useUser();
+
+// --- Fire-and-forget (fast, no confirmation) ---
 
 // Create — returns a client-generated recordId immediately
 const handleAdd = async () => {
@@ -162,6 +177,29 @@ const handleToggle = (record) => {
 // Delete — pass record.recordId
 const handleDelete = (id) => {
   remove(id);
+};
+
+// --- Server-acknowledged (use when you need confirmation) ---
+
+// Create then navigate — guaranteed persisted before navigation
+const handleCreateAndNavigate = async () => {
+  try {
+    const id = await createConfirmed({ title: 'New task', status: 'todo' });
+    setCurrentPage(`/tasks/${id}`); // Safe — server confirmed the record exists
+  } catch (err) {
+    // Permission denied, validation error, or timeout
+    console.error('Failed to create:', err.message);
+  }
+};
+
+// Update with error feedback
+const handleSave = async (record, updates) => {
+  try {
+    await putConfirmed(record.recordId, { ...record.data, ...updates });
+    // Show success toast
+  } catch (err) {
+    // Show error toast with err.message
+  }
 };
 ```
 
@@ -308,17 +346,44 @@ Team management. Create teams, add/remove members.
 **Important:** `useTeams()` only returns teams the current user belongs to — not all teams in the room. Users cannot discover teams they haven't joined yet through this hook. For discoverable rooms/groups, create a separate public collection (see Storage.md "Team-Scoped Data" pattern).
 
 ```jsx
-const { teams, create, addMember, removeMember, deleteTeam, refresh } = useTeams();
+const { teams, create, addMember, removeMember, cancelInvite, deleteTeam, refresh } = useTeams();
 ```
 
 | Return | Type | Description |
 |--------|------|-------------|
 | `teams` | `Team[]` | Teams the current user is a member of |
 | `create` | `(name: string, options?: { isOpen?: boolean }) => string` | Create a team (creator is auto-added). Returns `teamId`. Pass `{ isOpen: true }` for joinable teams. |
-| `addMember` | `(teamId, userId, roleInTeam?) => void` | Add member (self-join for open teams; owner/admin for closed teams) |
-| `removeMember` | `(teamId, userId) => void` | Remove member |
+| `addMember` | `(teamId, member, roleOrOptions?) => Promise<AddMemberResult>` | Add member by userId, email, or username (see below). Self-join for open teams; owner/admin for closed teams. |
+| `removeMember` | `(teamId, userId) => void` | Remove active member |
+| `cancelInvite` | `(teamId, inviteId) => void` | Cancel a pending invite. `inviteId` is `member.userId` from the pending `TeamMember` (e.g. `"invite:inv_..."`) |
 | `deleteTeam` | `(teamId) => void` | Delete team |
 | `refresh` | `() => void` | Re-fetch team list |
+
+**`addMember` accepts three identifier forms:**
+
+```jsx
+// By userId (direct add, backward compatible)
+addMember(teamId, 'user_abc123')
+addMember(teamId, 'user_abc123', 'lead')
+
+// By email (looks up user → adds if found, creates pending invite if not)
+const result = await addMember(teamId, { email: 'jane@example.com' })
+// result.status: 'added' | 'invited' | 'already_member' | 'error'
+
+// By username (looks up user → adds if found, errors if unknown)
+await addMember(teamId, { username: 'janedoe' })
+
+// With email notification (sent for both existing and new users)
+// NOTE: miniappId is required when sendEmail is true — emails are sent from noreply@{miniappId}.app.space
+await addMember(teamId, { email: 'jane@example.com' }, {
+  roleInTeam: 'member',
+  sendEmail: true,           // existing user → "You've been added"; new user → "You've been invited"
+  miniappId: 'my-task-app',
+  teamName: 'Engineering',   // optional, falls back to team name in state
+})
+```
+
+**Pending invites** appear as `TeamMember` entries with `status: 'pending'` and an `email` field. They auto-resolve when the invited user connects for the first time.
 
 **`addMember` permission:** Teams are **closed (invite-only) by default** — only the team owner or a room admin can call `addMember`. To allow self-join, create the team with `{ isOpen: true }`: open teams let any user call `addMember(teamId, theirOwnUserId)` to join themselves. In both modes, only owner/admin can add *other* users.
 

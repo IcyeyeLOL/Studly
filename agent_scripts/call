@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 
 /**
- * Tool Call Command for Miniapp Agents
- * 
- * MCP-like interface for calling tools on deployed miniapps.
- * 
+ * Tool Call Command for DeepSpace Agents
+ *
+ * MCP-like interface for calling RecordRoom tools.
+ * Works in two modes:
+ *   - Miniapp mode: direct HTTP to deployed site's /api/tools/*
+ *   - Canvas mode: HMAC-signed requests via main API → widget-worker → RecordRoom
+ *
  * Usage:
  *   call --list                                    # List available tools
  *   call --describe storage.write                  # Describe a tool
@@ -12,7 +15,7 @@
  *   call storage.read scope=global keys=todos,settings
  *   call storage.write scope=global data='{"key":"value"}'
  *   call storage.delete scope=global keys=oldKey
- * 
+ *
  * Params are passed as key=value pairs. JSON values should be quoted.
  */
 
@@ -30,18 +33,31 @@ function loadContext() {
   try {
     const content = fs.readFileSync(CONTAINER_VARS_PATH, 'utf8');
     const vars = JSON.parse(content);
-    
-    if (!vars.spacesSite || !vars.spacesSite.url) {
-      console.error('❌ Error: Not in a spaces.site context');
-      process.exit(1);
+
+    // Miniapp mode: deployed spaces.site with direct HTTP access
+    if (vars.spacesSite && vars.spacesSite.url) {
+      return {
+        mode: 'miniapp',
+        siteUrl: vars.spacesSite.url,
+        roomId: vars.spacesSite.roomId || 'default',
+        appName: vars.spacesSite.appName,
+        userId: vars.userId,
+      };
     }
-    
-    return {
-      siteUrl: vars.spacesSite.url,
-      roomId: vars.spacesSite.roomId || 'default',
-      appName: vars.spacesSite.appName,
-      userId: vars.userId,
-    };
+
+    // Canvas mode: HMAC-signed requests through main API proxy
+    if (vars.currentRoom && vars.userId) {
+      return {
+        mode: 'canvas',
+        apiUrl: process.env.DOCKER_CANVAS_SYNC_URL,
+        roomId: vars.currentRoom,
+        userId: vars.userId,
+      };
+    }
+
+    console.error('❌ Error: Not in a recognized context');
+    console.error('   Need either spacesSite (miniapp) or currentRoom + userId (canvas)');
+    process.exit(1);
   } catch (error) {
     console.error('❌ Error: Could not load context');
     console.error('   ' + error.message);
@@ -50,16 +66,19 @@ function loadContext() {
 }
 
 // ============================================================================
-// HTTP Client
+// HTTP Clients
 // ============================================================================
 
+/**
+ * Plain HTTP request (for miniapp mode — no auth needed).
+ */
 function makeRequest(url, options = {}) {
   return new Promise((resolve, reject) => {
     const parsedUrl = new URL(url);
     const client = parsedUrl.protocol === 'https:' ? https : http;
-    
+
     const body = options.body ? JSON.stringify(options.body) : null;
-    
+
     const reqOptions = {
       hostname: parsedUrl.hostname,
       port: parsedUrl.port || (parsedUrl.protocol === 'https:' ? 443 : 80),
@@ -70,7 +89,7 @@ function makeRequest(url, options = {}) {
         ...(body ? { 'Content-Length': Buffer.byteLength(body) } : {}),
       },
     };
-    
+
     const req = client.request(reqOptions, (res) => {
       let data = '';
       res.on('data', chunk => data += chunk);
@@ -82,11 +101,37 @@ function makeRequest(url, options = {}) {
         }
       });
     });
-    
+
     req.on('error', reject);
     if (body) req.write(body);
     req.end();
   });
+}
+
+/**
+ * HMAC-signed HTTP request (for canvas mode — service-to-service auth).
+ */
+async function makeSignedRequest(url, body) {
+  const { signInternalRequestBody } = require('/app/src/internal-auth');
+  const { payload, headers: authHeaders } = await signInternalRequestBody(body);
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-internal-worker': 'agentapi',
+      ...authHeaders,
+    },
+    body: payload,
+  });
+
+  const text = await response.text();
+  try {
+    const json = JSON.parse(text);
+    return { status: response.status, data: json };
+  } catch {
+    return { status: response.status, data: text };
+  }
 }
 
 // ============================================================================
@@ -94,9 +139,16 @@ function makeRequest(url, options = {}) {
 // ============================================================================
 
 async function listTools(context) {
-  const url = `${context.siteUrl}/api/tools/list`;
-  const response = await makeRequest(url);
-  
+  let response;
+
+  if (context.mode === 'miniapp') {
+    const url = `${context.siteUrl}/api/tools/list`;
+    response = await makeRequest(url);
+  } else {
+    const url = `${context.apiUrl}/api/agent/tools/list`;
+    response = await makeSignedRequest(url, { userId: context.userId, roomId: context.roomId });
+  }
+
   console.log('📦 Available Tools:\n');
   for (const tool of response.data.tools || []) {
     console.log(`  ${tool.name}`);
@@ -106,14 +158,21 @@ async function listTools(context) {
 }
 
 async function describeTool(context, toolName) {
-  const url = `${context.siteUrl}/api/tools/describe/${toolName}`;
-  const response = await makeRequest(url);
-  
+  let response;
+
+  if (context.mode === 'miniapp') {
+    const url = `${context.siteUrl}/api/tools/describe/${toolName}`;
+    response = await makeRequest(url);
+  } else {
+    const url = `${context.apiUrl}/api/agent/tools/describe/${toolName}`;
+    response = await makeSignedRequest(url, { userId: context.userId, roomId: context.roomId });
+  }
+
   if (response.status === 404) {
     console.error(`❌ Tool not found: ${toolName}`);
     process.exit(1);
   }
-  
+
   const tool = response.data.tool;
   console.log(`📦 ${tool.name}`);
   console.log(`   ${tool.description}\n`);
@@ -126,15 +185,26 @@ async function describeTool(context, toolName) {
 }
 
 async function executeTool(context, toolName, params) {
-  const url = `${context.siteUrl}/api/tools/execute/${context.roomId}`;
+  let response;
 
-  const response = await makeRequest(url, {
-    method: 'POST',
-    body: { tool: toolName, params, userId: context.userId },
-  });
-  
+  if (context.mode === 'miniapp') {
+    const url = `${context.siteUrl}/api/tools/execute/${context.roomId}`;
+    response = await makeRequest(url, {
+      method: 'POST',
+      body: { tool: toolName, params, userId: context.userId },
+    });
+  } else {
+    const url = `${context.apiUrl}/api/agent/tools/execute`;
+    response = await makeSignedRequest(url, {
+      userId: context.userId,
+      roomId: context.roomId,
+      tool: toolName,
+      params,
+    });
+  }
+
   const result = response.data;
-  
+
   if (result.success) {
     console.log(JSON.stringify(result.data, null, 2));
   } else {
@@ -153,7 +223,7 @@ function parseArgs(args) {
     toolName: null,
     params: {},
   };
-  
+
   for (const arg of args) {
     if (arg === '--list') {
       result.command = 'list';
@@ -168,7 +238,7 @@ function parseArgs(args) {
     } else if (arg.includes('=')) {
       const [key, ...valueParts] = arg.split('=');
       let value = valueParts.join('=');
-      
+
       // Try to parse as JSON
       try {
         value = JSON.parse(value);
@@ -178,22 +248,22 @@ function parseArgs(args) {
           value = value.split(',');
         }
       }
-      
+
       result.params[key] = value;
     }
   }
-  
+
   // Default command is execute if we have a tool name
   if (!result.command && result.toolName) {
     result.command = 'execute';
   }
-  
+
   return result;
 }
 
 function printUsage() {
   console.log(`
-📦 Tool Call Command for Miniapp Agents
+📦 RecordRoom Storage Tool for DeepSpace Agents
 
 Usage:
   call --list                              List available tools
@@ -241,6 +311,16 @@ Storage Tools (legacy key-value):
   storage.read     Read one or more keys (batch)
   storage.write    Write key-value pairs (batch)
   storage.delete   Delete keys
+
+Yjs Document Tools (collaborative content):
+  yjs.list         List all Yjs documents in this room
+  yjs.getText      Read text from a Yjs document
+  yjs.setText      Write text to a Yjs document
+
+Yjs Examples:
+  call yjs.list
+  call yjs.getText collection=__widget_storage__ recordId=shape:notepad-xxx fieldName=data
+  call yjs.setText collection=__widget_storage__ recordId=shape:notepad-xxx fieldName=data text="Hello world"
 `);
 }
 
@@ -250,27 +330,27 @@ Storage Tools (legacy key-value):
 
 async function main() {
   const args = process.argv.slice(2);
-  
+
   if (args.length === 0) {
     printUsage();
     process.exit(0);
   }
-  
+
   const parsed = parseArgs(args);
-  
+
   if (parsed.command === 'help') {
     printUsage();
     process.exit(0);
   }
-  
+
   const context = loadContext();
-  
+
   try {
     switch (parsed.command) {
       case 'list':
         await listTools(context);
         break;
-        
+
       case 'describe':
         if (!parsed.toolName) {
           console.error('❌ Missing tool name for --describe');
@@ -278,7 +358,7 @@ async function main() {
         }
         await describeTool(context, parsed.toolName);
         break;
-        
+
       case 'execute':
         if (!parsed.toolName) {
           console.error('❌ Missing tool name');
@@ -287,7 +367,7 @@ async function main() {
         }
         await executeTool(context, parsed.toolName, parsed.params);
         break;
-        
+
       default:
         printUsage();
         process.exit(1);
@@ -299,4 +379,3 @@ async function main() {
 }
 
 main();
-

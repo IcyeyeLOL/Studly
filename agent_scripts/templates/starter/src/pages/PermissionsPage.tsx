@@ -17,7 +17,7 @@
 import { useState, useMemo } from 'react'
 import { useUser, useTeams, type Team } from '@spaces/sdk/storage'
 import { analyzePermissions, type ResolvedPermission, type CollectionPermissionSummary, type FieldSchema } from '@spaces/sdk/worker'
-import { Badge, type BadgeColor } from '../components/ui'
+import { Badge, type BadgeProps } from '../components/ui'
 import { ROLES, ROLE_CONFIG, type Role } from '../constants'
 import { schemas } from '../schemas'
 
@@ -25,14 +25,16 @@ import { schemas } from '../schemas'
 // Constants
 // ============================================================================
 
-const LEVEL_DISPLAY: Record<string, { label: string; color: BadgeColor }> = {
-  'true': { label: 'all', color: 'success' },
-  'false': { label: 'none', color: 'danger' },
-  'own': { label: 'own', color: 'primary' },
-  'unclaimed-or-own': { label: 'unclaimed/own', color: 'info' },
-  'collaborator': { label: 'collaborator', color: 'warning' },
-  'team': { label: 'team', color: 'warning' },
-  'access': { label: 'access', color: 'warning' },
+type BadgeVariant = NonNullable<BadgeProps['variant']>
+
+const LEVEL_DISPLAY: Record<string, { label: string; variant: BadgeVariant }> = {
+  'true': { label: 'all', variant: 'success' },
+  'false': { label: 'none', variant: 'destructive' },
+  'own': { label: 'own', variant: 'default' },
+  'unclaimed-or-own': { label: 'unclaimed/own', variant: 'info' },
+  'collaborator': { label: 'collaborator', variant: 'warning' },
+  'team': { label: 'team', variant: 'warning' },
+  'access': { label: 'access', variant: 'warning' },
 }
 
 // ============================================================================
@@ -65,18 +67,18 @@ export default function PermissionsPage() {
   }, [teams, user?.id])
 
   return (
-    <div className="h-full bg-surface overflow-y-auto">
+    <div className="h-full bg-background overflow-y-auto">
       {/* Header */}
-      <div className="bg-surface-elevated/60 backdrop-blur-md border-b border-border sticky top-0 z-10">
+      <div className="bg-card/60 backdrop-blur-md border-b border-border sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-content">Permissions</h1>
-              <p className="text-content-muted mt-1">RBAC permission matrix for all collections</p>
+              <h1 className="text-2xl font-bold text-foreground">Permissions</h1>
+              <p className="text-muted-foreground mt-1">RBAC permission matrix for all collections</p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-content-secondary">Your role:</span>
-              <Badge color={roleConfig.color} size="sm">{roleConfig.title}</Badge>
+              <span className="text-sm text-muted-foreground">Your role:</span>
+              <Badge variant={roleConfig.badgeVariant}>{roleConfig.title}</Badge>
             </div>
           </div>
         </div>
@@ -95,7 +97,7 @@ export default function PermissionsPage() {
           />
         ))}
         {analysis.collections.length === 0 && (
-          <p className="text-center text-content-muted py-8">No collections defined in schemas</p>
+          <p className="text-center text-muted-foreground py-8">No collections defined in schemas</p>
         )}
       </div>
     </div>
@@ -108,37 +110,37 @@ export default function PermissionsPage() {
 
 function PermissionLegend() {
   return (
-    <div className="bg-surface-overlay/40 rounded-xl border border-border p-4">
-      <h3 className="text-sm font-semibold text-content-secondary mb-3">Permission Levels</h3>
+    <div className="bg-muted/40 rounded-xl border border-border p-4">
+      <h3 className="text-sm font-semibold text-muted-foreground mb-3">Permission Levels</h3>
       <div className="flex flex-wrap gap-3 text-xs">
         <div className="flex items-center gap-1.5">
-          <Badge color="success" size="sm">all</Badge>
-          <span className="text-content-muted">Everyone with role</span>
+          <Badge variant="success">all</Badge>
+          <span className="text-muted-foreground">Everyone with role</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <Badge color="danger" size="sm">none</Badge>
-          <span className="text-content-muted">Denied</span>
+          <Badge variant="destructive">none</Badge>
+          <span className="text-muted-foreground">Denied</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <Badge color="primary" size="sm">own</Badge>
-          <span className="text-content-muted">Record owner only</span>
+          <Badge variant="default">own</Badge>
+          <span className="text-muted-foreground">Record owner only</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <Badge color="info" size="sm">unclaimed/own</Badge>
-          <span className="text-content-muted">Unclaimed or owner</span>
+          <Badge variant="info">unclaimed/own</Badge>
+          <span className="text-muted-foreground">Unclaimed or owner</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <Badge color="warning" size="sm">collaborator</Badge>
-          <span className="text-content-muted">Owner or collaborator</span>
+          <Badge variant="warning">collaborator</Badge>
+          <span className="text-muted-foreground">Owner or collaborator</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <Badge color="warning" size="sm">team</Badge>
-          <span className="text-content-muted">Owner / collaborator / team member</span>
+          <Badge variant="warning">team</Badge>
+          <span className="text-muted-foreground">Owner / collaborator / team member</span>
         </div>
       </div>
-      <div className="flex gap-4 mt-3 pt-3 border-t border-border/30 text-xs text-content-muted">
+      <div className="flex gap-4 mt-3 pt-3 border-t border-border/30 text-xs text-muted-foreground">
         <span>
-          <span className="border-b border-dashed border-content-muted">dashed border</span> = resolved via * wildcard
+          <span className="border-b border-dashed border-muted-foreground">dashed border</span> = resolved via * wildcard
         </span>
         <span>
           <span className="italic opacity-50">italic + muted</span> = no permission defined (default deny)
@@ -166,22 +168,22 @@ function CollectionCard({ collection, roles, currentRole, userTeams }: {
   if (collection.teamField) metaBadges.push({ label: 'team', value: collection.teamField })
 
   return (
-    <div className="bg-surface-overlay/40 rounded-xl border border-border overflow-hidden">
+    <div className="bg-muted/40 rounded-xl border border-border overflow-hidden">
       {/* Header */}
       <div className="px-4 py-3 border-b border-border/50 flex items-center justify-between">
         <div className="flex items-center gap-3 flex-wrap">
-          <code className="text-sm font-semibold text-primary bg-surface-overlay px-2 py-1 rounded">
+          <code className="text-sm font-semibold text-primary bg-muted px-2 py-1 rounded">
             {collection.collection}
           </code>
           {metaBadges.map(mb => (
-            <span key={mb.label} className="text-[10px] text-content-muted bg-surface-overlay/60 px-1.5 py-0.5 rounded">
-              {mb.label}: <span className="text-content-secondary">{mb.value}</span>
+            <span key={mb.label} className="text-[10px] text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded">
+              {mb.label}: <span className="text-muted-foreground">{mb.value}</span>
             </span>
           ))}
         </div>
         <button
           onClick={() => setExpanded(!expanded)}
-          className="text-xs text-content-secondary hover:text-content transition-colors shrink-0 ml-2"
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0 ml-2"
         >
           {expanded ? 'Hide fields' : 'Show fields'}
         </button>
@@ -192,11 +194,11 @@ function CollectionCard({ collection, roles, currentRole, userTeams }: {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border/30">
-              <th className="px-4 py-2 text-left text-xs font-medium text-content-muted uppercase tracking-wide">Role</th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-content-muted uppercase tracking-wide">Read</th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-content-muted uppercase tracking-wide">Create</th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-content-muted uppercase tracking-wide">Update</th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-content-muted uppercase tracking-wide">Delete</th>
+              <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide">Role</th>
+              <th className="px-4 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide">Read</th>
+              <th className="px-4 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide">Create</th>
+              <th className="px-4 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide">Update</th>
+              <th className="px-4 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide">Delete</th>
             </tr>
           </thead>
           <tbody>
@@ -209,18 +211,18 @@ function CollectionCard({ collection, roles, currentRole, userTeams }: {
                 <tr
                   key={role}
                   className={`border-b border-border/20 last:border-0 ${
-                    isCurrentRole ? 'bg-primary-muted/30' : ''
+                    isCurrentRole ? 'bg-primary/10' : ''
                   }`}
                 >
                   <td className="px-4 py-2.5">
-                    <span className="font-medium text-content">{role}</span>
+                    <span className="font-medium text-foreground">{role}</span>
                     {roleConfig && (
-                      <span className="text-[10px] text-content-muted ml-1.5">
+                      <span className="text-[10px] text-muted-foreground ml-1.5">
                         {roleConfig.description}
                       </span>
                     )}
                     {isCurrentRole && (
-                      <span className="ml-2"><Badge color="primary" size="sm">You</Badge></span>
+                      <span className="ml-2"><Badge variant="default">You</Badge></span>
                     )}
                   </td>
                   <td className="px-4 py-2.5 text-center">
@@ -234,7 +236,7 @@ function CollectionCard({ collection, roles, currentRole, userTeams }: {
                       <PermissionBadge resolved={perms.update} />
                       {perms.writableFields && (
                         <div
-                          className="mt-1 text-[10px] text-content-muted cursor-help"
+                          className="mt-1 text-[10px] text-muted-foreground cursor-help"
                           title={`Writable fields: ${perms.writableFields.join(', ')}`}
                         >
                           {perms.writableFields.length} field{perms.writableFields.length !== 1 ? 's' : ''}
@@ -273,27 +275,27 @@ function CollectionCard({ collection, roles, currentRole, userTeams }: {
 
 function TeamContextInfo({ userTeams, teamField }: { userTeams: Team[]; teamField: string }) {
   return (
-    <div className="px-4 py-3 border-t border-border/30 bg-surface-overlay/20">
+    <div className="px-4 py-3 border-t border-border/30 bg-muted/20">
       <div className="flex items-start gap-2">
-        <svg className="w-4 h-4 text-content-muted mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
         <div className="text-xs">
-          <p className="text-content-secondary mb-1">
-            Records in this collection are team-scoped via the <code className="bg-surface-overlay px-1 py-0.5 rounded text-primary">{teamField}</code> field.
-            The <Badge color="warning" size="sm">team</Badge> permission level applies only to records tagged with one of your teams.
+          <p className="text-muted-foreground mb-1">
+            Records in this collection are team-scoped via the <code className="bg-muted px-1 py-0.5 rounded text-primary">{teamField}</code> field.
+            The <Badge variant="warning">team</Badge> permission level applies only to records tagged with one of your teams.
           </p>
           {userTeams.length > 0 ? (
             <div className="flex flex-wrap gap-1.5 mt-1.5">
-              <span className="text-content-muted">Your teams:</span>
+              <span className="text-muted-foreground">Your teams:</span>
               {userTeams.map(t => (
-                <span key={t.id} className="bg-surface-overlay px-1.5 py-0.5 rounded text-content-secondary">
+                <span key={t.id} className="bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                   {t.name}
                 </span>
               ))}
             </div>
           ) : (
-            <p className="text-content-muted mt-1">You are not a member of any team. Team-scoped permissions will not grant you access to any records.</p>
+            <p className="text-muted-foreground mt-1">You are not a member of any team. Team-scoped permissions will not grant you access to any records.</p>
           )}
         </div>
       </div>
@@ -307,7 +309,7 @@ function TeamContextInfo({ userTeams, teamField }: { userTeams: Team[]; teamFiel
 
 function PermissionBadge({ resolved }: { resolved: ResolvedPermission }) {
   const key = String(resolved.level)
-  const display = LEVEL_DISPLAY[key] ?? { label: key, color: 'muted' as BadgeColor }
+  const display = LEVEL_DISPLAY[key] ?? { label: key, variant: 'secondary' as BadgeVariant }
 
   const isWildcard = resolved.source === 'wildcard'
   const isDefaultDeny = resolved.source === 'default-deny'
@@ -321,9 +323,9 @@ function PermissionBadge({ resolved }: { resolved: ResolvedPermission }) {
   return (
     <span
       title={title}
-      className={`inline-flex ${isDefaultDeny ? 'opacity-50 italic' : ''} ${isWildcard ? '[&>span]:border-dashed' : ''}`}
+      className={`inline-flex ${isDefaultDeny ? 'opacity-50 italic' : ''} ${isWildcard ? '[&>div]:border-dashed' : ''}`}
     >
-      <Badge color={isDefaultDeny ? 'muted' : display.color} size="sm">
+      <Badge variant={isDefaultDeny ? 'secondary' : display.variant}>
         {display.label}
         {isWildcard && <span className="ml-0.5 opacity-60">*</span>}
       </Badge>
@@ -339,30 +341,30 @@ function FieldDetailsTable({ fields }: { fields: Record<string, FieldSchema> }) 
   const fieldEntries = Object.entries(fields)
 
   if (fieldEntries.length === 0) {
-    return <p className="px-4 py-3 text-sm text-content-muted">No fields defined</p>
+    return <p className="px-4 py-3 text-sm text-muted-foreground">No fields defined</p>
   }
 
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-xs">
         <thead>
-          <tr className="border-b border-border/30 bg-surface-overlay/20">
-            <th className="px-4 py-2 text-left font-medium text-content-muted">Field</th>
-            <th className="px-4 py-2 text-left font-medium text-content-muted">Type</th>
-            <th className="px-4 py-2 text-center font-medium text-content-muted">Required</th>
-            <th className="px-4 py-2 text-center font-medium text-content-muted">userBound</th>
-            <th className="px-4 py-2 text-center font-medium text-content-muted">Immutable</th>
-            <th className="px-4 py-2 text-center font-medium text-content-muted">System</th>
-            <th className="px-4 py-2 text-left font-medium text-content-muted">Default</th>
+          <tr className="border-b border-border/30 bg-muted/20">
+            <th className="px-4 py-2 text-left font-medium text-muted-foreground">Field</th>
+            <th className="px-4 py-2 text-left font-medium text-muted-foreground">Type</th>
+            <th className="px-4 py-2 text-center font-medium text-muted-foreground">Required</th>
+            <th className="px-4 py-2 text-center font-medium text-muted-foreground">userBound</th>
+            <th className="px-4 py-2 text-center font-medium text-muted-foreground">Immutable</th>
+            <th className="px-4 py-2 text-center font-medium text-muted-foreground">System</th>
+            <th className="px-4 py-2 text-left font-medium text-muted-foreground">Default</th>
           </tr>
         </thead>
         <tbody>
           {fieldEntries.map(([name, field]) => (
             <tr key={name} className="border-b border-border/10 last:border-0">
               <td className="px-4 py-1.5">
-                <code className="text-content font-medium">{name}</code>
+                <code className="text-foreground font-medium">{name}</code>
               </td>
-              <td className="px-4 py-1.5 text-content-secondary">{field.type}</td>
+              <td className="px-4 py-1.5 text-muted-foreground">{field.type}</td>
               <td className="px-4 py-1.5 text-center">
                 {field.required && <CheckIcon />}
               </td>
@@ -375,7 +377,7 @@ function FieldDetailsTable({ fields }: { fields: Record<string, FieldSchema> }) 
               <td className="px-4 py-1.5 text-center">
                 {field.systemManaged && <CheckIcon />}
               </td>
-              <td className="px-4 py-1.5 text-content-muted">
+              <td className="px-4 py-1.5 text-muted-foreground">
                 {field.default !== undefined ? JSON.stringify(field.default) : ''}
               </td>
             </tr>

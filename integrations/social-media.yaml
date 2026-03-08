@@ -70,6 +70,8 @@ tools:
                 - id
               additionalProperties: false
               description: Post author information
+            _debug:
+              description: "Debug info: extraction method, raw OG tags, oEmbed errors"
           required:
             - postId
             - caption

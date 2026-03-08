@@ -35,6 +35,50 @@ tools:
       required:
         - success
 
+  lookup_user:
+    method: POST
+    endpoint: /lookup-user
+    description: "Look up a DeepSpace user by email or username. Returns userId if found."
+    input_schema:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email address to look up
+        username:
+          type: string
+          description: Public username to look up
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            data:
+              type: object
+              properties:
+                found:
+                  type: boolean
+                userId:
+                  type: string
+                name:
+                  type: string
+                email:
+                  type: string
+                publicUsername:
+                  type: string
+              required:
+                - found
+              additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
   get_canvas_users:
     method: POST
     endpoint: /get-canvas-users

@@ -1,0 +1,24 @@
+{
+  "id": "sidebar-collapsible",
+  "name": "Collapsible Sidebar",
+  "category": "nav",
+  "description": "Icon navigation with expand/collapse",
+  "details": "A standard collapsible sidebar component with icon + label navigation items, section grouping, badge counts, user profile display, and collapse/expand functionality. Collapses to icon-only mode.",
+  "files": [
+    { "src": "Sidebar.tsx", "dest": "src/components/Sidebar.tsx" }
+  ],
+  "schema": null,
+  "route": null,
+  "instructions": [
+    "Import: import Sidebar, { type NavSection } from './components/Sidebar'",
+    "Add state: const [collapsed, setCollapsed] = useState(false)",
+    "Define sections: const sections: NavSection[] = [{ id: 'main', items: [...] }]",
+    "Use: <Sidebar sections={sections} activeId={...} collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)} />"
+  ],
+  "patterns": [
+    "NavItem: { id, label, icon, path?, badge? }",
+    "NavSection: { id, title?, items }",
+    "collapsed={true} → icon-only mode",
+    "user={{ name, email, imageUrl, role }} → profile at bottom"
+  ]
+}

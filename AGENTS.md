@@ -14,6 +14,7 @@ Make sure you read the full content of AGENTS.md (this file) as well as all the 
 - McAPI.yaml — API endpoint summary (names, descriptions, categories)
 - integrations/*.yaml — full endpoint specs with input/output schemas (one file per category)
 - AllowedCommands.md — permitted commands and agent constraints
+- Features.md — pre-built feature catalog and `add feature` usage
 - RoomStructure.md — file/folder layout of a canvas room
 - DO_DONT.md — best practices and common pitfalls
 - Storage.md — data schemas, collections, and permissions (schemas defined in `src/schemas.ts`)
@@ -23,10 +24,13 @@ Make sure you read the full content of AGENTS.md (this file) as well as all the 
 - McAPI.md — mcapi usage patterns and examples
 - Styling.md — rules for when to apply or preserve widget styling
 - SkeletonGuide.md — how the widget skeleton works, what each file does, the build sequence
+- AgentContextFiles.md — how to write agent-description.md and agent-prompt.md for deployed apps
 
 ---
 
 ## Your Task
+
+0. **Always answer questions first** - if the user asks you a question, answer it first; don't build anything and just do that.
 
 1. **Clarify if needed** — if the request is ambiguous or you're unsure what the user wants, ask a clarifying question before starting work. Don't guess.
 
@@ -45,11 +49,42 @@ For simple requests (single widget changes, small fixes), skip steps 1-3 and jus
 
 ## Guidelines
 
+- **CRITICAL**: when in plan mode, always output the plan directly (do not write it to a file, and do not call any other write tools or native plan mode tools) to the user in between the <PLAN></PLAN> tags. also give a summary of the plan and what it aims to do in a short paragraph at the top of the plan within <OVERVIEW></OVERVIEW> tags. This overview will be displayed to the user as the plan summary/intent. The full plan itself has to be within the plan tags. Anything outside of those tags will not be shown to the user.
+
+- **CRITICAL**: when in plan mode, do not ask questions of the user just make a best effort plan based on your knowledge and the code you explore. If the user wants to amend the plan they will do so manually in the next turn.
+
+- **CRITICAL**: when in plan mode, make sure the steps/ todo items are withing the <PLAN> tags and are themselves within <STEPS></STEPS> tags and each step is a new line. these are not necessarily all of your internal todos but rather a collection of up to 5 steps (**THIS IS IMPORTANT** DO NOT MAKE THE LIST OR EACH STEP TOO LONG) that are quite brief in their description. Try to keep this quite compact to show the general summary of the steps instead of hyper detailed information. Make sure the steps are not numbered, they should just be simple sentences one per line.
+
+An example plan mode output would look like this:
+'''
+<PLAN>
+<OVERVIEW>
+This is a plan to implement a user widget.
+</OVERVIEW>
+The plan is thorough and clear.
+It has many details.
+The implementation details will go here.
+<STEPS>
+Make widget main file
+Wire integrations for user data
+Make the style fit the user preference
+</STEPS>
+</PLAN>
+'''
+
+- **CRITICAL**: When the user asks you a question, you shouldn't edit any files or attempt to fix anything yet, you should just answer their question first.
+
 - **CRITICAL**: Before you start working on the user request, read DO_DONT.md
+
+- **CRITICAL**: Use `call` to inspect and populate widget storage data. Before debugging a storage issue, run `call schema.list` to see what collections exist, then `call records.query collection=<name>` to see the data. When creating widgets that need initial data, use `call records.create` to seed the collection.
 
 - **CRITICAL**: Before building widgets that need external data, check McAPI.yaml to verify the integration exists. If it doesn't, explain the limitation and direct user to request it from the Integrations panel (puzzle icon → Browse Integration Catalog → Suggest Integration).
 
+- **CRITICAL**: When you need information from the internet — to answer a user question, gather context for building a widget, or pre-populate content — use the `mcapi` shell command to fetch it directly (e.g., `mcapi firecrawl-scrape`, `mcapi exa-search`, `mcapi wikipedia-summary`). Do not tell the user to look things up themselves when you can fetch the data.
+
 - **CRITICAL**: Before modifying widget styling, read Styling.md
+
+- **CRITICAL**: Before building any new functionality (a page, a data collection, navigation, a layout, an admin panel, a leaderboard, etc.), check the pre-built feature catalog first. Run `add feature --list` to see all available features. If any look relevant, run `add feature --info <id>` to see what it provides. If it matches, install it with `add feature <id> <widget-dir>` instead of writing it from scratch. You can always customize it further. Read Features.md for full details.
 
 - **Room scope only**:
   - Your room path is stored at `/app/container_vars.json` under `currentRoomPath`.
@@ -84,11 +119,36 @@ For simple requests (single widget changes, small fixes), skip steps 1-3 and jus
 - **McAPI.yaml** — Summary file with endpoint names, descriptions, and categories
 - **integrations/*.yaml** — Full specifications with input/output schemas (one file per category)
 
-**How to use:**
+**How to use in widget code:**
 1. Open McAPI.yaml to find the endpoint you need
 2. Note the category (e.g., `search`, `images`, `github`)
 3. Open integrations/{category}.yaml for the full input/output schema
 4. Use the schema exactly as documented
+
+### Direct Shell Access (mcapi command)
+
+- **CRITICAL**: You have a `mcapi` shell command to call integration endpoints directly — use it proactively whenever you need information.
+- **CRITICAL**: Always run `mcapi --describe <endpoint>` before calling an unfamiliar endpoint to verify exact parameter names and types. Do NOT guess parameter names.
+
+**When to use the `mcapi` command:**
+- **Gathering context** — When you need real-world information to build a widget (e.g., scrape a website to understand its structure, look up Wikipedia content to pre-populate data)
+- **Answering user questions** — When the user asks about something you don't know (current weather, latest news, stock data, etc.), use `mcapi` to fetch the answer
+- **Validating integration schemas** — If a user reports errors with an `mcapi.post()` call in widget code, use `mcapi --describe <endpoint>` to verify the exact parameter names and types
+- **Pre-populating widget content** — Fetch real data via `mcapi` to seed a widget with meaningful initial content instead of placeholder text
+
+**Quick reference:**
+```bash
+mcapi --list                                          # See all endpoints
+mcapi --describe <endpoint>                           # Check exact params
+mcapi generate-text prompt="..." model=gpt-4o-mini   # Generate text
+mcapi current-weather location="New York"             # Get weather
+mcapi wikipedia-summary title="React (JavaScript)"    # Look up Wikipedia
+mcapi firecrawl-scrape url="https://example.com"      # Scrape a webpage
+mcapi exa-search query="..." numResults=5             # Search the web
+mcapi exa-answer query="What is ...?"                 # Web-sourced answer
+```
+
+**Note:** `search-web`, `search-web-raw`, `search-web-ai`, `search-pdfs`, and `advanced-web-search` are NOT supported via `mcapi`. For web search use `firecrawl-search`, `exa-search`, or `exa-answer` instead.
 
 ---
 
@@ -257,6 +317,17 @@ You can only use these console commands:
 - **I/O hooks (deprecated)**: `useInput(slotId, default)`, `useOutput(slotId)` — still work in old widgets, do not use for new ones
 - **API Access**: `mcapi.post(endpoint, data)`, `mcapi.get(endpoint, params)` — import from `@spaces/sdk`
 - **Modern JavaScript**: ES6+, async/await, destructuring, etc.
+
+---
+
+## Agent Context Files
+
+- **CRITICAL**: Read AgentContextFiles.md for full instructions and examples
+- After building or significantly modifying a widget, create/update two files in the widget directory root (next to `src/`):
+  - `agent-description.md` — describes the app (purpose, features, UI structure, user flows)
+  - `agent-prompt.md` — instructions for the deployed AI agent (role, common requests, data conventions, boundaries)
+- **Backfill**: If you open a widget directory and these files don't exist, create them from the existing code before doing anything else.
+- **Keep in sync**: After changing schemas, features, UI structure, or data flows, update the relevant file(s). Skip for trivial changes (styling tweaks, bug fixes).
 
 ---
 

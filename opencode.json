@@ -9,11 +9,13 @@
     "RoomStructure.md",
     "DO_DONT.md",
     "Storage.md",
+    "Cron.md",
     "FileEditing.md",
     "ImageAssets.md",
     "Hooks.md",
     "SkeletonGuide.md",
     "Styling.md",
-    "AppGuide.md"
+    "AppGuide.md",
+    "AgentContextFiles.md"
   ]
 }

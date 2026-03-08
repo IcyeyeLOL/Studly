@@ -7,6 +7,45 @@
 
 tools:
 
+  livekit_token:
+    method: POST
+    endpoint: /livekit-token
+    description: "Generate a LiveKit access token for any room. Rooms auto-create when the first participant connects. No billing — use livekit-create-room for billable rooms with duration limits."
+    input_schema:
+      type: object
+      properties:
+        roomName:
+          type: string
+          minLength: 1
+          description: "Room name to join (auto-created if it does not exist)"
+        displayName:
+          type: string
+          description: Display name for the participant
+      required:
+        - roomName
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            token:
+              type: string
+              description: JWT access token for LiveKit
+            url:
+              type: string
+              description: LiveKit server URL to connect to
+            roomName:
+              type: string
+              description: Room name
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
   livekit_create_room:
     method: POST
     endpoint: /livekit-create-room

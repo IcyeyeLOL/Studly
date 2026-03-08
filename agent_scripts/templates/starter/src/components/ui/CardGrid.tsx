@@ -1,23 +1,17 @@
-/**
- * Card Grid Components
- * 
- * Uses semantic theme colors from tailwind.config.js
- */
-
 import React, { ReactNode, JSX } from 'react'
 import { MoreHorizontal, Trash2 } from 'lucide-react'
+import { cn } from './utils'
 
 // ============================================================================
 // CardGrid - Responsive grid container
 // ============================================================================
 
-interface CardGridProps {
+interface CardGridProps extends React.HTMLAttributes<HTMLDivElement> {
   children: ReactNode
   columns?: 1 | 2 | 3 | 4
-  className?: string
 }
 
-export function CardGrid({ children, columns = 3, className = '' }: CardGridProps): JSX.Element {
+export function CardGrid({ children, columns = 3, className = '', ...rest }: CardGridProps): JSX.Element {
   const gridCols = {
     1: 'grid-cols-1',
     2: 'grid-cols-1 sm:grid-cols-2',
@@ -26,34 +20,33 @@ export function CardGrid({ children, columns = 3, className = '' }: CardGridProp
   }
 
   return (
-    <div className={`grid gap-4 ${gridCols[columns]} ${className}`}>
+    <div className={cn('grid gap-3 sm:gap-4', gridCols[columns], className)} {...rest}>
       {children}
     </div>
   )
 }
 
 // ============================================================================
-// Card - Base card component
+// GridCard - Base card component (named GridCard to avoid conflict with shadcn Card)
 // ============================================================================
 
-interface CardProps {
+interface GridCardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: ReactNode
   onClick?: () => void
-  className?: string
   hoverable?: boolean
 }
 
-export function Card({ children, onClick, className = '', hoverable = true }: CardProps): JSX.Element {
+export function GridCard({ children, onClick, className = '', hoverable = true, ...rest }: GridCardProps): JSX.Element {
   return (
     <div
       onClick={onClick}
-      className={`
-        group relative bg-surface-elevated rounded-xl border border-border overflow-hidden
-        transition-all duration-200
-        ${hoverable ? 'hover:border-border-strong hover:shadow-card-hover hover:-translate-y-0.5' : ''}
-        ${onClick ? 'cursor-pointer' : ''}
-        ${className}
-      `}
+      className={cn(
+        'group relative bg-card rounded-xl border border-border overflow-hidden transition-all duration-200',
+        hoverable && 'hover:border-border hover:shadow-card-hover hover:-translate-y-0.5',
+        onClick && 'cursor-pointer',
+        className
+      )}
+      {...rest}
     >
       {children}
     </div>
@@ -61,17 +54,17 @@ export function Card({ children, onClick, className = '', hoverable = true }: Ca
 }
 
 // ============================================================================
-// Card.Image - Optional image header
+// GridCard.Image - Optional image header
 // ============================================================================
 
-interface CardImageProps {
+interface GridCardImageProps {
   src: string
   alt?: string
   height?: 'sm' | 'md' | 'lg'
   className?: string
 }
 
-function CardImage({ src, alt = '', height = 'md', className = '' }: CardImageProps): JSX.Element {
+function GridCardImage({ src, alt = '', height = 'md', className = '' }: GridCardImageProps): JSX.Element {
   const heights = {
     sm: 'h-24',
     md: 'h-36',
@@ -79,7 +72,7 @@ function CardImage({ src, alt = '', height = 'md', className = '' }: CardImagePr
   }
 
   return (
-    <div className={`${heights[height]} overflow-hidden bg-surface-overlay ${className}`}>
+    <div className={cn(heights[height], 'overflow-hidden bg-muted', className)}>
       <img
         src={src}
         alt={alt}
@@ -90,21 +83,21 @@ function CardImage({ src, alt = '', height = 'md', className = '' }: CardImagePr
 }
 
 // ============================================================================
-// Card.Header - Title area with optional actions
+// GridCard.Header - Title area with optional actions
 // ============================================================================
 
-interface CardHeaderProps {
+interface GridCardHeaderProps {
   children: ReactNode
   actions?: ReactNode
   className?: string
 }
 
-function CardHeader({ children, actions, className = '' }: CardHeaderProps): JSX.Element {
+function GridCardHeader({ children, actions, className = '' }: GridCardHeaderProps): JSX.Element {
   return (
-    <div className={`flex items-start justify-between gap-2 p-4 pb-2 ${className}`}>
+    <div className={cn('flex items-start justify-between gap-2 p-4 pb-2', className)}>
       <div className="flex-1 min-w-0">{children}</div>
       {actions && (
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+        <div className="sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
           {actions}
         </div>
       )}
@@ -113,50 +106,50 @@ function CardHeader({ children, actions, className = '' }: CardHeaderProps): JSX
 }
 
 // ============================================================================
-// Card.Title
+// GridCard.Title
 // ============================================================================
 
-interface CardTitleProps {
+interface GridCardTitleProps {
   children: ReactNode
   className?: string
 }
 
-function CardTitle({ children, className = '' }: CardTitleProps): JSX.Element {
+function GridCardTitle({ children, className = '' }: GridCardTitleProps): JSX.Element {
   return (
-    <h3 className={`font-semibold text-content truncate ${className}`}>
+    <h3 className={cn('font-semibold text-foreground truncate', className)}>
       {children}
     </h3>
   )
 }
 
 // ============================================================================
-// Card.Content - Main content area
+// GridCard.Content - Main content area
 // ============================================================================
 
-interface CardContentProps {
+interface GridCardContentProps {
   children: ReactNode
   className?: string
 }
 
-function CardContent({ children, className = '' }: CardContentProps): JSX.Element {
+function GridCardContent({ children, className = '' }: GridCardContentProps): JSX.Element {
   return (
-    <div className={`px-4 pb-4 ${className}`}>
+    <div className={cn('px-4 pb-4', className)}>
       {children}
     </div>
   )
 }
 
 // ============================================================================
-// Card.Description - Muted text with line clamp
+// GridCard.Description - Muted text with line clamp
 // ============================================================================
 
-interface CardDescriptionProps {
+interface GridCardDescriptionProps {
   children: ReactNode
   lines?: 1 | 2 | 3 | 4
   className?: string
 }
 
-function CardDescription({ children, lines = 2, className = '' }: CardDescriptionProps): JSX.Element {
+function GridCardDescription({ children, lines = 2, className = '' }: GridCardDescriptionProps): JSX.Element {
   const lineClamp = {
     1: 'line-clamp-1',
     2: 'line-clamp-2',
@@ -165,64 +158,64 @@ function CardDescription({ children, lines = 2, className = '' }: CardDescriptio
   }
 
   return (
-    <p className={`text-sm text-content-secondary leading-relaxed ${lineClamp[lines]} ${className}`}>
+    <p className={cn('text-sm text-muted-foreground leading-relaxed', lineClamp[lines], className)}>
       {children}
     </p>
   )
 }
 
 // ============================================================================
-// Card.Footer - Bottom area for meta info
+// GridCard.Footer - Bottom area for meta info
 // ============================================================================
 
-interface CardFooterProps {
+interface GridCardFooterProps {
   children: ReactNode
   className?: string
 }
 
-function CardFooter({ children, className = '' }: CardFooterProps): JSX.Element {
+function GridCardFooter({ children, className = '' }: GridCardFooterProps): JSX.Element {
   return (
-    <div className={`px-4 pb-4 pt-2 text-xs text-content-muted ${className}`}>
+    <div className={cn('px-4 pb-4 pt-2 text-xs text-muted-foreground', className)}>
       {children}
     </div>
   )
 }
 
 // ============================================================================
-// Card.Badge - Status badge
+// GridCard.Badge - Status badge
 // ============================================================================
 
-interface CardBadgeProps {
+interface GridCardBadgeProps {
   children: ReactNode
   variant?: 'default' | 'success' | 'warning' | 'danger'
   className?: string
 }
 
-function CardBadge({ children, variant = 'default', className = '' }: CardBadgeProps): JSX.Element {
+function GridCardBadge({ children, variant = 'default', className = '' }: GridCardBadgeProps): JSX.Element {
   const variants = {
-    default: 'bg-surface-overlay text-content-secondary border-border',
-    success: 'bg-success-muted text-success border-success-border',
-    warning: 'bg-warning-muted text-warning border-warning-border',
-    danger: 'bg-danger-muted text-danger border-danger-border',
+    default: 'bg-muted text-muted-foreground border-border',
+    success: 'bg-success/20 text-success border-success/40',
+    warning: 'bg-warning/20 text-warning border-warning/40',
+    danger: 'bg-destructive/20 text-destructive border-destructive/40',
   }
 
   return (
-    <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded border ${variants[variant]} ${className}`}>
+    <span className={cn('inline-flex px-2 py-0.5 text-xs font-medium rounded border', variants[variant], className)}>
       {children}
     </span>
   )
 }
 
 // ============================================================================
-// Card.Actions - Common action buttons
+// GridCard.Actions - Common action buttons
 // ============================================================================
 
-interface CardActionsProps {
+interface GridCardActionsProps {
   onDelete?: () => void
   onMore?: () => void
 }
 
-function CardActions({ onDelete, onMore }: CardActionsProps): JSX.Element {
+function GridCardActions({ onDelete, onMore }: GridCardActionsProps): JSX.Element {
   const handleClick = (e: React.MouseEvent, handler?: () => void): void => {
     e.stopPropagation()
     handler?.()
@@ -233,7 +226,7 @@ function CardActions({ onDelete, onMore }: CardActionsProps): JSX.Element {
       {onMore && (
         <button
           onClick={(e) => handleClick(e, onMore)}
-          className="p-1.5 rounded-lg bg-surface-overlay/50 hover:bg-surface-overlay text-content-muted hover:text-content transition-colors"
+          className="p-2 rounded-lg bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
         >
           <MoreHorizontal className="w-4 h-4" />
         </button>
@@ -241,7 +234,7 @@ function CardActions({ onDelete, onMore }: CardActionsProps): JSX.Element {
       {onDelete && (
         <button
           onClick={(e) => handleClick(e, onDelete)}
-          className="p-1.5 rounded-lg bg-surface-overlay/50 hover:bg-danger-muted text-content-muted hover:text-danger transition-colors"
+          className="p-2 rounded-lg bg-muted/50 hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
         >
           <Trash2 className="w-4 h-4" />
         </button>
@@ -254,13 +247,13 @@ function CardActions({ onDelete, onMore }: CardActionsProps): JSX.Element {
 // Attach sub-components
 // ============================================================================
 
-Card.Image = CardImage
-Card.Header = CardHeader
-Card.Title = CardTitle
-Card.Content = CardContent
-Card.Description = CardDescription
-Card.Footer = CardFooter
-Card.Badge = CardBadge
-Card.Actions = CardActions
+GridCard.Image = GridCardImage
+GridCard.Header = GridCardHeader
+GridCard.Title = GridCardTitle
+GridCard.Content = GridCardContent
+GridCard.Description = GridCardDescription
+GridCard.Footer = GridCardFooter
+GridCard.Badge = GridCardBadge
+GridCard.Actions = GridCardActions
 
-export default Card
+export default GridCard

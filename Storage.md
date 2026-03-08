@@ -231,6 +231,10 @@ The storage system offers two sync paths with very different performance charact
 ### CRUD (`useQuery` + `useMutations`)
 Every `put()` goes: WebSocket → Durable Object → **SQLite write** → broadcast to subscribers.
 
+**Fire-and-forget** (`create`/`put`/`remove`): Send and return immediately. Best for most UI interactions.
+
+**Server-acknowledged** (`createConfirmed`/`putConfirmed`/`removeConfirmed`): Wait for the server to process the mutation. Rejects on permission errors, validation failures, or timeout (10s). Use when you need confirmation before proceeding (create-then-navigate, save-with-feedback).
+
 **Use for:**
 - Persistent records (tasks, settings, profiles, scores, room metadata)
 - Data that changes at human speed — button clicks, form submissions, status updates
@@ -348,3 +352,136 @@ useMutations('collection-name')
 ```
 
 If you see these hooks in existing widgets, they will continue to work. New widgets should use `useQuery` and `useMutations` with schemas defined in `src/schemas.ts`.
+
+---
+
+## Agent Access (call command)
+
+Agents can read and write RecordRoom storage directly from the shell using the `call` command. This is useful for:
+- Inspecting what data widgets have stored
+- Pre-populating collections with initial data
+- Debugging storage issues
+- Verifying schemas are correct
+
+**Quick reference:**
+```bash
+call schema.list                                    # See all collections
+call schema.describe collection=tasks               # See fields/permissions
+call records.query collection=tasks                  # List records
+call records.create collection=tasks data='{"title":"New task","status":"todo"}'
+call records.update collection=tasks recordId=abc123 data='{"status":"done"}'
+call user.current                                    # Current user info
+```
+
+The `call` command uses the same RecordRoom backend as widget hooks — data written via `call` is immediately visible to widgets via `useQuery`, and vice versa.
+
+### Yjs Document Access
+
+Widgets that use `useYjsText` or `useYjsField` store collaborative data in Yjs documents (binary CRDTs). These are invisible to `schema.list` and `records.query`. Use the `yjs.*` tools to discover, read, and write this content:
+
+```bash
+call yjs.list                                          # See all Yjs documents in this room
+call yjs.getText collection=__widget_storage__ recordId=shape:notepad-xxx fieldName=data   # Read text
+call yjs.setText collection=__widget_storage__ recordId=shape:notepad-xxx fieldName=data text="Hello world"  # Write text
+```
+
+**How to find the right parameters:**
+1. Run `call yjs.list` to see all Yjs docs — each shows `collection`, `recordId`, `fieldName`
+2. Use those values with `yjs.getText` / `yjs.setText`
+
+**Important:** `yjs.setText` does a full text replacement. If users are actively editing the same document, their in-progress changes will be overwritten. Use it to seed or set content, not for concurrent editing.
+
+---
+
+## File Storage (useR2Files)
+
+For uploading and managing any binary files in widgets (images, PDFs, documents, audio, video, etc.), use `useR2Files`. This stores files in R2 and returns permanent URLs — **never inline base64 data in records or code**.
+
+### Import
+
+```tsx
+import { useR2Files } from '@spaces/sdk/storage'
+```
+
+### Basic usage
+
+```tsx
+const { upload, uploadBase64, list, downloadFile, deleteFile, isUploading } = useR2Files()
+
+// Upload a File/Blob (from <input type="file">)
+const result = await upload(file, 'photo.png')
+// result = { success: true, url: '/api/files/widgets/.../photo.png', key: '...' }
+
+// Upload base64 data (from canvas, API response, etc.)
+const result = await uploadBase64(dataUri, 'image.png', 'image/png')
+
+// List uploaded files
+const files = await list()
+
+// Download (triggers browser download)
+await downloadFile(files[0])
+
+// Delete
+await deleteFile(files[0])
+```
+
+### Scopes
+
+| Scope | Prefix | Auth required for reads | Use case |
+|-------|--------|------------------------|----------|
+| `self` (default) | `widgets/{widgetId}/` | No | Widget's own files |
+| `user` | `users/{userId}/` | Yes | User's personal files across widgets |
+| `widget` | `widgets/{otherWidgetId}/` | No | Read another widget's files (read-only) |
+
+```tsx
+// Default: widget-scoped (most common)
+const { upload } = useR2Files()
+
+// User-scoped
+const { upload } = useR2Files({ scope: 'user' })
+
+// Cross-widget read
+const { list, downloadFile } = useR2Files({ scope: 'widget', widgetId: 'shape:other-widget' })
+```
+
+### Pattern: User uploads a file → store URL in record
+
+```tsx
+function FileUploader() {
+  const { upload, isUploading } = useR2Files()
+  const { create } = useMutations('attachments')
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const result = await upload(file, file.name)
+    if (result.success && result.url) {
+      // Store just the URL in a record — NOT the file data
+      await create({ fileUrl: result.url, name: file.name, type: file.type })
+    }
+  }
+
+  return <input type="file" onChange={handleFile} disabled={isUploading} />
+}
+```
+
+Then display based on file type:
+```tsx
+// Images
+<img src={record.data.fileUrl} />
+
+// PDFs
+<iframe src={record.data.fileUrl} />
+
+// Download link for any file
+<a href={record.data.fileUrl} download={record.data.name}>Download</a>
+```
+
+### Important rules
+
+- **NEVER store base64 data in records or code.** Upload via `useR2Files`, store the returned URL.
+- **NEVER inline base64 in JSX** (e.g., `<img src="data:image/png;base64,..." />`). Upload first, use the URL.
+- This applies to ALL file types: images, PDFs, documents, audio, video, etc.
+- URLs from `scope=self` are publicly readable (no auth needed for `<img src>`, `<iframe>`, `<a href>`).
+- URLs from `scope=user` require authentication — use `downloadFile()` instead of raw URLs.

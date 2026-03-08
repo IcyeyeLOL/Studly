@@ -1,0 +1,412 @@
+#!/usr/bin/env node
+
+/**
+ * mcapi - Direct integration endpoint caller for DeepSpace agents
+ *
+ * Calls integration endpoints (generate-text, web-search, current-weather, etc.)
+ * directly from the agent shell via HMAC-authenticated requests to the main API.
+ *
+ * Usage:
+ *   mcapi <endpoint> [param=value ...]     Execute an integration
+ *   mcapi --list                           List all integration categories
+ *   mcapi --describe <endpoint>            Show endpoint schema
+ *
+ * Examples:
+ *   mcapi generate-text prompt="Hello" provider=openai model=gpt-4o-mini
+ *   mcapi current-weather location="NYC"
+ *   mcapi firecrawl-scrape url="https://example.com"
+ *   mcapi exa-search query="React patterns" numResults=5
+ *
+ * Params are passed as key=value pairs. JSON values should be quoted.
+ * Credits are deducted per normal billing rules.
+ */
+
+const fs = require('fs');
+const path = require('path');
+const yaml = require('js-yaml');
+
+// ============================================================================
+// Config
+// ============================================================================
+
+const CONTAINER_VARS_PATH = '/app/container_vars.json';
+const REPO_DIR = '/app/workspace/repo';
+const MCAPI_YAML_PATH = path.join(REPO_DIR, 'McAPI.yaml');
+const INTEGRATIONS_DIR = path.join(REPO_DIR, 'integrations');
+
+// ============================================================================
+// Context Loading
+// ============================================================================
+
+function loadContext() {
+  try {
+    const content = fs.readFileSync(CONTAINER_VARS_PATH, 'utf8');
+    const vars = JSON.parse(content);
+
+    if (!vars.userId) {
+      console.error('❌ Error: No userId set in container vars');
+      process.exit(1);
+    }
+
+    return {
+      userId: vars.userId,
+      apiUrl: process.env.DOCKER_CANVAS_SYNC_URL,
+    };
+  } catch (error) {
+    console.error('❌ Error: Could not load context');
+    console.error('   ' + error.message);
+    process.exit(1);
+  }
+}
+
+// ============================================================================
+// HMAC Auth
+// ============================================================================
+
+async function signRequest(body) {
+  const { signInternalRequestBody } = require('/app/src/internal-auth');
+  return signInternalRequestBody(body);
+}
+
+// ============================================================================
+// HTTP Client
+// ============================================================================
+
+async function makeRequest(url, body) {
+  const { payload, headers: authHeaders } = await signRequest(body);
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-internal-worker': 'agentapi',
+      ...authHeaders,
+    },
+    body: payload,
+  });
+
+  const text = await response.text();
+  try {
+    const json = JSON.parse(text);
+    return { status: response.status, ok: response.ok, data: json };
+  } catch {
+    return { status: response.status, ok: response.ok, data: text };
+  }
+}
+
+// ============================================================================
+// Commands
+// ============================================================================
+
+function listEndpoints() {
+  if (!fs.existsSync(MCAPI_YAML_PATH)) {
+    console.error('❌ McAPI.yaml not found at ' + MCAPI_YAML_PATH);
+    process.exit(1);
+  }
+
+  const content = fs.readFileSync(MCAPI_YAML_PATH, 'utf8');
+  const parsed = yaml.load(content);
+  const categories = parsed.categories || {};
+
+  console.log('📦 Available Integration Endpoints:\n');
+
+  for (const [catName, catData] of Object.entries(categories)) {
+    const endpoints = catData.endpoints || [];
+    const count = catData.endpoint_count || endpoints.length;
+    console.log(`  ${catName} (${count} endpoints)`);
+    for (const ep of endpoints) {
+      if (ep && typeof ep === 'object') {
+        const method = ep.method || 'POST';
+        const endpoint = (ep.endpoint || '').replace(/^\//, '');
+        const desc = ep.description || '';
+        console.log(`    ${method.padEnd(5)} ${endpoint.padEnd(40)} ${desc}`);
+      }
+    }
+    console.log('');
+  }
+}
+
+function describeEndpoint(endpointName) {
+  // Normalize: strip leading slash if present
+  const normalized = endpointName.replace(/^\//, '');
+
+  // First, find which category file has this endpoint
+  if (!fs.existsSync(MCAPI_YAML_PATH)) {
+    console.error('❌ McAPI.yaml not found');
+    process.exit(1);
+  }
+
+  const summaryContent = fs.readFileSync(MCAPI_YAML_PATH, 'utf8');
+  const summary = yaml.load(summaryContent);
+  const categories = summary.categories || {};
+
+  let categoryFile = null;
+  let endpointInfo = null;
+
+  for (const [, catData] of Object.entries(categories)) {
+    const endpoints = catData.endpoints || [];
+    for (const ep of endpoints) {
+      if (ep && typeof ep === 'object') {
+        const epPath = (ep.endpoint || '').replace(/^\//, '');
+        if (epPath === normalized) {
+          categoryFile = catData.file;
+          endpointInfo = ep;
+          break;
+        }
+      }
+    }
+    if (categoryFile) break;
+  }
+
+  if (!categoryFile || !endpointInfo) {
+    console.error(`❌ Endpoint not found: ${normalized}`);
+    console.log('💡 Run: mcapi --list  to see all available endpoints');
+    process.exit(1);
+  }
+
+  // Load the detailed YAML
+  const detailPath = path.join(REPO_DIR, categoryFile);
+  if (!fs.existsSync(detailPath)) {
+    console.log(`📦 ${endpointInfo.name || normalized}`);
+    console.log(`   Method:   ${endpointInfo.method || 'POST'}`);
+    console.log(`   Endpoint: ${endpointInfo.endpoint}`);
+    console.log(`   ${endpointInfo.description || ''}`);
+    console.log('\n   (Detailed schema file not found)');
+    return;
+  }
+
+  const detailContent = fs.readFileSync(detailPath, 'utf8');
+  const detail = yaml.load(detailContent);
+  const tools = detail.tools || {};
+
+  // Find the tool entry matching this endpoint
+  let toolSpec = null;
+  for (const [, spec] of Object.entries(tools)) {
+    if (spec && (spec.endpoint || '').replace(/^\//, '') === normalized) {
+      toolSpec = spec;
+      break;
+    }
+  }
+
+  // Print header
+  console.log(`📦 ${endpointInfo.name || normalized}`);
+  console.log(`   ${endpointInfo.description || ''}\n`);
+  console.log(`   Method:   ${endpointInfo.method || 'POST'}`);
+  console.log(`   Endpoint: ${endpointInfo.endpoint}\n`);
+
+  if (!toolSpec || !toolSpec.input_schema) {
+    return;
+  }
+
+  const schema = toolSpec.input_schema;
+  const properties = schema.properties || {};
+  const required = schema.required || [];
+
+  if (Object.keys(properties).length > 0) {
+    console.log('Parameters:');
+    for (const [propName, propDef] of Object.entries(properties)) {
+      const isRequired = required.includes(propName);
+      const reqLabel = isRequired ? '(required)' : '(optional)';
+      const type = propDef.type || 'string';
+      console.log(`  ${propName}: ${type} ${reqLabel}`);
+      if (propDef.description) {
+        console.log(`    ${propDef.description}`);
+      }
+      if (propDef.enum) {
+        console.log(`    values: ${propDef.enum.join(', ')}`);
+      }
+      if (propDef.default !== undefined) {
+        console.log(`    default: ${propDef.default}`);
+      }
+      if (propDef.minimum !== undefined || propDef.maximum !== undefined) {
+        const parts = [];
+        if (propDef.minimum !== undefined) parts.push(`min: ${propDef.minimum}`);
+        if (propDef.maximum !== undefined) parts.push(`max: ${propDef.maximum}`);
+        console.log(`    ${parts.join(', ')}`);
+      }
+    }
+  }
+
+  console.log(`\nUsage:`);
+  const exampleParams = required
+    .map(r => `${r}="..."`)
+    .join(' ');
+  console.log(`  mcapi ${normalized} ${exampleParams}`);
+}
+
+async function executeEndpoint(context, endpointName, params) {
+  if (!context.apiUrl) {
+    console.error('❌ Error: DOCKER_CANVAS_SYNC_URL not set');
+    process.exit(1);
+  }
+
+  const normalized = endpointName.replace(/^\//, '');
+  const url = `${context.apiUrl}/api/agent/integrations/${normalized}`;
+
+  const body = {
+    userId: context.userId,
+    data: params,
+  };
+
+  const response = await makeRequest(url, body);
+
+  if (response.ok && response.data) {
+    if (response.data.success) {
+      console.log(JSON.stringify(response.data.data, null, 2));
+    } else {
+      console.error(`❌ Error: ${response.data.error || 'Unknown error'}`);
+      if (response.data.details) {
+        console.error('Details:', JSON.stringify(response.data.details, null, 2));
+      }
+      process.exit(1);
+    }
+  } else {
+    const errMsg = response.data?.error || response.data?.message || `HTTP ${response.status}`;
+    console.error(`❌ Error: ${errMsg}`);
+    if (response.data?.details) {
+      console.error('Details:', JSON.stringify(response.data.details, null, 2));
+    }
+    // Handle OAuth-required responses gracefully
+    if (response.data?.data?.requiresOAuth) {
+      console.log('\n⚠️  This endpoint requires OAuth authentication.');
+      console.log('   The user must connect their account in the DeepSpace UI first.');
+    }
+    process.exit(1);
+  }
+}
+
+// ============================================================================
+// Parse Arguments
+// ============================================================================
+
+function parseArgs(args) {
+  const result = {
+    command: null,
+    endpointName: null,
+    params: {},
+  };
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '--list') {
+      result.command = 'list';
+    } else if (arg === '--describe') {
+      result.command = 'describe';
+    } else if (arg === '--help' || arg === '-h') {
+      result.command = 'help';
+    } else if (result.command === 'describe' && !result.endpointName) {
+      result.endpointName = arg;
+    } else if (!result.endpointName && !arg.includes('=')) {
+      result.endpointName = arg;
+    } else if (arg.includes('=')) {
+      const [key, ...valueParts] = arg.split('=');
+      let value = valueParts.join('=');
+
+      // Try to parse as JSON
+      try {
+        value = JSON.parse(value);
+      } catch {
+        // Try to parse numbers
+        if (/^\d+$/.test(value)) {
+          value = parseInt(value, 10);
+        } else if (/^\d+\.\d+$/.test(value)) {
+          value = parseFloat(value);
+        }
+        // Try comma-separated as array
+        else if (value.includes(',') && !value.startsWith('{') && !value.startsWith('[')) {
+          value = value.split(',');
+        }
+      }
+
+      result.params[key] = value;
+    }
+  }
+
+  // Default command is execute if we have an endpoint name
+  if (!result.command && result.endpointName) {
+    result.command = 'execute';
+  }
+
+  return result;
+}
+
+function printUsage() {
+  console.log(`
+📦 mcapi - Direct Integration Endpoint Caller
+
+Usage:
+  mcapi <endpoint> [param=value ...]     Execute an integration endpoint
+  mcapi --list                           List all available endpoints
+  mcapi --describe <endpoint>            Show endpoint parameters
+
+Examples:
+  mcapi generate-text prompt="Hello world" provider=openai model=gpt-4o-mini
+  mcapi current-weather location="New York"
+  mcapi wikipedia-summary title="Machine learning"
+  mcapi news-top-headlines country=us category=technology
+  mcapi firecrawl-scrape url="https://example.com"
+  mcapi firecrawl-search query="React best practices" limit=3
+  mcapi exa-search query="latest AI news" numResults=5
+  mcapi exa-answer query="What is quantum computing?"
+
+Parameter Syntax:
+  - Simple values:    key=value  or  key="value with spaces"
+  - Numbers:          limit=5
+  - Arrays:           keys=a,b,c
+  - JSON objects:     data='{"key":"value"}'
+
+Notes:
+  - Credits are deducted per normal billing rules
+  - OAuth endpoints (Google, Slack) require user to connect in the UI first
+  - Response data is printed as JSON to stdout
+`);
+}
+
+// ============================================================================
+// Main
+// ============================================================================
+
+async function main() {
+  const args = process.argv.slice(2);
+
+  if (args.length === 0) {
+    printUsage();
+    process.exit(0);
+  }
+
+  const parsed = parseArgs(args);
+
+  if (parsed.command === 'help') {
+    printUsage();
+    process.exit(0);
+  }
+
+  if (parsed.command === 'list') {
+    listEndpoints();
+    process.exit(0);
+  }
+
+  if (parsed.command === 'describe') {
+    if (!parsed.endpointName) {
+      console.error('❌ Missing endpoint name for --describe');
+      process.exit(1);
+    }
+    describeEndpoint(parsed.endpointName);
+    process.exit(0);
+  }
+
+  if (parsed.command === 'execute') {
+    if (!parsed.endpointName) {
+      console.error('❌ Missing endpoint name');
+      printUsage();
+      process.exit(1);
+    }
+    const context = loadContext();
+    await executeEndpoint(context, parsed.endpointName, parsed.params);
+  } else {
+    printUsage();
+    process.exit(1);
+  }
+}
+
+main();

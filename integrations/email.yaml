@@ -62,3 +62,128 @@ tools:
           type: string
       required:
         - success
+
+  claim_email_handle:
+    method: POST
+    endpoint: /claim-email-handle
+    description: "Claim a personal email handle (e.g., \"daniel\" → daniel@app.space). Handle must be 3-30 chars, lowercase alphanumeric with dots/hyphens."
+    input_schema:
+      type: object
+      properties:
+        handle:
+          type: string
+          minLength: 1
+          description: Desired email handle (e.g., "daniel")
+      required:
+        - handle
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            emailAddress:
+              type: string
+            handle:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  my_email_address:
+    method: GET
+    endpoint: /my-email-address
+    description: "Get the authenticated user's claimed @app.space email address."
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            claimed:
+              type: boolean
+            emailAddress:
+              type:
+                - string
+                - null
+            handle:
+              type:
+                - string
+                - null
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  send_user_email:
+    method: POST
+    endpoint: /send-user-email
+    description: "Send an email from your personal @app.space address. Requires a claimed handle. Rate limited to 30 emails/hour."
+    input_schema:
+      type: object
+      properties:
+        to:
+          type: array
+          items:
+            type: string
+            format: email
+          minItems: 1
+          description: Recipient email addresses
+        cc:
+          type: array
+          items:
+            type: string
+            format: email
+          description: CC recipients
+        bcc:
+          type: array
+          items:
+            type: string
+            format: email
+          description: BCC recipients
+        subject:
+          type: string
+          minLength: 1
+          description: Email subject
+        html:
+          type: string
+          minLength: 1
+          description: HTML body content
+        text:
+          type: string
+          description: Plain text fallback
+        replyTo:
+          type: string
+          format: email
+          description: "Reply-to address"
+        conversationId:
+          type: string
+          description: Conversation ID for thread mapping
+      required:
+        - to
+        - subject
+        - html
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            messageId:
+              type: string
+            rateLimited:
+              type: boolean
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
