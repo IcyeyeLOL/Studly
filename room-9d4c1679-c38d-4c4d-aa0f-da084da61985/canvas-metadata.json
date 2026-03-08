@@ -11,21 +11,19 @@
         "config": {
           "type": "dock",
           "name": "Dock Space",
-          "description": "Dock mode with macOS-style dock bar for widgets (zoom locked at 50% via DOCK_MODE_ZOOM constant)",
-          "canvasBounds": {
-            "x": 0,
-            "y": 0,
-            "w": 2261.286804798255,
-            "h": 1080
-          },
-          "canvasSize": {
-            "width": 2261.286804798255,
-            "height": 1080
-          }
+          "description": "Dock mode with macOS-style dock bar for widgets (zoom locked at 50% via DOCK_MODE_ZOOM constant)"
         },
-        "lastUpdated": 1770497124564
+        "lastUpdated": 1772999966210
       },
-      "publishedSpaceHandle": "deepspace-lime17451"
+      "publishedSpaceHandle": "deepspace-lime17451",
+      "__canvas_storage": {
+        "__widget_io_configs": {
+          "shape:community-essay-W2BwQOOCVqpM7Ca8": {
+            "inputs": [],
+            "outputs": []
+          }
+        }
+      }
     },
     "id": "document:document",
     "typeName": "document"
@@ -37,7 +35,7 @@
       "name": "Page 1",
       "index": "a1",
       "typeName": "page",
-      "lastChangedClock": 10762
+      "lastChangedClock": 11797
     }
   ],
   "schema": {
@@ -70,21 +68,18 @@
       "com.tldraw.shape.note": 9,
       "com.tldraw.shape.text": 4,
       "com.tldraw.shape.video": 4,
-      "com.tldraw.shape.miyagi-widget": 0,
+      "com.tldraw.shape.miyagi-widget": 1,
       "com.tldraw.shape.miyagi-widget-overlay": 0,
       "com.tldraw.shape.canvas-link": 0,
       "com.tldraw.shape.canvas-link-overlay": 0,
       "com.tldraw.shape.file": 0,
       "com.tldraw.shape.file-overlay": 0,
-      "com.tldraw.shape.tile-overlay": 0,
-      "com.tldraw.shape.univer": 0,
-      "com.tldraw.shape.block": 0,
       "com.tldraw.binding.arrow": 1
     }
   },
-  "generatedAt": "2026-02-07T20:45:57.649Z",
-  "clock": 11796,
-  "documentClock": 11796,
+  "generatedAt": "2026-03-08T20:00:04.658Z",
+  "clock": 11833,
+  "documentClock": 11833,
   "tombstones": {
     "shape:password-strength-checker-E0rHZqa3_3pHgf9ZPxoOk": 4798,
     "shape:secure-bike-booking-OQfKCmASWPsshJa0XD0YG": 3674,
@@ -113,6 +108,7 @@
     "shape:ratecraft-rdGM5J_KNPs9V-fwAClyz": 3544,
     "shape:normalizer-extractor-kvjQ0JMwgbTFmzkoCYbZv": 3583,
     "shape:slide-deck-react-uGU5-z5W3KoUzBMWk0Pm-": 9771,
+    "asset:xUKZcQqaV5jO7-2r75iVv": 11797,
     "shape:P5MlYGs6_VYdJ0Ah": 1326,
     "shape:qr-code-generator-POsoDUo7P-Kd46sLThSDO": 11358
   },
