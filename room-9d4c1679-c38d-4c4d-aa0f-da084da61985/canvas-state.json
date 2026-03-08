@@ -85,47 +85,37 @@
   "documents": [
     {
       "state": {
-        "x": 1130.6434023991276,
-        "y": 540,
-        "rotation": 0,
-        "isLocked": false,
-        "opacity": 1,
+        "gridSize": 10,
+        "name": "DeepSpace",
         "meta": {
-          "dockOrder": 11,
-          "showDefaultHandles": false
+          "roomId": "room-9d4c1679-c38d-4c4d-aa0f-da084da61985",
+          "canvasMode": "dock",
+          "canvasName": "DeepSpace",
+          "canvasSpace": {
+            "spaceType": "dock",
+            "config": {
+              "type": "dock",
+              "name": "Dock Space",
+              "description": "Dock mode with macOS-style dock bar for widgets (zoom locked at 50% via DOCK_MODE_ZOOM constant)"
+            },
+            "lastUpdated": 1772999966210
+          },
+          "publishedSpaceHandle": "deepspace-lime17451",
+          "__canvas_storage": {
+            "__widget_io_configs": {
+              "shape:community-essay-W2BwQOOCVqpM7Ca8": {
+                "inputs": [],
+                "outputs": []
+              },
+              "shape:deepspace-hello-NnlEhrL1cLnYBKJ1": {
+                "inputs": [],
+                "outputs": []
+              }
+            }
+          }
         },
-        "id": "shape:2UFxqgIbsiAvkr5xjKSbB",
-        "type": "file",
-        "props": {
-          "w": 200,
-          "h": 120,
-          "assetId": "asset:GuAnpniOVkyi1_cL3eu35"
-        },
-        "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
-        "index": "aXTB2QbV",
-        "typeName": "shape"
-      },
-      "lastChangedClock": 11858
-    },
-    {
-      "state": {
-        "meta": {
-          "isFileAsset": true,
-          "originalMimeType": "application/pdf",
-          "originalFileName": "DeepSpace_Penetration_Test_Report.docx.pdf"
-        },
-        "id": "asset:GuAnpniOVkyi1_cL3eu35",
-        "type": "image",
-        "typeName": "asset",
-        "props": {
-          "name": "DeepSpace_Penetration_Test_Report.docx.pdf",
-          "src": "https://miyagi-canvas-sync.eudaimonicincorporated.workers.dev/api/uploads/6ea7ad4e-285a-4c0c-b6df-0b07a9650bca",
-          "w": 200,
-          "h": 120,
-          "fileSize": 381629,
-          "mimeType": "application/pdf",
-          "isAnimated": false
-        }
+        "id": "document:document",
+        "typeName": "document"
       },
       "lastChangedClock": 11858
     },
@@ -136,39 +126,6 @@
         "name": "Page 1",
         "index": "a1",
         "typeName": "page"
-      },
-      "lastChangedClock": 11858
-    },
-    {
-      "state": {
-        "id": "shape:nCg1Sj3SAxFsb3kp",
-        "typeName": "shape",
-        "type": "canvas-link",
-        "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
-        "index": "aWDLUHwG",
-        "x": -50000,
-        "y": -50000,
-        "rotation": 0,
-        "isLocked": false,
-        "opacity": 1,
-        "meta": {
-          "justCreated": false,
-          "createdAt": 1770151546373,
-          "showDefaultHandles": false,
-          "dockOrder": 12,
-          "isDockedHidden": true,
-          "hiddenAt": 1770151551312,
-          "originalX": 347.65539803707736,
-          "originalY": 553.762268266085
-        },
-        "props": {
-          "w": 400,
-          "h": 400,
-          "targetCanvasId": "room-6ab35ced-ca14-4ccb-927e-33e87313ba1e",
-          "label": "New Desktop 3",
-          "linkType": "realfile",
-          "targetSpaceType": "dock"
-        }
       },
       "lastChangedClock": 11858
     },
@@ -228,7 +185,7 @@
             "src/constants.ts": "/**\n * App Constants\n *\n * Define roles, status values, and other constants here.\n * Import feature-specific constants from their directories.\n */\n\nimport type { BadgeProps } from './components/ui'\n\n// Badge variant type extracted from BadgeProps\ntype BadgeVariant = NonNullable<BadgeProps['variant']>\n\n// ============================================================================\n// User Roles\n// ============================================================================\n\nexport const ROLES = {\n  VIEWER: 'viewer',\n  MEMBER: 'member',\n  ADMIN: 'admin',\n} as const\n\nexport type Role = typeof ROLES[keyof typeof ROLES]\n\nexport const ROLE_CONFIG: Record<Role, { title: string; badgeVariant: BadgeVariant; description: string }> = {\n  [ROLES.VIEWER]: {\n    title: 'Viewer',\n    badgeVariant: 'secondary',\n    description: 'Read-only access',\n  },\n  [ROLES.MEMBER]: {\n    title: 'Member',\n    badgeVariant: 'default',\n    description: 'Can create and edit own content',\n  },\n  [ROLES.ADMIN]: {\n    title: 'Admin',\n    badgeVariant: 'warning',\n    description: 'Full access to all features',\n  },\n}\n\n// ============================================================================\n// Add your app-specific constants below\n// Or import from features:\n//   import { ITEM_STATUS } from '../../features/items/constants'\n//   import { DIFFICULTY, GRADE } from '../../features/tasks/constants'\n// ============================================================================\n",
             "src/hooks/index.ts": "/**\n * Hooks Index\n * \n * Re-exports all custom hooks for easy importing.\n * \n * @example\n * import { useItems } from './hooks'\n */\n\n// Add your custom hooks here\n// export { useItems } from './useItems'\n",
             "src/main.tsx": "/**\n * Starter Template - Entry Point\n *\n * Platform wiring (auth shells, RecordProvider, screenshot listener,\n * DeepSpacePill, MobileHeader) lives here so App.tsx stays purely\n * app-specific.\n *\n * Uses RecordRoom-based storage with RBAC and real-time sync.\n *\n * When running inside the canvas (iframe), Clerk is skipped entirely —\n * auth is handled via postMessage from the parent frame.\n * When deployed as a standalone site, SpacesAuthProvider wraps the tree\n * so Clerk satellite auth works normally.\n */\n\nimport { useEffect } from 'react'\nimport { createRoot } from 'react-dom/client'\nimport { BrowserRouter } from 'react-router-dom'\nimport { SpacesAuthProvider, PillCoordinatorProvider, DeepSpaceThemeProvider, MobileBlockerProvider } from '@spaces/sdk'\nimport { useAuth, DeepSpacePill, GuestBanner, isWidgetContext, getWidgetAuthToken } from '@spaces/sdk/auth'\nimport { ProfileModalProvider } from '@spaces/sdk/profile'\nimport { MobileHeader } from '@spaces/sdk/mobile'\nimport { initScreenshotListener } from '@spaces/sdk/screenshot'\nimport { getApiUrl } from '@spaces/sdk/config'\nimport { RecordProvider, type UserProfile } from '@spaces/sdk/storage'\nimport { schemas } from './schemas'\nimport ChatMount from './chat-mount'\nimport App from './App'\nimport './styles.css'\n\nconst WIDGET_BASE = (window as any).__WIDGET_BASE__ ?? ''\n\nconst inWidget = isWidgetContext()\n\n/**\n * Get the storage roomId for this widget instance.\n *\n * Canvas widgets receive their canvas roomId via URL search params\n * (injected by the parent canvas into the iframe src). This ensures\n * per-canvas data isolation — each canvas gets its own RecordRoom\n * Durable Object.\n *\n * Standalone mode uses 'default' so all pages share one RecordRoom.\n */\nfunction getRoomId(): string {\n  const params = new URLSearchParams(window.location.search)\n  return params.get('roomId') ?? 'default'\n}\n\n/**\n * Fetch user profile using postMessage auth (for canvas widgets).\n * Gets auth token from parent frame, then fetches /api/users/me.\n */\nasync function fetchUserViaPostMessage(): Promise<UserProfile> {\n  const token = await getWidgetAuthToken()\n  if (!token) {\n    throw new Error('No auth token from parent')\n  }\n\n  const apiUrl = getApiUrl()\n  const response = await fetch(`${apiUrl}/api/users/me`, {\n    headers: { Authorization: `Bearer ${token}` },\n  })\n\n  if (!response.ok) {\n    throw new Error(`Failed to fetch user: ${response.status}`)\n  }\n\n  return response.json()\n}\n\n/**\n * Canvas widget shell — Clerk is NOT in the tree, auth via postMessage.\n *\n * The parent canvas injects `roomId` as a URL search param on the iframe\n * src, so `getRoomId()` resolves it synchronously.\n */\nfunction WidgetShell() {\n  useEffect(() => initScreenshotListener(), [])\n\n  return (\n    <RecordProvider\n      roomId={getRoomId()}\n      schemas={schemas}\n      fetchUser={fetchUserViaPostMessage}\n      allowAnonymous\n    >\n      <App />\n    </RecordProvider>\n  )\n}\n\n/**\n * Deployed / standalone shell — Clerk is in the tree, full auth flow.\n */\nfunction DeployedShell() {\n  const { isLoaded } = useAuth()\n\n  if (!isLoaded) {\n    return (\n      <div className=\"flex items-center justify-center min-h-screen bg-surface\">\n        <div className=\"text-content-secondary\">Authenticating...</div>\n      </div>\n    )\n  }\n\n  return (\n    <ProfileModalProvider>\n      <DeepSpacePill />\n      <GuestBanner />\n      <MobileHeader />\n      <RecordProvider\n        roomId={getRoomId()}\n        schemas={schemas}\n        allowAnonymous\n      >\n        <App />\n      </RecordProvider>\n    </ProfileModalProvider>\n  )\n}\n\nconst tree = (\n  <BrowserRouter basename={WIDGET_BASE}>\n    <DeepSpaceThemeProvider>\n      <MobileBlockerProvider>\n        <PillCoordinatorProvider>\n          {inWidget ? <WidgetShell /> : <DeployedShell />}\n          <ChatMount />\n        </PillCoordinatorProvider>\n      </MobileBlockerProvider>\n    </DeepSpaceThemeProvider>\n  </BrowserRouter>\n)\n\ncreateRoot(document.getElementById('root')!).render(\n  inWidget ? tree : <SpacesAuthProvider>{tree}</SpacesAuthProvider>,\n)\n",
-            "src/pages/HomePage.tsx": "import { useState } from 'react'\nimport { Button } from '../components/ui/Button'\nimport { Input } from '../components/ui/Input'\n\nconst API_URL = 'https://deepspace-backend-basics.vercel.app'\n\nexport default function HomePage() {\n  const [name, setName] = useState('')\n  const [result, setResult] = useState('')\n  const [loading, setLoading] = useState(false)\n  const [error, setError] = useState('')\n\n  const callAPI = async () => {\n    if (!name.trim()) return\n    setLoading(true)\n    setError('')\n    setResult('')\n    try {\n      const res = await fetch(`${API_URL}/api/hello`, {\n        method: 'POST',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({ name }),\n      })\n      if (!res.ok) throw new Error('API request failed')\n      const data = await res.json()\n      setResult(data.message)\n    } catch {\n      setError('Failed to reach the API.')\n    } finally {\n      setLoading(false)\n    }\n  }\n\n  return (\n    <div className=\"min-h-screen bg-background flex items-center justify-center p-8\">\n      <div className=\"w-full max-w-md\">\n        {/* Card */}\n        <div className=\"bg-card rounded-2xl border border-border p-10\" style={{ boxShadow: 'var(--shadow-card)' }}>\n          {/* Header */}\n          <div className=\"mb-8\">\n            <h1 className=\"text-2xl font-semibold text-foreground tracking-tight mb-1\">\n              DeepSpace Hello\n            </h1>\n            <p className=\"text-sm text-muted-foreground\">\n              Enter your name and say hello to the API.\n            </p>\n          </div>\n\n          {/* Input */}\n          <div className=\"mb-4\">\n            <label className=\"block text-xs font-medium text-muted-foreground uppercase tracking-widest mb-2\">\n              Your Name\n            </label>\n            <Input\n              type=\"text\"\n              placeholder=\"e.g. Alex\"\n              value={name}\n              onChange={(e) => setName(e.target.value)}\n              onKeyDown={(e) => e.key === 'Enter' && callAPI()}\n              className=\"h-12 px-4 text-base rounded-xl border-border bg-muted/40 placeholder:text-muted-foreground focus-visible:ring-ring\"\n            />\n          </div>\n\n          {/* Button */}\n          <Button\n            onClick={callAPI}\n            disabled={loading || !name.trim()}\n            loading={loading}\n            className=\"w-full h-12 text-sm font-semibold rounded-xl mt-2\"\n          >\n            {loading ? 'Calling API…' : 'Say Hello'}\n          </Button>\n\n          {/* Result */}\n          {result && (\n            <div className=\"mt-6 p-4 rounded-xl bg-success-muted border border-success-border\">\n              <p className=\"text-sm font-medium text-success\">{result}</p>\n            </div>\n          )}\n\n          {/* Error */}\n          {error && (\n            <div className=\"mt-6 p-4 rounded-xl bg-danger-muted border border-danger-border\">\n              <p className=\"text-sm font-medium text-destructive\">{error}</p>\n            </div>\n          )}\n        </div>\n      </div>\n    </div>\n  )\n}\n",
+            "src/pages/HomePage.tsx": "import { useState } from 'react'\nimport { Button } from '../components/ui/Button'\nimport { Input } from '../components/ui/Input'\nimport { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/Tabs'\n\nconst API_URL = 'https://deepspace-backend-basics.vercel.app'\n\ninterface Joke {\n  category: string\n  setup: string\n  punchline: string\n}\n\nexport default function HomePage() {\n  // Hello state\n  const [name, setName] = useState('')\n  const [greeting, setGreeting] = useState('')\n  const [helloLoading, setHelloLoading] = useState(false)\n  const [helloError, setHelloError] = useState('')\n\n  // Joke state\n  const [joke, setJoke] = useState<Joke | null>(null)\n  const [jokeLoading, setJokeLoading] = useState(false)\n  const [jokeError, setJokeError] = useState('')\n  const [showPunchline, setShowPunchline] = useState(false)\n\n  const callHello = async () => {\n    if (!name.trim()) return\n    setHelloLoading(true)\n    setHelloError('')\n    setGreeting('')\n    try {\n      const res = await fetch(`${API_URL}/api/hello`, {\n        method: 'POST',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({ name }),\n      })\n      if (!res.ok) throw new Error()\n      const data = await res.json()\n      setGreeting(data.message)\n    } catch {\n      setHelloError('Failed to reach the API.')\n    } finally {\n      setHelloLoading(false)\n    }\n  }\n\n  const fetchJoke = async () => {\n    setJokeLoading(true)\n    setJokeError('')\n    setJoke(null)\n    setShowPunchline(false)\n    try {\n      const res = await fetch(`${API_URL}/api/joke`)\n      if (!res.ok) throw new Error()\n      const data = await res.json()\n      setJoke(data)\n    } catch {\n      setJokeError('Could not fetch a joke right now.')\n    } finally {\n      setJokeLoading(false)\n    }\n  }\n\n  return (\n    <div className=\"min-h-screen bg-background flex items-center justify-center p-8\">\n      <div className=\"w-full max-w-md\">\n        {/* Card */}\n        <div className=\"bg-card rounded-2xl border border-border p-10\" style={{ boxShadow: 'var(--shadow-card)' }}>\n          {/* Header */}\n          <div className=\"mb-8\">\n            <h1 className=\"text-2xl font-semibold text-foreground tracking-tight mb-1\">\n              DeepSpace Widget\n            </h1>\n            <p className=\"text-sm text-muted-foreground\">\n              Say hello or get a random joke from the API.\n            </p>\n          </div>\n\n          {/* Tabs */}\n          <Tabs defaultValue=\"hello\">\n            <TabsList className=\"w-full mb-8 rounded-xl bg-muted h-11\">\n              <TabsTrigger value=\"hello\" className=\"flex-1 rounded-lg text-sm font-medium\">\n                Say Hello\n              </TabsTrigger>\n              <TabsTrigger value=\"joke\" className=\"flex-1 rounded-lg text-sm font-medium\">\n                Get a Joke\n              </TabsTrigger>\n            </TabsList>\n\n            {/* Hello Tab */}\n            <TabsContent value=\"hello\">\n              <div className=\"mb-4\">\n                <label className=\"block text-xs font-medium text-muted-foreground uppercase tracking-widest mb-2\">\n                  Your Name\n                </label>\n                <Input\n                  type=\"text\"\n                  placeholder=\"e.g. Alex\"\n                  value={name}\n                  onChange={(e) => setName(e.target.value)}\n                  onKeyDown={(e) => e.key === 'Enter' && callHello()}\n                  className=\"h-12 px-4 text-base rounded-xl border-border bg-muted/40 placeholder:text-muted-foreground\"\n                />\n              </div>\n\n              <Button\n                onClick={callHello}\n                disabled={helloLoading || !name.trim()}\n                loading={helloLoading}\n                className=\"w-full h-12 text-sm font-semibold rounded-xl mt-2\"\n              >\n                {helloLoading ? 'Calling API…' : 'Say Hello'}\n              </Button>\n\n              {greeting && (\n                <div className=\"mt-6 p-4 rounded-xl bg-success-muted border border-success-border\">\n                  <p className=\"text-sm font-medium text-success\">{greeting}</p>\n                </div>\n              )}\n              {helloError && (\n                <div className=\"mt-6 p-4 rounded-xl bg-danger-muted border border-danger-border\">\n                  <p className=\"text-sm font-medium text-destructive\">{helloError}</p>\n                </div>\n              )}\n            </TabsContent>\n\n            {/* Joke Tab */}\n            <TabsContent value=\"joke\">\n              <Button\n                onClick={fetchJoke}\n                disabled={jokeLoading}\n                loading={jokeLoading}\n                className=\"w-full h-12 text-sm font-semibold rounded-xl\"\n              >\n                {jokeLoading ? 'Fetching joke…' : 'Get a Random Joke'}\n              </Button>\n\n              {joke && (\n                <div className=\"mt-6 p-5 rounded-xl bg-muted border border-border\">\n                  <p className=\"text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3\">\n                    {joke.category}\n                  </p>\n                  <p className=\"text-base text-foreground mb-4 leading-relaxed\">\n                    {joke.setup}\n                  </p>\n                  {showPunchline ? (\n                    <p className=\"text-base font-semibold text-primary leading-relaxed\">\n                      {joke.punchline}\n                    </p>\n                  ) : (\n                    <button\n                      onClick={() => setShowPunchline(true)}\n                      className=\"text-sm font-medium text-muted-foreground border border-border bg-background hover:bg-muted rounded-lg px-4 py-2 transition-colors\"\n                    >\n                      Reveal punchline\n                    </button>\n                  )}\n                </div>\n              )}\n\n              {jokeError && (\n                <div className=\"mt-6 p-4 rounded-xl bg-danger-muted border border-danger-border\">\n                  <p className=\"text-sm font-medium text-destructive\">{jokeError}</p>\n                </div>\n              )}\n            </TabsContent>\n          </Tabs>\n        </div>\n      </div>\n    </div>\n  )\n}\n",
             "src/pages/PermissionsPage.tsx": "/**\n * Permissions Page\n *\n * Displays the auto-generated RBAC permission matrix from schemas.\n * Accessible to all authenticated users — schema definitions are not secret.\n *\n * Features:\n * - Per-collection CRUD permission matrix (role x operation)\n * - Current user's role row highlighted with \"You\" badge\n * - Team context for collections with teamField (user's own teams only)\n * - Expandable field details per collection\n * - Wildcard / default-deny indicators\n *\n * To use: Copy to starter/src/pages/ and add route in App.tsx\n */\n\nimport { useState, useMemo } from 'react'\nimport { useUser, useTeams, type Team } from '@spaces/sdk/storage'\nimport { analyzePermissions, type ResolvedPermission, type CollectionPermissionSummary, type FieldSchema } from '@spaces/sdk/worker'\nimport { Badge, type BadgeProps } from '../components/ui'\nimport { ROLES, ROLE_CONFIG, type Role } from '../constants'\nimport { schemas } from '../schemas'\n\n// ============================================================================\n// Constants\n// ============================================================================\n\ntype BadgeVariant = NonNullable<BadgeProps['variant']>\n\nconst LEVEL_DISPLAY: Record<string, { label: string; variant: BadgeVariant }> = {\n  'true': { label: 'all', variant: 'success' },\n  'false': { label: 'none', variant: 'destructive' },\n  'own': { label: 'own', variant: 'default' },\n  'unclaimed-or-own': { label: 'unclaimed/own', variant: 'info' },\n  'collaborator': { label: 'collaborator', variant: 'warning' },\n  'team': { label: 'team', variant: 'warning' },\n  'access': { label: 'access', variant: 'warning' },\n}\n\n// ============================================================================\n// Main Page\n// ============================================================================\n\nexport default function PermissionsPage() {\n  const { user } = useUser()\n  const { teams } = useTeams()\n  const currentRole = user?.role ?? ROLES.VIEWER\n  const roleConfig = ROLE_CONFIG[currentRole as Role] ?? ROLE_CONFIG[ROLES.VIEWER]\n\n  const analysis = useMemo(() => analyzePermissions(schemas), [])\n\n  // Sort roles: use ROLE_CONFIG key order first, then any extras alphabetically\n  const roleOrder = Object.keys(ROLE_CONFIG)\n  const sortedRoles = useMemo(() => {\n    const known = analysis.roles.filter(r => roleOrder.includes(r))\n    const unknown = analysis.roles.filter(r => !roleOrder.includes(r)).sort()\n    known.sort((a, b) => roleOrder.indexOf(a) - roleOrder.indexOf(b))\n    return [...known, ...unknown]\n  }, [analysis.roles])\n\n  // Filter to only teams the current user is a member of\n  const userTeams = useMemo(() => {\n    if (!user?.id) return []\n    return teams.filter(t =>\n      t.createdBy === user.id || t.members?.some(m => m.userId === user.id)\n    )\n  }, [teams, user?.id])\n\n  return (\n    <div className=\"h-full bg-background overflow-y-auto\">\n      {/* Header */}\n      <div className=\"bg-card/60 backdrop-blur-md border-b border-border sticky top-0 z-10\">\n        <div className=\"max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4\">\n          <div className=\"flex items-center justify-between\">\n            <div>\n              <h1 className=\"text-2xl font-bold text-foreground\">Permissions</h1>\n              <p className=\"text-muted-foreground mt-1\">RBAC permission matrix for all collections</p>\n            </div>\n            <div className=\"flex items-center gap-2\">\n              <span className=\"text-sm text-muted-foreground\">Your role:</span>\n              <Badge variant={roleConfig.badgeVariant}>{roleConfig.title}</Badge>\n            </div>\n          </div>\n        </div>\n      </div>\n\n      {/* Content */}\n      <div className=\"max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6\">\n        <PermissionLegend />\n        {analysis.collections.map(collection => (\n          <CollectionCard\n            key={collection.collection}\n            collection={collection}\n            roles={sortedRoles}\n            currentRole={currentRole}\n            userTeams={userTeams}\n          />\n        ))}\n        {analysis.collections.length === 0 && (\n          <p className=\"text-center text-muted-foreground py-8\">No collections defined in schemas</p>\n        )}\n      </div>\n    </div>\n  )\n}\n\n// ============================================================================\n// Permission Legend\n// ============================================================================\n\nfunction PermissionLegend() {\n  return (\n    <div className=\"bg-muted/40 rounded-xl border border-border p-4\">\n      <h3 className=\"text-sm font-semibold text-muted-foreground mb-3\">Permission Levels</h3>\n      <div className=\"flex flex-wrap gap-3 text-xs\">\n        <div className=\"flex items-center gap-1.5\">\n          <Badge variant=\"success\">all</Badge>\n          <span className=\"text-muted-foreground\">Everyone with role</span>\n        </div>\n        <div className=\"flex items-center gap-1.5\">\n          <Badge variant=\"destructive\">none</Badge>\n          <span className=\"text-muted-foreground\">Denied</span>\n        </div>\n        <div className=\"flex items-center gap-1.5\">\n          <Badge variant=\"default\">own</Badge>\n          <span className=\"text-muted-foreground\">Record owner only</span>\n        </div>\n        <div className=\"flex items-center gap-1.5\">\n          <Badge variant=\"info\">unclaimed/own</Badge>\n          <span className=\"text-muted-foreground\">Unclaimed or owner</span>\n        </div>\n        <div className=\"flex items-center gap-1.5\">\n          <Badge variant=\"warning\">collaborator</Badge>\n          <span className=\"text-muted-foreground\">Owner or collaborator</span>\n        </div>\n        <div className=\"flex items-center gap-1.5\">\n          <Badge variant=\"warning\">team</Badge>\n          <span className=\"text-muted-foreground\">Owner / collaborator / team member</span>\n        </div>\n      </div>\n      <div className=\"flex gap-4 mt-3 pt-3 border-t border-border/30 text-xs text-muted-foreground\">\n        <span>\n          <span className=\"border-b border-dashed border-muted-foreground\">dashed border</span> = resolved via * wildcard\n        </span>\n        <span>\n          <span className=\"italic opacity-50\">italic + muted</span> = no permission defined (default deny)\n        </span>\n      </div>\n    </div>\n  )\n}\n\n// ============================================================================\n// Collection Card\n// ============================================================================\n\nfunction CollectionCard({ collection, roles, currentRole, userTeams }: {\n  collection: CollectionPermissionSummary\n  roles: string[]\n  currentRole: string\n  userTeams: Team[]\n}) {\n  const [expanded, setExpanded] = useState(false)\n\n  const metaBadges: Array<{ label: string; value: string }> = []\n  if (collection.ownerField) metaBadges.push({ label: 'owner', value: collection.ownerField })\n  if (collection.collaboratorsField) metaBadges.push({ label: 'collaborators', value: collection.collaboratorsField })\n  if (collection.teamField) metaBadges.push({ label: 'team', value: collection.teamField })\n\n  return (\n    <div className=\"bg-muted/40 rounded-xl border border-border overflow-hidden\">\n      {/* Header */}\n      <div className=\"px-4 py-3 border-b border-border/50 flex items-center justify-between\">\n        <div className=\"flex items-center gap-3 flex-wrap\">\n          <code className=\"text-sm font-semibold text-primary bg-muted px-2 py-1 rounded\">\n            {collection.collection}\n          </code>\n          {metaBadges.map(mb => (\n            <span key={mb.label} className=\"text-[10px] text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded\">\n              {mb.label}: <span className=\"text-muted-foreground\">{mb.value}</span>\n            </span>\n          ))}\n        </div>\n        <button\n          onClick={() => setExpanded(!expanded)}\n          className=\"text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0 ml-2\"\n        >\n          {expanded ? 'Hide fields' : 'Show fields'}\n        </button>\n      </div>\n\n      {/* Permission matrix table */}\n      <div className=\"overflow-x-auto\">\n        <table className=\"w-full text-sm\">\n          <thead>\n            <tr className=\"border-b border-border/30\">\n              <th className=\"px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide\">Role</th>\n              <th className=\"px-4 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide\">Read</th>\n              <th className=\"px-4 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide\">Create</th>\n              <th className=\"px-4 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide\">Update</th>\n              <th className=\"px-4 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide\">Delete</th>\n            </tr>\n          </thead>\n          <tbody>\n            {roles.map(role => {\n              const perms = collection.permissions[role]\n              if (!perms) return null\n              const roleConfig = ROLE_CONFIG[role as Role]\n              const isCurrentRole = role === currentRole\n              return (\n                <tr\n                  key={role}\n                  className={`border-b border-border/20 last:border-0 ${\n                    isCurrentRole ? 'bg-primary/10' : ''\n                  }`}\n                >\n                  <td className=\"px-4 py-2.5\">\n                    <span className=\"font-medium text-foreground\">{role}</span>\n                    {roleConfig && (\n                      <span className=\"text-[10px] text-muted-foreground ml-1.5\">\n                        {roleConfig.description}\n                      </span>\n                    )}\n                    {isCurrentRole && (\n                      <span className=\"ml-2\"><Badge variant=\"default\">You</Badge></span>\n                    )}\n                  </td>\n                  <td className=\"px-4 py-2.5 text-center\">\n                    <PermissionBadge resolved={perms.read} />\n                  </td>\n                  <td className=\"px-4 py-2.5 text-center\">\n                    <PermissionBadge resolved={perms.create} />\n                  </td>\n                  <td className=\"px-4 py-2.5 text-center\">\n                    <div>\n                      <PermissionBadge resolved={perms.update} />\n                      {perms.writableFields && (\n                        <div\n                          className=\"mt-1 text-[10px] text-muted-foreground cursor-help\"\n                          title={`Writable fields: ${perms.writableFields.join(', ')}`}\n                        >\n                          {perms.writableFields.length} field{perms.writableFields.length !== 1 ? 's' : ''}\n                        </div>\n                      )}\n                    </div>\n                  </td>\n                  <td className=\"px-4 py-2.5 text-center\">\n                    <PermissionBadge resolved={perms.delete} />\n                  </td>\n                </tr>\n              )\n            })}\n          </tbody>\n        </table>\n      </div>\n\n      {/* Team context for collections with teamField */}\n      {collection.teamField && (\n        <TeamContextInfo userTeams={userTeams} teamField={collection.teamField} />\n      )}\n\n      {/* Expandable field details */}\n      {expanded && (\n        <div className=\"border-t border-border/50\">\n          <FieldDetailsTable fields={collection.fields} />\n        </div>\n      )}\n    </div>\n  )\n}\n\n// ============================================================================\n// Team Context Info\n// ============================================================================\n\nfunction TeamContextInfo({ userTeams, teamField }: { userTeams: Team[]; teamField: string }) {\n  return (\n    <div className=\"px-4 py-3 border-t border-border/30 bg-muted/20\">\n      <div className=\"flex items-start gap-2\">\n        <svg className=\"w-4 h-4 text-muted-foreground mt-0.5 shrink-0\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\">\n          <path strokeLinecap=\"round\" strokeLinejoin=\"round\" strokeWidth={1.5} d=\"M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z\" />\n        </svg>\n        <div className=\"text-xs\">\n          <p className=\"text-muted-foreground mb-1\">\n            Records in this collection are team-scoped via the <code className=\"bg-muted px-1 py-0.5 rounded text-primary\">{teamField}</code> field.\n            The <Badge variant=\"warning\">team</Badge> permission level applies only to records tagged with one of your teams.\n          </p>\n          {userTeams.length > 0 ? (\n            <div className=\"flex flex-wrap gap-1.5 mt-1.5\">\n              <span className=\"text-muted-foreground\">Your teams:</span>\n              {userTeams.map(t => (\n                <span key={t.id} className=\"bg-muted px-1.5 py-0.5 rounded text-muted-foreground\">\n                  {t.name}\n                </span>\n              ))}\n            </div>\n          ) : (\n            <p className=\"text-muted-foreground mt-1\">You are not a member of any team. Team-scoped permissions will not grant you access to any records.</p>\n          )}\n        </div>\n      </div>\n    </div>\n  )\n}\n\n// ============================================================================\n// Permission Badge\n// ============================================================================\n\nfunction PermissionBadge({ resolved }: { resolved: ResolvedPermission }) {\n  const key = String(resolved.level)\n  const display = LEVEL_DISPLAY[key] ?? { label: key, variant: 'secondary' as BadgeVariant }\n\n  const isWildcard = resolved.source === 'wildcard'\n  const isDefaultDeny = resolved.source === 'default-deny'\n\n  const title = isWildcard\n    ? `${display.label} (via * wildcard)`\n    : isDefaultDeny\n    ? 'No permission defined — defaults to deny'\n    : display.label\n\n  return (\n    <span\n      title={title}\n      className={`inline-flex ${isDefaultDeny ? 'opacity-50 italic' : ''} ${isWildcard ? '[&>div]:border-dashed' : ''}`}\n    >\n      <Badge variant={isDefaultDeny ? 'secondary' : display.variant}>\n        {display.label}\n        {isWildcard && <span className=\"ml-0.5 opacity-60\">*</span>}\n      </Badge>\n    </span>\n  )\n}\n\n// ============================================================================\n// Field Details Table\n// ============================================================================\n\nfunction FieldDetailsTable({ fields }: { fields: Record<string, FieldSchema> }) {\n  const fieldEntries = Object.entries(fields)\n\n  if (fieldEntries.length === 0) {\n    return <p className=\"px-4 py-3 text-sm text-muted-foreground\">No fields defined</p>\n  }\n\n  return (\n    <div className=\"overflow-x-auto\">\n      <table className=\"w-full text-xs\">\n        <thead>\n          <tr className=\"border-b border-border/30 bg-muted/20\">\n            <th className=\"px-4 py-2 text-left font-medium text-muted-foreground\">Field</th>\n            <th className=\"px-4 py-2 text-left font-medium text-muted-foreground\">Type</th>\n            <th className=\"px-4 py-2 text-center font-medium text-muted-foreground\">Required</th>\n            <th className=\"px-4 py-2 text-center font-medium text-muted-foreground\">userBound</th>\n            <th className=\"px-4 py-2 text-center font-medium text-muted-foreground\">Immutable</th>\n            <th className=\"px-4 py-2 text-center font-medium text-muted-foreground\">System</th>\n            <th className=\"px-4 py-2 text-left font-medium text-muted-foreground\">Default</th>\n          </tr>\n        </thead>\n        <tbody>\n          {fieldEntries.map(([name, field]) => (\n            <tr key={name} className=\"border-b border-border/10 last:border-0\">\n              <td className=\"px-4 py-1.5\">\n                <code className=\"text-foreground font-medium\">{name}</code>\n              </td>\n              <td className=\"px-4 py-1.5 text-muted-foreground\">{field.type}</td>\n              <td className=\"px-4 py-1.5 text-center\">\n                {field.required && <CheckIcon />}\n              </td>\n              <td className=\"px-4 py-1.5 text-center\">\n                {field.userBound && <CheckIcon />}\n              </td>\n              <td className=\"px-4 py-1.5 text-center\">\n                {field.immutable && <CheckIcon />}\n              </td>\n              <td className=\"px-4 py-1.5 text-center\">\n                {field.systemManaged && <CheckIcon />}\n              </td>\n              <td className=\"px-4 py-1.5 text-muted-foreground\">\n                {field.default !== undefined ? JSON.stringify(field.default) : ''}\n              </td>\n            </tr>\n          ))}\n        </tbody>\n      </table>\n    </div>\n  )\n}\n\nfunction CheckIcon() {\n  return (\n    <svg className=\"w-3.5 h-3.5 text-success inline-block\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\">\n      <path strokeLinecap=\"round\" strokeLinejoin=\"round\" strokeWidth={2} d=\"M5 13l4 4L19 7\" />\n    </svg>\n  )\n}\n",
             "src/schemas/admin-schema.ts": "/**\n * Admin Feature - Schema\n * \n * Admin-only settings collection demonstrating:\n * - Collection-level access restriction\n * - Key-value settings storage\n */\n\nimport type { CollectionSchema } from '@spaces/sdk/worker'\n\nexport const settingsSchema: CollectionSchema = {\n  name: 'settings',\n  fields: {\n    key: { type: 'string', required: true },\n    value: { type: 'string', required: true },\n  },\n  permissions: {\n    // Only admins can access this collection\n    viewer: { read: false, create: false, update: false, delete: false },\n    member: { read: false, create: false, update: false, delete: false },\n    admin: { read: true, create: true, update: true, delete: true },\n  },\n}\n",
             "src/schemas.ts": "/**\n * Collection Schemas\n * \n * Defines all collections with fields and RBAC permissions.\n * This is the SINGLE SOURCE OF TRUTH - imported by both worker and frontend.\n * \n * Roles (stored on user records):\n * - viewer: Read-only access (default for new users)\n * - member: Can create and edit own content\n * - admin: Full access (automatically assigned to global admins)\n * \n * To add features, copy schema files to src/schemas/ then import:\n *   import { itemsSchema } from './schemas/items-schema'\n *   import { challengesSchema } from './schemas/tasks-schema'\n *   import { teamsSchemas } from './schemas/teams-schema'\n *   import { settingsSchema } from './schemas/admin-schema'\n */\n\nimport type { CollectionSchema } from '@spaces/sdk/worker'\nimport { USERS_COLLECTION_FIELDS } from '@spaces/sdk/worker'\nimport { settingsSchema } from './schemas/admin-schema'\n\n// ============================================================================\n// Users Collection (required)\n// ============================================================================\n\nconst usersSchema: CollectionSchema = {\n  name: 'users',\n  fields: {\n    // System-managed fields (from SDK)\n    ...USERS_COLLECTION_FIELDS,\n    \n    // Add your app-specific user fields here\n    // bio: { type: 'string' },\n    // preferences: { type: 'string' },\n  },\n  permissions: {\n    viewer: { \n      read: 'own',\n      create: false,\n      update: 'own', \n      delete: false,\n      writableFields: [],  // Add fields users can update\n    },\n    member: { \n      read: true,\n      create: false,\n      update: 'own', \n      delete: false,\n      writableFields: [],\n    },\n    admin: { read: true, create: false, update: true, delete: true },\n  },\n}\n\n// ============================================================================\n// Export all schemas\n// ============================================================================\n\nexport const schemas: CollectionSchema[] = [\n  usersSchema,\n  settingsSchema,\n\n  // Add feature schemas here:\n  // itemsSchema,\n  // challengesSchema,\n  // ...teamsSchemas,\n]\n",
@@ -243,8 +200,7 @@
           "style": {
             "id": "clean-light",
             "name": "Clean Light"
-          },
-          "siteUrl": "https://deepspacesites.com/deepspace-hello_1773000151102/?v=10ngcaw"
+          }
         }
       },
       "lastChangedClock": 11858
@@ -284,234 +240,49 @@
     },
     {
       "state": {
-        "gridSize": 10,
-        "name": "DeepSpace",
         "meta": {
-          "roomId": "room-9d4c1679-c38d-4c4d-aa0f-da084da61985",
-          "canvasMode": "dock",
-          "canvasName": "DeepSpace",
-          "canvasSpace": {
-            "spaceType": "dock",
-            "config": {
-              "type": "dock",
-              "name": "Dock Space",
-              "description": "Dock mode with macOS-style dock bar for widgets (zoom locked at 50% via DOCK_MODE_ZOOM constant)"
-            },
-            "lastUpdated": 1772999966210
-          },
-          "publishedSpaceHandle": "deepspace-lime17451",
-          "__canvas_storage": {
-            "__widget_io_configs": {
-              "shape:community-essay-W2BwQOOCVqpM7Ca8": {
-                "inputs": [],
-                "outputs": []
-              },
-              "shape:deepspace-hello-NnlEhrL1cLnYBKJ1": {
-                "inputs": [],
-                "outputs": []
-              }
-            }
-          }
+          "isFileAsset": true,
+          "originalMimeType": "application/pdf",
+          "originalFileName": "DeepSpace_Penetration_Test_Report.docx.pdf"
         },
-        "id": "document:document",
-        "typeName": "document"
+        "id": "asset:GuAnpniOVkyi1_cL3eu35",
+        "type": "image",
+        "typeName": "asset",
+        "props": {
+          "name": "DeepSpace_Penetration_Test_Report.docx.pdf",
+          "src": "https://miyagi-canvas-sync.eudaimonicincorporated.workers.dev/api/uploads/6ea7ad4e-285a-4c0c-b6df-0b07a9650bca",
+          "w": 200,
+          "h": 120,
+          "fileSize": 381629,
+          "mimeType": "application/pdf",
+          "isAnimated": false
+        }
       },
-      "lastChangedClock": 11858
+      "lastChangedClock": 5
     },
     {
       "state": {
-        "widgets": {
-          "shape:community-essay-W2BwQOOCVqpM7Ca8": {
-            "__widget_config": "{\"roomId\":\"room-9d4c1679-c38d-4c4d-aa0f-da084da61985\",\"pageId\":\"page:ryfD_vTjBIH4xjvQ2a2vu\",\"shapeId\":\"shape:community-essay-W2BwQOOCVqpM7Ca8\",\"templateHandle\":\"community-essay\"}"
-          },
-          "shape:css-gradient-generator-EJ1gQvsCKLAmoW6Sp0-5v": {
-            "__widget_config": "{\"roomId\":\"room-9d4c1679-c38d-4c4d-aa0f-da084da61985\",\"pageId\":\"page:ryfD_vTjBIH4xjvQ2a2vu\",\"shapeId\":\"shape:css-gradient-generator-EJ1gQvsCKLAmoW6Sp0-5v\",\"templateHandle\":\"css-gradient-generator\"}"
-          },
-          "shape:css-gradient-generator-eSQmLO5NDxOe1HSGvqskN": {
-            "__widget_config": "{\"roomId\":\"room-9d4c1679-c38d-4c4d-aa0f-da084da61985\",\"pageId\":\"page:ryfD_vTjBIH4xjvQ2a2vu\",\"shapeId\":\"shape:css-gradient-generator-eSQmLO5NDxOe1HSGvqskN\",\"templateHandle\":\"css-gradient-generator\"}"
-          },
-          "shape:financial-command-center-9Z55s5KtZPiBgUibmQN3y": {
-            "__widget_config": "{\"roomId\":\"room-9d4c1679-c38d-4c4d-aa0f-da084da61985\",\"pageId\":\"page:ryfD_vTjBIH4xjvQ2a2vu\",\"shapeId\":\"shape:financial-command-center-9Z55s5KtZPiBgUibmQN3y\",\"templateHandle\":\"financial-command-center\"}"
-          },
-          "shape:fps-QFKMOVlCTzH29Bjn7h3CQ": {
-            "__widget_config": "{\"roomId\":\"room-9d4c1679-c38d-4c4d-aa0f-da084da61985\",\"pageId\":\"page:ryfD_vTjBIH4xjvQ2a2vu\",\"shapeId\":\"shape:fps-QFKMOVlCTzH29Bjn7h3CQ\",\"templateHandle\":\"fps\"}"
-          },
-          "shape:hue-GQICO8EsTvIVYhNIc7xKv": {
-            "__widget_config": "{\"roomId\":\"room-9d4c1679-c38d-4c4d-aa0f-da084da61985\",\"pageId\":\"page:ryfD_vTjBIH4xjvQ2a2vu\",\"shapeId\":\"shape:hue-GQICO8EsTvIVYhNIc7xKv\",\"templateHandle\":\"hue\"}"
-          },
-          "shape:instagram-recipe-extractor-ANZhrZMPAKbHNan5CZ8KG": {
-            "__widget_config": "{\"roomId\":\"room-9d4c1679-c38d-4c4d-aa0f-da084da61985\",\"pageId\":\"page:ryfD_vTjBIH4xjvQ2a2vu\",\"shapeId\":\"shape:instagram-recipe-extractor-ANZhrZMPAKbHNan5CZ8KG\",\"templateHandle\":\"instagram-recipe-extractor\"}"
-          },
-          "shape:may_the_force_be_with_you-XhfJFRaJohm9ZXaWl8IaC": {
-            "__widget_config": "{\"roomId\":\"room-9d4c1679-c38d-4c4d-aa0f-da084da61985\",\"pageId\":\"page:ryfD_vTjBIH4xjvQ2a2vu\",\"shapeId\":\"shape:may_the_force_be_with_you-XhfJFRaJohm9ZXaWl8IaC\",\"templateHandle\":\"may_the_force_be_with_you\"}"
-          },
-          "shape:wavelength-9bGw90ctWcv34v87sk97T": {
-            "__widget_config": "{\"roomId\":\"room-9d4c1679-c38d-4c4d-aa0f-da084da61985\",\"pageId\":\"page:ryfD_vTjBIH4xjvQ2a2vu\",\"shapeId\":\"shape:wavelength-9bGw90ctWcv34v87sk97T\",\"templateHandle\":\"wavelength\"}"
-          }
+        "x": 1130.6434023991276,
+        "y": 540,
+        "rotation": 0,
+        "isLocked": false,
+        "opacity": 1,
+        "meta": {
+          "dockOrder": 11,
+          "showDefaultHandles": false
         },
-        "global": {
-          "user_scoped_storage": {
-            "user_38p3fn6iTbV25TyWCNcFJ0Dxrx5": {
-              "tiling-view-active": false,
-              "tiling-view-config": {
-                "layout": {
-                  "type": "window",
-                  "tileId": "tile-1769878791449-1",
-                  "widgetId": null,
-                  "screenId": 2
-                },
-                "focusedTileId": "tile-1769878791449-1",
-                "screens": {
-                  "1": {
-                    "type": "window",
-                    "tileId": "tile-1769482861656-1",
-                    "widgetId": "shape:fps-QFKMOVlCTzH29Bjn7h3CQ",
-                    "screenId": 1
-                  },
-                  "2": {
-                    "type": "window",
-                    "tileId": "tile-1769878791449-1",
-                    "widgetId": null,
-                    "screenId": 2
-                  },
-                  "3": null
-                },
-                "activeScreen": 2,
-                "spacing": 14
-              }
-            },
-            "user_372YbfVWbJ8jQKwzJOtWszZJyy2": {
-              "tiling-view-active": false,
-              "tiling-view-config": {
-                "layout": {
-                  "type": "window",
-                  "tileId": "tile-1769809310087-1",
-                  "widgetId": null,
-                  "screenId": 1
-                },
-                "focusedTileId": "tile-1769809310087-1",
-                "screens": {
-                  "1": {
-                    "type": "window",
-                    "tileId": "tile-1769809310087-1",
-                    "widgetId": null,
-                    "screenId": 1
-                  },
-                  "2": null,
-                  "3": null
-                },
-                "activeScreen": 1,
-                "spacing": 14
-              }
-            },
-            "user_37tKsgveyHVRfYYO5FVrTOYJ9Uj": {
-              "tiling-view-active": false,
-              "tiling-view-config": {
-                "layout": {
-                  "type": "window",
-                  "tileId": "tile-1769823608128-1",
-                  "widgetId": null,
-                  "screenId": 1
-                },
-                "focusedTileId": "tile-1769823608128-1",
-                "screens": {
-                  "1": {
-                    "type": "window",
-                    "tileId": "tile-1769823608128-1",
-                    "widgetId": null,
-                    "screenId": 1
-                  },
-                  "2": null,
-                  "3": null
-                },
-                "activeScreen": 1,
-                "spacing": 14
-              }
-            },
-            "guest_v6i6pmemc": {
-              "tiling-view-config": {
-                "layout": {
-                  "type": "window",
-                  "tileId": "tile-1769878791449-1",
-                  "widgetId": null,
-                  "screenId": 2
-                },
-                "focusedTileId": "tile-1769878791449-1",
-                "screens": {
-                  "1": {
-                    "type": "window",
-                    "tileId": "tile-1769482861656-1",
-                    "widgetId": "shape:fps-QFKMOVlCTzH29Bjn7h3CQ",
-                    "screenId": 1
-                  },
-                  "2": {
-                    "type": "window",
-                    "tileId": "tile-1769878791449-1",
-                    "widgetId": null,
-                    "screenId": 2
-                  },
-                  "3": null
-                },
-                "activeScreen": 2,
-                "spacing": 14
-              }
-            },
-            "user_37tpg4NdcT8h5G55T4zZaMcyhud": {
-              "tiling-view-active": false,
-              "tiling-view-config": {
-                "layout": {
-                  "type": "window",
-                  "tileId": "tile-1770402723660-1",
-                  "widgetId": null,
-                  "screenId": 1
-                },
-                "focusedTileId": "tile-1770402723660-1",
-                "screens": {
-                  "1": {
-                    "type": "window",
-                    "tileId": "tile-1770402723660-1",
-                    "widgetId": null,
-                    "screenId": 1
-                  },
-                  "2": null,
-                  "3": null
-                },
-                "activeScreen": 1,
-                "spacing": 14
-              }
-            }
-          },
-          "__widget_io_configs": "{\"shape:fps-QFKMOVlCTzH29Bjn7h3CQ\":{\"inputs\":[],\"outputs\":[]},\"shape:css-gradient-generator-EJ1gQvsCKLAmoW6Sp0-5v\":{\"inputs\":[],\"outputs\":[]},\"shape:css-gradient-generator-eSQmLO5NDxOe1HSGvqskN\":{\"inputs\":[],\"outputs\":[]},\"shape:wavelength-9bGw90ctWcv34v87sk97T\":{\"inputs\":[],\"outputs\":[]},\"shape:instagram-recipe-extractor-ANZhrZMPAKbHNan5CZ8KG\":{\"inputs\":[],\"outputs\":[]},\"shape:may_the_force_be_with_you-XhfJFRaJohm9ZXaWl8IaC\":{\"inputs\":[],\"outputs\":[]},\"shape:hue-GQICO8EsTvIVYhNIc7xKv\":{\"inputs\":[],\"outputs\":[]},\"shape:financial-command-center-9Z55s5KtZPiBgUibmQN3y\":{\"inputs\":[],\"outputs\":[]},\"shape:community-essay-W2BwQOOCVqpM7Ca8\":{\"inputs\":[],\"outputs\":[]}}",
-          "__widget_connections": "[]",
-          "fcc-dark-mode": "true",
-          "fcc-watchlists": "[{\"id\":\"default\",\"name\":\"My Watchlist\",\"tickers\":[]}]",
-          "fcc-followed-accounts": "[]",
-          "fcc-last-check": "2026-01-27T03:40:08.580Z",
-          "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.watchlist": "[]",
-          "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.positions": "{}",
-          "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.lastAlertCheck": "2026-01-28T03:16:35.197Z",
-          "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.followedAccounts": "[]",
-          "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.stockInfo": "{}",
-          "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.widgetTheme": "dark",
-          "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.priceAlertEmailEnabled": "true",
-          "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.priceAlertPollingEnabled": "true",
-          "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.priceAlertRules": "[]",
-          "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.tickerNotes": "{}",
-          "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.selectedCatalysts": "[]",
-          "__user:user_37tKsgveyHVRfYYO5FVrTOYJ9Uj:financial.widgetTheme": "dark",
-          "__user:user_37tKsgveyHVRfYYO5FVrTOYJ9Uj:financial.selectedCatalysts": "[]",
-          "mobile_icon_order_room-9d4c1679-c38d-4c4d-aa0f-da084da61985": "[\"shape:financial-command-center-1Xhrt5jTAK6Nu03nrvzql\"]",
-          "wavelength.game": "{\"phase\":\"clue\",\"currentPrompt\":{\"left\":\"Easy to learn\",\"right\":\"Hard to learn\"},\"targetPosition\":62,\"clue\":\"\",\"guessPosition\":50,\"score\":0,\"round\":1,\"roundScores\":[]}",
-          "__user:user_37tpg4NdcT8h5G55T4zZaMcyhud:financial.widgetTheme": "dark",
-          "files/slides/config.json": "\"{\\r\\n  \\\"currentDeckId\\\": \\\"welcome-deck\\\",\\r\\n  \\\"deckOrder\\\": [\\r\\n    \\\"welcome-deck\\\"\\r\\n  ]\\r\\n}\"",
-          "files/slides/welcome-deck/deck.json": "\"{\\r\\n  \\\"title\\\": \\\"Welcome Presentation\\\",\\r\\n  \\\"themeId\\\": \\\"modern\\\",\\r\\n  \\\"currentSlideIndex\\\": 1,\\r\\n  \\\"slideOrder\\\": [\\r\\n    \\\"slide-1\\\",\\r\\n    \\\"slide-2\\\"\\r\\n  ],\\r\\n  \\\"createdAt\\\": 1769483252674,\\r\\n  \\\"updatedAt\\\": 1769483252674\\r\\n}\"",
-          "files/slides/welcome-deck/slide-1.html": "\"<div style=\\\"display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 60px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\\\">\\r\\n  <h1 style=\\\"font-size: 56px; font-weight: 700; color: white; margin: 0 0 24px 0; text-shadow: 0 2px 4px rgba(0,0,0,0.2);\\\">Welcome to Slide Deck</h1>\\r\\n  <p style=\\\"font-size: 24px; color: rgba(255,255,255,0.9); max-width: 600px; line-height: 1.6;\\\">Create beautiful presentations with HTML slides</p>\\r\\n</div>\"",
-          "files/slides/welcome-deck/slide-2.html": "\"<div style=\\\"padding: 60px; height: 100%; background: #1e293b;\\\">\\r\\n  <h2 style=\\\"font-size: 42px; font-weight: 700; color: white; margin: 0 0 32px 0;\\\">Getting Started</h2>\\r\\n  <ul style=\\\"font-size: 24px; color: #94a3b8; line-height: 2; list-style: none; padding: 0; margin: 0;\\\">\\r\\n    <li style=\\\"margin-bottom: 16px;\\\">✨ Edit slides using the HTML editor</li>\\r\\n    <li style=\\\"margin-bottom: 16px;\\\">🎨 Create multiple presentations</li>\\r\\n    <li style=\\\"margin-bottom: 16px;\\\">📺 Present in fullscreen mode</li>\\r\\n    <li style=\\\"margin-bottom: 16px;\\\">📄 Export to PDF</li>\\r\\n  </ul>\\r\\n</div>\""
+        "id": "shape:2UFxqgIbsiAvkr5xjKSbB",
+        "type": "file",
+        "props": {
+          "w": 200,
+          "h": 120,
+          "assetId": "asset:GuAnpniOVkyi1_cL3eu35"
         },
-        "id": "canvas_storage:main",
-        "typeName": "canvas_storage"
+        "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
+        "index": "aXTB2QbV",
+        "typeName": "shape"
       },
-      "lastChangedClock": 11858
+      "lastChangedClock": 6
     }
   ]
 }
