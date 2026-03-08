@@ -1,0 +1,25 @@
+{
+  "shapeId": "shape:deepspace-hello-NnlEhrL1cLnYBKJ1",
+  "widgetId": "deepspace-hello_1773000151102",
+  "templateHandle": "deepspace-hello",
+  "position": {
+    "x": 1280.6434023991276,
+    "y": 700
+  },
+  "size": {
+    "w": 700,
+    "h": 600
+  },
+  "rotation": 0,
+  "opacity": 1,
+  "isLocked": false,
+  "color": "black",
+  "zoomScale": 1,
+  "savedContentHash": "initial",
+  "meta": {
+    "initializationState": "ready"
+  },
+  "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
+  "index": "a0",
+  "lastChangedClock": 1676
+}
