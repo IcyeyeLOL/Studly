@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { resolveMimeTypeAndExtension } = require('../../src/file-signatures');
 
 /**
  * Upload a local file to R2 and get a permanent URL.
@@ -61,35 +62,16 @@ function parseArgs(args) {
 }
 
 /**
- * Detect MIME type from file extension
+ * Detect MIME type from file bytes first, then filename as fallback
  */
-function detectContentType(filename) {
-  const ext = path.extname(filename).toLowerCase();
-  const mimeTypes = {
-    '.png': 'image/png',
-    '.jpg': 'image/jpeg',
-    '.jpeg': 'image/jpeg',
-    '.gif': 'image/gif',
-    '.webp': 'image/webp',
-    '.svg': 'image/svg+xml',
-    '.pdf': 'application/pdf',
-    '.txt': 'text/plain',
-    '.md': 'text/markdown',
-    '.json': 'application/json',
-    '.html': 'text/html',
-    '.css': 'text/css',
-    '.js': 'application/javascript',
-    '.mp4': 'video/mp4',
-    '.mp3': 'audio/mpeg',
-    '.wav': 'audio/wav',
-  };
-  return mimeTypes[ext] || 'application/octet-stream';
+function detectContentType(fileBuffer, filename) {
+  return resolveMimeTypeAndExtension(fileBuffer, null, filename).mimeType;
 }
 
 /**
  * Upload file to R2 via the API
  */
-async function uploadFile(filePath, contentType, userId) {
+async function uploadFile(fileBuffer, filePath, contentType, userId) {
   const { signInternalRequestBody } = require('/app/src/internal-auth');
 
   const apiUrl = process.env.DOCKER_CANVAS_SYNC_URL;
@@ -98,7 +80,6 @@ async function uploadFile(filePath, contentType, userId) {
     process.exit(1);
   }
 
-  const fileBuffer = fs.readFileSync(filePath);
   const base64 = fileBuffer.toString('base64');
   const filename = path.basename(filePath);
 
@@ -195,14 +176,15 @@ async function main() {
   }
 
   // Detect or use provided content type
-  const contentType = options.contentType || detectContentType(resolvedPath);
+  const fileBuffer = fs.readFileSync(resolvedPath);
+  const contentType = options.contentType || detectContentType(fileBuffer, resolvedPath);
   const filename = path.basename(resolvedPath);
 
   console.log(`📤 Uploading: ${filename}`);
   console.log(`   Size: ${(stats.size / 1024).toFixed(1)} KB`);
   console.log(`   Type: ${contentType}`);
 
-  const result = await uploadFile(resolvedPath, contentType, userId);
+  const result = await uploadFile(fileBuffer, resolvedPath, contentType, userId);
 
   if (!result.success) {
     console.error(`❌ Upload failed: ${result.error}`);

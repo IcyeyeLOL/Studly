@@ -15,9 +15,22 @@
 
 import { useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
+import { BrowserRouter, useLocation } from 'react-router-dom'
 import { SpacesAuthProvider, PillCoordinatorProvider, DeepSpaceThemeProvider, MobileBlockerProvider } from '@spaces/sdk'
-import { useAuth, DeepSpacePill, GuestBanner, isWidgetContext, getWidgetAuthToken } from '@spaces/sdk/auth'
+import {
+  useAuth,
+  AuthModalProvider,
+  AUTH_CALLBACK_PATH,
+  AUTH_SIGN_IN_PATH,
+  AUTH_SIGN_UP_PATH,
+  DeepSpaceAuthCallback,
+  DeepSpaceAuthPage,
+  DeepSpacePill,
+  AuthOverlay,
+  GuestBanner,
+  isWidgetContext,
+  getWidgetAuthToken,
+} from '@spaces/sdk/auth'
 import { ProfileModalProvider } from '@spaces/sdk/profile'
 import { MobileHeader } from '@spaces/sdk/mobile'
 import { initScreenshotListener } from '@spaces/sdk/screenshot'
@@ -31,6 +44,26 @@ import './styles.css'
 const WIDGET_BASE = (window as any).__WIDGET_BASE__ ?? ''
 
 const inWidget = isWidgetContext()
+
+function PreviewRouteReporter() {
+  const location = useLocation()
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (window.parent === window || !window.parent?.postMessage) return
+
+    const pathname = location.pathname && location.pathname.length > 0 ? location.pathname : '/'
+    const search = location.search || ''
+    const hash = location.hash || ''
+
+    window.parent.postMessage({
+      type: 'miyagi-preview-route',
+      path: `${pathname}${search}${hash}`,
+    }, '*')
+  }, [location.hash, location.pathname, location.search])
+
+  return null
+}
 
 /**
  * Get the storage roomId for this widget instance.
@@ -91,10 +124,41 @@ function WidgetShell() {
 }
 
 /**
+ * Whether this app allows anonymous (non-signed-in) users.
+ *
+ * - true  → users can browse freely; a soft GuestBanner nudges sign-up.
+ * - false → a full-page AuthOverlay blocks access until the user signs in.
+ *
+ * Set at deploy time via the "Deploy as Website" dialog. The deployer
+ * injects window.__DEEPSPACE_ALLOW_ANONYMOUS__ into index.html when enabled.
+ * Defaults to false (require auth).
+ */
+const ALLOW_ANONYMOUS = !!(window as any).__DEEPSPACE_ALLOW_ANONYMOUS__
+
+/**
+ * OG screenshot mode: the dispatch worker appends ?_og=1 when taking
+ * Puppeteer screenshots for OpenGraph images. Skips auth entirely so
+ * the screenshot captures the actual app content instead of the
+ * "Authenticating..." loading state or the AuthOverlay.
+ */
+const IS_OG_SCREENSHOT = new URLSearchParams(window.location.search).has('_og')
+
+/**
  * Deployed / standalone shell — Clerk is in the tree, full auth flow.
+ *
+ * When ALLOW_ANONYMOUS is false (default), a frosted AuthOverlay blocks
+ * interaction until the user signs in. The app still renders behind the
+ * overlay so visitors can "peek through the frost" and see what the app
+ * looks like — motivating sign-up.
+ *
+ * When ALLOW_ANONYMOUS is true, the overlay is replaced with a dismissible
+ * GuestBanner at the top of the page (soft nudge).
+ * 
  */
 function DeployedShell() {
-  const { isLoaded } = useAuth()
+  const location = useLocation()
+  const { isLoaded, isSignedIn } = useAuth()
+  const searchParams = new URLSearchParams(location.search)
 
   if (!isLoaded) {
     return (
@@ -104,19 +168,34 @@ function DeployedShell() {
     )
   }
 
+  if (location.pathname === AUTH_CALLBACK_PATH) {
+    return <DeepSpaceAuthCallback />
+  }
+
+  if (location.pathname === AUTH_SIGN_IN_PATH) {
+    return <DeepSpaceAuthPage mode="sign-in" searchParams={searchParams} />
+  }
+
+  if (location.pathname === AUTH_SIGN_UP_PATH) {
+    return <DeepSpaceAuthPage mode="sign-up" searchParams={searchParams} />
+  }
+
   return (
-    <ProfileModalProvider>
-      <DeepSpacePill />
-      <GuestBanner />
-      <MobileHeader />
-      <RecordProvider
-        roomId={getRoomId()}
-        schemas={schemas}
-        allowAnonymous
-      >
-        <App />
-      </RecordProvider>
-    </ProfileModalProvider>
+    <AuthModalProvider>
+      <ProfileModalProvider>
+        <DeepSpacePill />
+        {!isSignedIn && !ALLOW_ANONYMOUS && <AuthOverlay />}
+        {!isSignedIn && ALLOW_ANONYMOUS && <GuestBanner />}
+        <MobileHeader />
+        <RecordProvider
+          roomId={getRoomId()}
+          schemas={schemas}
+          allowAnonymous
+        >
+          <App />
+        </RecordProvider>
+      </ProfileModalProvider>
+    </AuthModalProvider>
   )
 }
 
@@ -125,6 +204,7 @@ const tree = (
     <DeepSpaceThemeProvider>
       <MobileBlockerProvider>
         <PillCoordinatorProvider>
+          <PreviewRouteReporter />
           {inWidget ? <WidgetShell /> : <DeployedShell />}
           <ChatMount />
         </PillCoordinatorProvider>
@@ -133,6 +213,18 @@ const tree = (
   </BrowserRouter>
 )
 
+const ogTree = (
+  <BrowserRouter basename={WIDGET_BASE}>
+    <DeepSpaceThemeProvider>
+      <RecordProvider roomId={getRoomId()} schemas={schemas} allowAnonymous>
+        <App />
+      </RecordProvider>
+    </DeepSpaceThemeProvider>
+  </BrowserRouter>
+)
+
 createRoot(document.getElementById('root')!).render(
-  inWidget ? tree : <SpacesAuthProvider>{tree}</SpacesAuthProvider>,
+  IS_OG_SCREENSHOT
+    ? <SpacesAuthProvider>{ogTree}</SpacesAuthProvider>
+    : inWidget ? tree : <SpacesAuthProvider>{tree}</SpacesAuthProvider>,
 )

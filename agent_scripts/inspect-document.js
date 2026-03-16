@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 const crypto = require('crypto');
+const { resolveLocalDocumentPath } = require('./inspect-document-paths');
 
 /**
  * Fetch document from API and process based on type
@@ -512,26 +513,21 @@ async function inspectDocument(assetIdOrPath, options) {
     // 1. Load container vars (userId, currentRoom, currentRoomPath)
     const { currentRoomPath, currentRoom, userId } = loadContainerVars();
 
-    // 2. Get room path from container vars
-    const roomPath = currentRoomPath;
-    if (!roomPath) {
-      console.error(`❌ Error: No currentRoomPath set in container vars`);
-      process.exit(1);
-    }
-
     let buffer, filename, assetId;
+    let roomPath = currentRoomPath;
 
     // Detect if input is a file path or asset ID
     const isFilePath = assetIdOrPath.includes('/') || assetIdOrPath.includes('.');
 
     // Branch 1: File path mode
     if (isFilePath) {
-      // Resolve path relative to room
-      const filePath = path.resolve(roomPath, assetIdOrPath);
-
-      // Security: validate path is within room
-      if (!filePath.startsWith(roomPath)) {
-        console.error('❌ Error: File path outside room (security check failed)');
+      let filePath;
+      try {
+        const resolvedPath = resolveLocalDocumentPath(currentRoomPath, assetIdOrPath);
+        roomPath = resolvedPath.basePath;
+        filePath = resolvedPath.filePath;
+      } catch (err) {
+        console.error(`❌ Error: ${err.message}`);
         process.exit(1);
       }
 
@@ -548,6 +544,11 @@ async function inspectDocument(assetIdOrPath, options) {
     }
     // Branch 2: Asset ID mode (existing behavior)
     else {
+      if (!roomPath) {
+        console.error(`❌ Error: No currentRoomPath set in container vars`);
+        process.exit(1);
+      }
+
       // Strip "asset:" prefix if present (e.g., "asset:abc123" -> "abc123")
       assetId = assetIdOrPath.startsWith('asset:')
         ? assetIdOrPath.slice(6)

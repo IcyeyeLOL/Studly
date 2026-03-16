@@ -20,12 +20,24 @@ categories:
         description: "Search Amazon products"
   audio:
     file: integrations/audio.yaml
-    endpoint_count: 2
+    endpoint_count: 5
     endpoints:
       - name: text_to_speech
         method: POST
         endpoint: /text-to-speech
         description: "Convert text to speech audio"
+      - name: elevenlabs_text_to_speech
+        method: POST
+        endpoint: /elevenlabs-text-to-speech
+        description: "Convert text to speech using ElevenLabs (high-quality, expressive voices)"
+      - name: elevenlabs_create_agent
+        method: POST
+        endpoint: /elevenlabs-create-agent
+        description: "Create an ElevenLabs Conversational AI agent"
+      - name: elevenlabs_signed_url
+        method: POST
+        endpoint: /elevenlabs-signed-url
+        description: "Get a signed URL for ElevenLabs Conversational AI session"
       - name: speech_to_text
         method: POST
         endpoint: /speech-to-text
