@@ -1,6 +1,6 @@
 {
-  "clock": 11864,
-  "documentClock": 11863,
+  "clock": 11876,
+  "documentClock": 11876,
   "tombstones": {
     "shape:fps-QFKMOVlCTzH29Bjn7h3CQ": 11834,
     "shape:password-strength-checker-E0rHZqa3_3pHgf9ZPxoOk": 4798,
@@ -174,13 +174,42 @@
     },
     {
       "state": {
+        "id": "shape:SkBRT03Ru33YDCyJ",
+        "typeName": "shape",
+        "type": "canvas-link",
+        "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
+        "index": "aZSFdQcV",
+        "x": 367.67720828789527,
+        "y": 537.2737186477644,
+        "rotation": 0,
+        "isLocked": false,
+        "opacity": 1,
+        "meta": {
+          "justCreated": true,
+          "createdAt": 1773698094517,
+          "showDefaultHandles": false,
+          "dockOrder": 14
+        },
+        "props": {
+          "w": 400,
+          "h": 400,
+          "targetCanvasId": "room-29bd3e52-141d-4fc7-a4d9-ff8d8913d9a3",
+          "label": "New Desktop 4",
+          "linkType": "realfile",
+          "targetSpaceType": "dock"
+        }
+      },
+      "lastChangedClock": 11874
+    },
+    {
+      "state": {
         "id": "shape:deepspace-hello-NnlEhrL1cLnYBKJ1",
         "typeName": "shape",
         "type": "miyagi-widget",
         "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
-        "index": "aYz9jQfl",
-        "x": 665.8560523446021,
-        "y": 280.42529989094874,
+        "index": "aai6i2KV",
+        "x": -50000,
+        "y": -50000,
         "rotation": 0,
         "isLocked": false,
         "opacity": 1,
@@ -189,7 +218,11 @@
           "justCreated": false,
           "createdAt": 1773000252764,
           "dockOrder": 13,
-          "showDefaultHandles": false
+          "showDefaultHandles": false,
+          "isDockedHidden": true,
+          "hiddenAt": 1773698102087,
+          "originalX": 665.8560523446021,
+          "originalY": 280.42529989094874
         },
         "props": {
           "w": 700,
@@ -237,17 +270,24 @@
             "agent-description.md": "# DeepSpace Hello Widget\n\nA simple demo widget that calls an external API. The user enters their name and the app posts it to `https://deepspace-backend-basics.vercel.app/api/hello`, then displays the greeting response.\n\n## Features\n- Text input for a name\n- Button to trigger the API call (also triggered by Enter key)\n- Displays the success message from the API response\n- Shows an error state if the request fails\n- Loading state while the request is in-flight\n\n## UI Structure\n- **Home page**: Single centered card with input, button, and result/error display\n",
             "agent-prompt.md": "# Agent Instructions — DeepSpace Hello Widget\n\nYou are a helper for this simple demo widget. It has no persistent storage — all interactions are stateless API calls.\n\n## What the widget does\nPosts a name to an external API and displays the greeting response.\n\n## Boundaries\n- This widget has no collections or stored data\n- Cannot change the API endpoint (it's hardcoded)\n- If asked to \"edit the app\" or \"change the design\" — explain you can only answer questions about it\n"
           },
-          "savedContentHash": "initial",
+          "savedContentHash": "kry3yj",
           "color": "black",
           "zoomScale": 1,
           "style": {
             "id": "clean-light",
             "name": "Clean Light"
           },
-          "siteUrl": "https://deepspacesites.com/deepspace-hello_1773000151102/?v=kry3yj"
+          "siteUrl": "https://deepspacesites.com/deepspace-hello_1773000151102/?v=kry3yj",
+          "icon": {
+            "type": "react-icon",
+            "value": "Fi:FiPackage"
+          },
+          "templateDescription": "Easily send personalized greetings and fetch random jokes to lighten your day with a simple interface",
+          "templateCategory": "General",
+          "templateName": "Deepspace Hello"
         }
       },
-      "lastChangedClock": 11863
+      "lastChangedClock": 11876
     },
     {
       "state": {
@@ -297,26 +337,23 @@
               "name": "Dock Space",
               "description": "Dock mode with macOS-style dock bar for widgets (zoom locked at 50% via DOCK_MODE_ZOOM constant)"
             },
-            "lastUpdated": 1772999966210
+            "lastUpdated": 1773698084069
           },
           "publishedSpaceHandle": "deepspace-lime17451",
           "__canvas_storage": {
             "__widget_io_configs": {
-              "shape:community-essay-W2BwQOOCVqpM7Ca8": {
-                "inputs": [],
-                "outputs": []
-              },
               "shape:deepspace-hello-NnlEhrL1cLnYBKJ1": {
                 "inputs": [],
                 "outputs": []
               }
-            }
+            },
+            "__widget_connections": []
           }
         },
         "id": "document:document",
         "typeName": "document"
       },
-      "lastChangedClock": 11863
+      "lastChangedClock": 11871
     },
     {
       "state": {
