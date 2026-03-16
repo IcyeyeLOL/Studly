@@ -1,0 +1,37 @@
+{
+  "shapeId": "shape:studly-helper-2nkgpbSG7g5iFPJw",
+  "widgetId": "studly-helper_1773000000001",
+  "templateHandle": "studly-helper",
+  "templateName": "Studly Homework Helper",
+  "icon": {
+    "type": "react-icon",
+    "value": "Fi:FiBookOpen"
+  },
+  "position": {
+    "x": -50000,
+    "y": -50000
+  },
+  "size": {
+    "w": 720,
+    "h": 620
+  },
+  "rotation": 0,
+  "opacity": 1,
+  "isLocked": false,
+  "color": "black",
+  "zoomScale": 1,
+  "savedContentHash": "initial",
+  "templateDescription": "AI-powered homework helper for Math, Science, English, History and more",
+  "templateCategory": "Education",
+  "meta": {
+    "initializationState": "ready",
+    "justCreated": true,
+    "createdAt": 1773000000001,
+    "dockOrder": 14,
+    "showDefaultHandles": false,
+    "isDockedHidden": false
+  },
+  "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
+  "index": "ac",
+  "lastChangedClock": 1
+}

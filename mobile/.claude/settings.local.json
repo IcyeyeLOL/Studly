@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude mcp:*)",
+      "Bash(npx:*)",
+      "Bash(npm search:*)",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\(d.get\\(''bin'',''''\\)\\);print\\(d.get\\(''main'',''''\\)\\);print\\(list\\(d.get\\(''scripts'',{}\\).items\\(\\)\\)[:5]\\)\")",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(cd:*)"
+    ]
+  }
+}
