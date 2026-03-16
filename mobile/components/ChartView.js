@@ -7,17 +7,34 @@ import Svg, { Path, Rect, Line, G, Circle, Defs, LinearGradient, Stop, Text as S
  * Advanced charts: line, bar, area, pie, donut, barh, scatter.
  * Multi-series, secondary y-axis, grid, legend. Entrance animation via Reanimated.
  */
-const PADDING = { top: 12, right: 12, bottom: 32, left: 44 };
-const PADDING_RIGHT_SECONDARY = 36;
-const CHART_WIDTH = 300;
-const CHART_HEIGHT = 180;
+const PADDING = { top: 14, right: 14, bottom: 36, left: 48 };
+const PADDING_RIGHT_SECONDARY = 40;
+const CHART_WIDTH = 340;
+const CHART_HEIGHT = 220;
 const AXIS_COLOR = 'rgba(128,128,128,0.45)';
 const GRID_COLOR = 'rgba(128,128,128,0.2)';
 
-const SERIES_COLORS = ['#5fc4e0', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899'];
+const SERIES_COLORS = [
+  '#5fc4e0', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899',
+  '#ef4444', '#06b6d4', '#84cc16', '#f97316', '#6366f1',
+];
 
 function getSeriesColor(index, primary) {
   return SERIES_COLORS[index % SERIES_COLORS.length];
+}
+
+function formatTickValue(v) {
+  const abs = Math.abs(v);
+  if (abs >= 1_000_000) return (v / 1_000_000).toFixed(abs >= 10_000_000 ? 0 : 1) + 'M';
+  if (abs >= 10_000) return (v / 1_000).toFixed(abs >= 100_000 ? 0 : 1) + 'K';
+  if (abs >= 1_000) return (v / 1_000).toFixed(1) + 'K';
+  if (v === Math.floor(v)) return String(Math.round(v));
+  return v.toFixed(1);
+}
+
+function labelStep(count, maxVisible) {
+  if (count <= maxVisible) return 1;
+  return Math.ceil(count / maxVisible);
 }
 
 function ChartWrapper({ children, scale }) {
@@ -49,6 +66,7 @@ export function ChartView({
   xValues = [],
   secondaryValues = [],
   secondaryLabel = '',
+  logScale: logScaleProp = false,
   colors,
   isDark,
   scale,
@@ -198,11 +216,11 @@ export function ChartView({
               <Path key={i} d={s.d} fill={`url(#pie-${i})`} stroke={isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.6)'} strokeWidth={1} />
             ))}
           </Svg>
-          <View style={[styles.legendWrap, { marginTop: scale(6) }]}>
+          <View style={[styles.legendWrap, { marginTop: scale(6), flexWrap: 'wrap' }]}>
             {slices.map((s, i) => (
-              <View key={i} style={[styles.legendItem, { marginRight: scale(12) }]}>
+              <View key={i} style={[styles.legendItem, { marginHorizontal: scale(4), marginVertical: scale(2) }]}>
                 <View style={[styles.legendDot, { backgroundColor: s.color }]} />
-                <Text style={[styles.legendText, { fontSize: font(11), color: muted }]} numberOfLines={1}>{s.label} ({s.pct}%)</Text>
+                <Text style={[styles.legendText, { fontSize: font(slices.length > 5 ? 9 : 11), color: muted }]} numberOfLines={1}>{s.label} ({s.pct}%)</Text>
               </View>
             ))}
           </View>
@@ -214,11 +232,39 @@ export function ChartView({
   // ─── Line / Bar / Area (cartesian) with optional secondary y-axis ───────
   const allValues = hasMulti ? dataSeries.flat() : values;
   const withSecondary = hasSecondary ? [...allValues, ...secondaryValues] : allValues;
+  const positiveVals = withSecondary.filter((v) => v > 0);
   const minVal = Math.min(...withSecondary);
   const maxVal = Math.max(...withSecondary);
-  const yBase = minVal < 0 ? 0 : minVal;
-  const yRange = (maxVal - yBase) || 1;
-  const yScale = (v) => PADDING.top + innerHeight - ((v - yBase) / yRange) * innerHeight;
+
+  const useLogScale = chartType !== 'bar' && (logScaleProp || (
+    positiveVals.length > 0 && maxVal / (Math.min(...positiveVals) || 1) > 100 && minVal >= 0
+  ));
+
+  let yScale, yTickValues;
+  if (useLogScale) {
+    const logMin = Math.log10(Math.max(1, Math.min(...positiveVals)));
+    const logMax = Math.log10(Math.max(1, maxVal));
+    const logRange = (logMax - logMin) || 1;
+    yScale = (v) => {
+      const lv = Math.log10(Math.max(1, v));
+      return PADDING.top + innerHeight - ((lv - logMin) / logRange) * innerHeight;
+    };
+    const yTicks = 5;
+    yTickValues = [];
+    for (let t = 0; t <= yTicks; t++) {
+      const logV = logMin + (logRange * t) / yTicks;
+      yTickValues.push(Math.pow(10, logV));
+    }
+  } else {
+    const yBase = minVal < 0 ? 0 : minVal;
+    const yRange = (maxVal - yBase) || 1;
+    yScale = (v) => PADDING.top + innerHeight - ((v - yBase) / yRange) * innerHeight;
+    const yTicks = 5;
+    yTickValues = [];
+    for (let t = 0; t <= yTicks; t++) yTickValues.push(yBase + (yRange * t) / yTicks);
+  }
+
+  const yBaseForBar = useLogScale ? 1 : (minVal < 0 ? 0 : minVal);
 
   const secMin = hasSecondary ? Math.min(...secondaryValues) : 0;
   const secMax = hasSecondary ? Math.max(...secondaryValues) : 1;
@@ -230,21 +276,21 @@ export function ChartView({
   for (let t = 0; t <= secTicks; t++) secTickValues.push(secBase + (secRange * t) / secTicks);
 
   const xScale = (i) => PADDING.left + (i / Math.max(n - 1, 1)) * innerWidth;
-  const yTicks = 4;
-  const yTickValues = [];
-  for (let t = 0; t <= yTicks; t++) yTickValues.push(yBase + (yRange * t) / yTicks);
 
-  const barMinHeight = (chartType === 'bar' && yRange === 0) ? 8 : 0;
   const barHeight = (v) => {
-    const h = yScale(yBase) - yScale(v);
-    return chartType === 'bar' && Math.abs(h) < 1 ? (v >= 0 ? barMinHeight : -barMinHeight) : h;
+    const h = yScale(yBaseForBar) - yScale(v);
+    return chartType === 'bar' && Math.abs(h) < 1 ? (v >= 0 ? 8 : -8) : h;
   };
 
   return (
     <ChartWrapper scale={scale}>
       <View style={styles.wrapper}>
-        {title ? <Text style={[styles.title, { fontSize: font(12), color: muted, marginBottom: 4 }]} numberOfLines={2}>{title}</Text> : null}
-        {yAxisLabel ? <Text style={[styles.yAxisLabel, { fontSize: font(9), color: muted, marginBottom: 2 }]} numberOfLines={1}>{yAxisLabel}</Text> : null}
+        {title ? <Text style={[styles.title, { fontSize: font(13), color: muted, marginBottom: 4 }]} numberOfLines={2}>{title}</Text> : null}
+        {(yAxisLabel || useLogScale) ? (
+          <Text style={[styles.yAxisLabel, { fontSize: font(9), color: muted, marginBottom: 2 }]} numberOfLines={1}>
+            {yAxisLabel || ''}{useLogScale ? (yAxisLabel ? ' (log scale)' : 'log scale') : ''}
+          </Text>
+        ) : null}
         <Svg width={width} height={height} style={styles.svg}>
           {yTickValues.map((v, i) => (
             <Line key={i} x1={PADDING.left} y1={yScale(v)} x2={PADDING.left + innerWidth} y2={yScale(v)} stroke={GRID_COLOR} strokeWidth={1} strokeDasharray="4 3" />
@@ -256,14 +302,14 @@ export function ChartView({
               <Line x1={width - rightPad} y1={PADDING.top} x2={width - rightPad} y2={PADDING.top + innerHeight} stroke={AXIS_COLOR} strokeWidth={1} />
               {secTickValues.map((v, i) => (
                 <SvgText key={i} x={width - rightPad + 6} y={secondaryYScale(v) + 4} fill={muted} fontSize={font(9)} textAnchor="start">
-                  {v === Math.floor(v) ? String(Math.round(v)) : v.toFixed(1)}
+                  {formatTickValue(v)}
                 </SvgText>
               ))}
             </>
           )}
           {yTickValues.map((v, i) => (
             <SvgText key={i} x={PADDING.left - 6} y={yScale(v) + 4} fill={muted} fontSize={font(9)} textAnchor="end">
-              {v === Math.floor(v) ? String(Math.round(v)) : v.toFixed(1)}
+              {formatTickValue(v)}
             </SvgText>
           ))}
           {dataSeries.map((series, seriesIdx) => {
@@ -286,13 +332,13 @@ export function ChartView({
               );
             }
             const pathD = series.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xScale(i)} ${yScale(v)}`).join(' ');
-            const areaD = chartType === 'area' ? `${pathD} L ${xScale(series.length - 1)} ${yScale(yBase)} L ${xScale(0)} ${yScale(yBase)} Z` : null;
+            const areaD = chartType === 'area' ? `${pathD} L ${xScale(series.length - 1)} ${yScale(yBaseForBar)} L ${xScale(0)} ${yScale(yBaseForBar)} Z` : null;
             return (
               <G key={seriesIdx}>
                 {chartType === 'area' && areaD && <Path d={areaD} fill={color} opacity={0.35} />}
                 <Path d={pathD} stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                {series.map((v, i) => (
-                  <Circle key={i} cx={xScale(i)} cy={yScale(v)} r={3.5} fill={color} stroke={isDark ? '#1a2832' : '#fff'} strokeWidth={1} />
+                {n <= 12 && series.map((v, i) => (
+                  <Circle key={i} cx={xScale(i)} cy={yScale(v)} r={n > 8 ? 2.5 : 3.5} fill={color} stroke={isDark ? '#1a2832' : '#fff'} strokeWidth={1} />
                 ))}
               </G>
             );
@@ -315,16 +361,22 @@ export function ChartView({
           )}
         </Svg>
         <View style={[styles.labelsRow, { marginLeft: PADDING.left, width: innerWidth, marginTop: 4 }]}>
-          {(labels || []).slice(0, n).map((label, i) => (
-            <Text key={i} style={[styles.label, { fontSize: font(10), color: muted, flex: 1 }]} numberOfLines={1}>{label}</Text>
-          ))}
+          {(() => {
+            const allLabels = (labels || []).slice(0, n);
+            const step = labelStep(allLabels.length, 8);
+            return allLabels.map((label, i) => (
+              <Text key={i} style={[styles.label, { fontSize: font(n > 8 ? 8 : 10), color: muted, flex: 1 }]} numberOfLines={1}>
+                {i % step === 0 ? label : ''}
+              </Text>
+            ));
+          })()}
         </View>
         {hasMulti && seriesLabels.length > 0 && (
-          <View style={[styles.legendWrap, { marginTop: scale(8), flexWrap: 'wrap', flexDirection: 'row', justifyContent: 'center' }]}>
+          <View style={[styles.legendWrap, { marginTop: scale(8), flexWrap: 'wrap', flexDirection: 'row', justifyContent: 'center', paddingHorizontal: scale(4) }]}>
             {seriesLabels.slice(0, dataSeries.length).map((name, i) => (
-              <View key={i} style={[styles.legendItem, { marginHorizontal: scale(6) }]}>
+              <View key={i} style={[styles.legendItem, { marginHorizontal: scale(4), marginVertical: scale(2) }]}>
                 <View style={[styles.legendDot, { backgroundColor: getSeriesColor(i, primary) }]} />
-                <Text style={[styles.legendText, { fontSize: font(11), color: muted }]} numberOfLines={1}>{name}</Text>
+                <Text style={[styles.legendText, { fontSize: font(dataSeries.length > 5 ? 9 : 11), color: muted }]} numberOfLines={1}>{name}</Text>
               </View>
             ))}
             {hasSecondary && secondaryLabel && (

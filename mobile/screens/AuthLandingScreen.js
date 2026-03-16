@@ -3,6 +3,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLayout } from '../utils/useLayout';
 import { useNavigation } from '@react-navigation/native';
+import { OAuthButtons } from '../components/OAuthButtons';
 
 export function AuthLandingScreen() {
   const navigation = useNavigation();
@@ -24,6 +25,14 @@ export function AuthLandingScreen() {
 
       {/* Bottom rounded panel */}
       <View style={[styles.panel, { backgroundColor: colors.card, borderColor: colors.border, paddingHorizontal: padding, paddingTop: scale(24), paddingBottom: scale(24) + insets.bottom }]}>
+        <OAuthButtons style={{ marginBottom: scale(4) }} />
+
+        <View style={styles.dividerRow}>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          <Text style={[styles.dividerText, { color: colors.muted, fontSize: font(13) }]}>or</Text>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+        </View>
+
         <Pressable
           style={({ pressed }) => [
             styles.btn,
@@ -32,7 +41,7 @@ export function AuthLandingScreen() {
           ]}
           onPress={() => navigation.navigate('SignUp')}
         >
-          <Text style={[styles.btnText, { color: '#fff', fontWeight: '600' }]}>Sign up</Text>
+          <Text style={[styles.btnText, { color: '#fff', fontWeight: '600' }]}>Sign up with email</Text>
         </Pressable>
         <Pressable
           style={({ pressed }) => [
@@ -42,7 +51,7 @@ export function AuthLandingScreen() {
           ]}
           onPress={() => navigation.navigate('SignIn')}
         >
-          <Text style={[styles.btnText, { color: colors.ink }]}>Log in</Text>
+          <Text style={[styles.btnText, { color: colors.ink }]}>Log in with email</Text>
         </Pressable>
       </View>
     </View>
@@ -72,4 +81,7 @@ const styles = StyleSheet.create({
   },
   btnPressed: { opacity: 0.85 },
   btnText: { fontSize: 16 },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 16 },
+  dividerLine: { flex: 1, height: 1 },
+  dividerText: { marginHorizontal: 12 },
 });

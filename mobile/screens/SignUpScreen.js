@@ -4,6 +4,7 @@ import { useSignUp, useClerk } from '@clerk/clerk-expo';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLayout } from '../utils/useLayout';
 import { useNavigation } from '@react-navigation/native';
+import { OAuthButtons } from '../components/OAuthButtons';
 
 export function SignUpScreen() {
   const navigation = useNavigation();
@@ -50,15 +51,7 @@ export function SignUpScreen() {
       const signUpAttempt = await signUp.attemptEmailAddressVerification({ code });
 
       if (signUpAttempt.status === 'complete') {
-        await setActive({
-          session: signUpAttempt.createdSessionId,
-          navigate: async ({ session }) => {
-            if (session?.currentTask) {
-              console.log(session?.currentTask);
-              return;
-            }
-          },
-        });
+        await setActive({ session: signUpAttempt.createdSessionId });
       } else {
         setError(JSON.stringify(signUpAttempt, null, 2));
       }
@@ -136,8 +129,17 @@ export function SignUpScreen() {
           ) : (
             <>
               <Text style={[styles.panelTitle, { fontSize: font(18), color: colors.ink }]}>Sign up</Text>
+
+              <OAuthButtons style={{ marginTop: scale(16) }} />
+
+              <View style={styles.dividerRow}>
+                <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+                <Text style={[styles.dividerText, { color: colors.muted, fontSize: font(13) }]}>or</Text>
+                <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+              </View>
+
               <TextInput
-                style={[inputStyle, { marginTop: scale(16) }]}
+                style={inputStyle}
                 autoCapitalize="none"
                 value={emailAddress}
                 placeholder="Email"
@@ -214,5 +216,8 @@ const styles = StyleSheet.create({
   btnPressed: { opacity: 0.85 },
   btnDisabled: { opacity: 0.5 },
   btnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 16 },
+  dividerLine: { flex: 1, height: 1 },
+  dividerText: { marginHorizontal: 12 },
   error: { fontSize: 13, marginTop: 12 },
 });

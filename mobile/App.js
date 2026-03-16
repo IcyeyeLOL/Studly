@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, Component } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo, Component } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import {
   StyleSheet,
@@ -21,6 +21,7 @@ import {
   Easing,
   LayoutAnimation,
   Image,
+  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -45,10 +46,11 @@ import { SignOutButton } from './components/SignOutButton';
 import { ClerkUserSync } from './components/ClerkUserSync';
 import { ProfileAccountInfo } from './components/ProfileAccountInfo';
 import Constants from 'expo-constants';
-import { OnboardingFlow } from './screens/onboarding/OnboardingFlow';
+import { FeatureShowcase } from './screens/FeatureShowcase';
 import { useLayout } from './utils/useLayout';
-import { solve as apiSolve, solveStream as apiSolveStream, healthCheck, API_URL } from './services/api';
-import { solveDirect, solveDirectStream, isDirectAvailable } from './services/solveDirect';
+import { solve as apiSolve, solveStream as apiSolveStream, healthCheck, API_URL, createCheckoutSession, getProfile } from './services/api';
+import { PLAN_LABELS, getPlanLabel, getPlanLabelShort, FREE_PLAN_CTA, PLAN_PICKER_MESSAGE } from './constants/plans';
+import * as WebBrowser from 'expo-web-browser';
 
 class ErrorBoundary extends Component {
   state = { error: null };
@@ -95,6 +97,38 @@ const SIDEBAR_DARK = {
 
 const SidebarContext = React.createContext({ openSidebar: () => {} });
 
+/**
+ * Listens for studly://subscription-success and syncs profile (subscription_plan) from backend.
+ */
+function SubscriptionDeepLinkHandler() {
+  const { getToken } = useAuth();
+  const setSubscriptionPlan = useStudlyStoreImpl((s) => s.setSubscriptionPlan);
+
+  useEffect(() => {
+    const handleUrl = async (event) => {
+      const url = event?.url || event;
+      if (!url || typeof url !== 'string') return;
+      if (!url.includes('subscription-success')) return;
+      try {
+        const token = await getToken();
+        if (!token) return;
+        const profile = await getProfile(token);
+        if (profile?.subscription_plan === 'yearly' || profile?.subscription_plan === 'monthly') {
+          setSubscriptionPlan(profile.subscription_plan);
+        } else {
+          setSubscriptionPlan('free');
+        }
+      } catch (_) {}
+    };
+
+    const sub = Linking.addEventListener('url', handleUrl);
+    Linking.getInitialURL().then(handleUrl);
+    return () => sub.remove();
+  }, [getToken, setSubscriptionPlan]);
+
+  return null;
+}
+
 function ProfileAvatar({ size = 36 }) {
   const { colors } = useTheme();
   const { font } = useLayout();
@@ -127,13 +161,14 @@ function SidebarProvider({ children }) {
   const { insets, scale } = useLayout();
   const userName = useStudlyStoreImpl((s) => s.userName);
   const savedSolutions = useStudlyStoreImpl((s) => s.savedSolutions);
-  const recentQuestions = useStudlyStoreImpl((s) => s.recentQuestions);
+  const _recentQuestions = useStudlyStoreImpl((s) => s.recentQuestions);
+  const recentQuestions = useMemo(() => { const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000; return _recentQuestions.filter((r) => r.createdAt >= cutoff); }, [_recentQuestions]);
   const chats = useStudlyStoreImpl((s) => s.chats);
   const setActiveChatId = useStudlyStoreImpl((s) => s.setActiveChatId);
   const starredChatIds = useStudlyStoreImpl((s) => s.starredChatIds);
 
-  const recentChats = [...chats].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)).slice(0, 10);
-  const starredChats = recentChats.filter((c) => starredChatIds.includes(c.id));
+  const recentChats = useMemo(() => [...chats].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)).slice(0, 10), [chats]);
+  const starredChats = useMemo(() => recentChats.filter((c) => starredChatIds.includes(c.id)), [recentChats, starredChatIds]);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const sidebarWidth = Math.min(320, width * 0.85);
@@ -172,13 +207,23 @@ function SidebarProvider({ children }) {
     closeSidebar(() => navigation.dispatch(CommonActions.navigate({ name: 'Chat' })));
   }, [closeSidebar, navigation, setActiveChatId]);
 
-  const state = navigation.getState();
-  const currentRoute = state?.routes?.[state.index]?.name ?? 'Chat';
+  const [currentRoute, setCurrentRoute] = useState('Chat');
+  useEffect(() => {
+    const getRoute = () => {
+      const state = navigation.getState();
+      return state?.routes?.[state.index]?.name ?? 'Chat';
+    };
+    setCurrentRoute(getRoute());
+    const unsub = navigation.addListener('state', () => setCurrentRoute(getRoute()));
+    return unsub;
+  }, [navigation]);
   const isChat = currentRoute === 'Chat';
   const isProjects = currentRoute === 'Projects';
 
+  const ctxValue = useMemo(() => ({ openSidebar }), [openSidebar]);
+
   return (
-    <SidebarContext.Provider value={{ openSidebar }}>
+    <SidebarContext.Provider value={ctxValue}>
       {children}
       <Modal visible={sidebarOpen} transparent animationType="none" statusBarTranslucent>
         <View style={styles.sidebarContainer}>
@@ -314,7 +359,8 @@ function AskScreen() {
   const lastNonAskTab = useStudlyStoreImpl((s) => s.lastNonAskTab);
   const userName = useStudlyStoreImpl((s) => s.userName);
   const savedSolutions = useStudlyStoreImpl((s) => s.savedSolutions);
-  const recentQuestions = useStudlyStoreImpl((s) => s.recentQuestions);
+  const _recentQuestions = useStudlyStoreImpl((s) => s.recentQuestions);
+  const recentQuestions = useMemo(() => { const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000; return _recentQuestions.filter((r) => r.createdAt >= cutoff); }, [_recentQuestions]);
   const projects = useStudlyStoreImpl((s) => s.projects);
   const addProject = useStudlyStoreImpl((s) => s.addProject);
   const defaultOutput = useStudlyStoreImpl((s) => s.defaultOutput);
@@ -332,6 +378,19 @@ function AskScreen() {
   const removeMessageFromChat = useStudlyStoreImpl((s) => s.removeMessageFromChat);
   const subscriptionPlan = useStudlyStoreImpl((s) => s.subscriptionPlan);
   const setSubscriptionPlan = useStudlyStoreImpl((s) => s.setSubscriptionPlan);
+  const { getToken } = useAuth();
+
+  const openStudlyProCheckout = useCallback(async (plan) => {
+    try {
+      const token = await getToken();
+      if (!token) { Alert.alert('Error', 'Not signed in.'); return; }
+      const data = await createCheckoutSession(plan, token);
+      if (data?.url) await WebBrowser.openBrowserAsync(data.url);
+      else Alert.alert('Error', 'Could not open checkout.');
+    } catch (e) {
+      Alert.alert('Error', e?.message || 'Could not start checkout.');
+    }
+  }, [getToken]);
 
   useFocusEffect(useCallback(() => {
     useStudlyStoreImpl.getState().setLastNonAskTab('Chat');
@@ -415,13 +474,21 @@ function AskScreen() {
     };
   }, []);
 
-  const subjects = ['Math', 'English', 'Science', 'History', 'Other'];
+  const subjects = ['Math', 'Science', 'English', 'History', 'Computer Science', 'Business', 'Economics', 'Psychology', 'Philosophy', 'Art', 'Other'];
 
   const onBack = () => navigation.navigate(lastNonAskTab || 'Saved');
 
+  const MAX_ATTACHMENTS = 5;
   const addToAttachments = (items) => {
     const newFiles = items.map((f, i) => ({ id: `${Date.now()}-${i}`, uri: f.uri, name: f.name || 'File' }));
-    setAttachments((prev) => [...prev, ...newFiles]);
+    setAttachments((prev) => {
+      const combined = [...prev, ...newFiles];
+      if (combined.length > MAX_ATTACHMENTS) {
+        Alert.alert('Limit reached', `You can attach up to ${MAX_ATTACHMENTS} files.`);
+        return combined.slice(0, MAX_ATTACHMENTS);
+      }
+      return combined;
+    });
   };
 
   const pickCamera = async () => {
@@ -486,159 +553,108 @@ function AskScreen() {
     return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
   };
 
-  const { getToken } = useAuth();
+  const resolveOutputFormat = () => {
+    if (defaultOutput === 'ask') return null;
+    return defaultOutput || resultView;
+  };
 
-  const onSolve = async () => {
+  const doSolveWithFormat = async (outputFormat) => {
     const q = question.trim();
     if (!q) return;
     setQuestion('');
     setLoading(true);
     isNearBottomRef.current = true;
-    let usedBackend = false;
     let streamChatId = null;
     let streamMsgId = null;
     try {
-      try {
-        const health = await healthCheck();
-        const token = await getToken();
-        usedBackend = true;
-        // Stream from backend: add message immediately with empty answer, then stream into it
-        streamMsgId = addMessageToChat(activeChatId, {
+      const health = await healthCheck();
+      const token = await getToken();
+      streamMsgId = addMessageToChat(activeChatId, {
+        question: q,
+        subject,
+        answerText: '',
+        outputPreference: outputFormat,
+        projectId: selectedProjectId,
+      });
+      streamChatId = useStudlyStoreImpl.getState().activeChatId;
+      setPendingQuestion(null);
+      let accumulated = '';
+      let scrollTimer = null;
+      const scheduleScroll = () => {
+        if (scrollTimer || !isNearBottomRef.current) return;
+        scrollTimer = setTimeout(() => {
+          scrollTimer = null;
+          if (isNearBottomRef.current) {
+            threadScrollRef.current?.scrollToEnd?.({ animated: false });
+          }
+        }, 80);
+      };
+      await apiSolveStream(
+        {
           question: q,
           subject,
-          answerText: '',
-          outputPreference: defaultOutput || resultView,
-          projectId: selectedProjectId,
-        });
-        streamChatId = useStudlyStoreImpl.getState().activeChatId;
-        setPendingQuestion(null);
-        let accumulated = '';
-        let scrollTimer = null;
-        const scheduleScroll = () => {
-          if (scrollTimer || !isNearBottomRef.current) return;
-          scrollTimer = setTimeout(() => {
-            scrollTimer = null;
-            if (isNearBottomRef.current) {
-              threadScrollRef.current?.scrollToEnd?.({ animated: false });
-            }
-          }, 80);
-        };
-        await apiSolveStream(
-          {
-            question: q,
-            subject,
-            output_preference: defaultOutput || resultView,
-            attachment_urls: attachments.map((a) => a.uri),
-            token: token ?? undefined,
-            baseUrl: health._baseUrl,
+          output_preference: outputFormat,
+          attachment_urls: attachments.map((a) => a.uri),
+          web_search: webSearchEnabled,
+          token: token ?? undefined,
+          baseUrl: health._baseUrl,
+        },
+        {
+          onChunk(t) {
+            accumulated += t;
+            updateMessageInChat(streamChatId, streamMsgId, { answerText: accumulated });
+            scheduleScroll();
           },
-          {
-            onChunk(t) {
-              accumulated += t;
-              updateMessageInChat(streamChatId, streamMsgId, { answerText: accumulated });
-              scheduleScroll();
-            },
-            onDone(data) {
-              updateMessageInChat(streamChatId, streamMsgId, { answerText: data.answerText });
-              addRecent({
-                id: Date.now().toString(),
-                title: q.slice(0, 50) + (q.length > 50 ? '…' : ''),
-                subject,
-                createdAt: Date.now(),
-              });
-              setAttachments([]);
-              if (isNearBottomRef.current) {
-                setTimeout(() => threadScrollRef.current?.scrollToEnd?.({ animated: true }), 100);
-              }
-            },
-            onError(err) {
-              const msg = err?.message || 'Stream failed';
-              updateMessageInChat(streamChatId, streamMsgId, { answerText: `Error: ${msg}` });
-              Alert.alert('Error', msg);
-            },
-          }
-        );
-        setLoading(false);
-        setPendingQuestion(null);
-        return;
-      } catch (_backendErr) {
-        usedBackend = false;
-        if (streamMsgId != null && streamChatId != null) {
-          removeMessageFromChat(streamChatId, streamMsgId);
-        }
-        setPendingQuestion(q);
-      }
-
-      if (!usedBackend) {
-        if (!isDirectAvailable()) {
-          Alert.alert('Cannot reach backend', 'Add EXPO_PUBLIC_ANTHROPIC_API_KEY to mobile/.env for direct AI calls without a backend.');
-          setLoading(false);
-          setPendingQuestion(null);
-          setQuestion(q);
-          return;
-        }
-        // Stream directly from Anthropic API
-        streamMsgId = addMessageToChat(activeChatId, {
-          question: q,
-          subject,
-          answerText: '',
-          outputPreference: defaultOutput || resultView,
-          projectId: selectedProjectId,
-        });
-        streamChatId = useStudlyStoreImpl.getState().activeChatId;
-        setPendingQuestion(null);
-        let directAccumulated = '';
-        let directScrollTimer = null;
-        const directScheduleScroll = () => {
-          if (directScrollTimer || !isNearBottomRef.current) return;
-          directScrollTimer = setTimeout(() => {
-            directScrollTimer = null;
+          onDone(data) {
+            updateMessageInChat(streamChatId, streamMsgId, { answerText: data.answerText });
+            addRecent({
+              id: Date.now().toString(),
+              title: q.slice(0, 50) + (q.length > 50 ? '…' : ''),
+              subject,
+              createdAt: Date.now(),
+            });
+            setAttachments([]);
             if (isNearBottomRef.current) {
-              threadScrollRef.current?.scrollToEnd?.({ animated: false });
+              setTimeout(() => threadScrollRef.current?.scrollToEnd?.({ animated: true }), 100);
             }
-          }, 80);
-        };
-        await solveDirectStream(
-          {
-            question: q,
-            subject,
-            output_preference: defaultOutput || resultView,
-            attachments,
           },
-          {
-            onChunk(t) {
-              directAccumulated += t;
-              updateMessageInChat(streamChatId, streamMsgId, { answerText: directAccumulated });
-              directScheduleScroll();
-            },
-            onDone(data) {
-              updateMessageInChat(streamChatId, streamMsgId, { answerText: data.answerText });
-              addRecent({
-                id: Date.now().toString(),
-                title: q.slice(0, 50) + (q.length > 50 ? '…' : ''),
-                subject,
-                createdAt: Date.now(),
-              });
-              setAttachments([]);
-              if (isNearBottomRef.current) {
-                setTimeout(() => threadScrollRef.current?.scrollToEnd?.({ animated: true }), 100);
-              }
-            },
-            onError(err) {
-              const errMsg = err?.message || 'Stream failed';
-              updateMessageInChat(streamChatId, streamMsgId, { answerText: `Error: ${errMsg}` });
-              Alert.alert('Error', errMsg);
-            },
-          }
-        );
-      }
+          onError(err) {
+            const msg = err?.message || 'Stream failed';
+            updateMessageInChat(streamChatId, streamMsgId, { answerText: `Error: ${msg}` });
+            Alert.alert('Error', msg);
+          },
+        }
+      );
     } catch (err) {
+      if (streamMsgId != null && streamChatId != null) {
+        removeMessageFromChat(streamChatId, streamMsgId);
+      }
       Alert.alert('Error', err?.message || 'Could not get solution. Please try again.');
       setQuestion(q);
     } finally {
       setLoading(false);
       setPendingQuestion(null);
     }
+  };
+
+  const onSolve = () => {
+    const q = question.trim();
+    if (!q) return;
+    const outputFormat = resolveOutputFormat();
+    if (outputFormat !== null) {
+      doSolveWithFormat(outputFormat);
+      return;
+    }
+    // defaultOutput === 'ask': show picker before solving
+    Alert.alert(
+      'How would you like this solution displayed?',
+      'Choose a format for this question.',
+      [
+        { text: 'Handwritten', onPress: () => doSolveWithFormat('handwritten') },
+        { text: 'Flowchart', onPress: () => doSolveWithFormat('flowchart') },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
   };
 
   const onNewChat = () => {
@@ -705,7 +721,7 @@ function AskScreen() {
                         <HandwrittenView key={idx} text={seg.value} subject={idx === 0 ? msg.subject : null} colors={colors} isDark={isDark} scale={scale} font={font} />
                       )
                     ) : (
-                      <ChartView key={idx} chartType={seg.chartType} title={seg.title} yAxisLabel={seg.yAxisLabel} labels={seg.labels} values={seg.values} seriesLabels={seg.seriesLabels} seriesValues={seg.seriesValues} xValues={seg.xValues} secondaryValues={seg.secondaryValues} secondaryLabel={seg.secondaryLabel} colors={colors} isDark={isDark} scale={scale} font={font} />
+                      <ChartView key={idx} chartType={seg.chartType} title={seg.title} yAxisLabel={seg.yAxisLabel} labels={seg.labels} values={seg.values} seriesLabels={seg.seriesLabels} seriesValues={seg.seriesValues} xValues={seg.xValues} secondaryValues={seg.secondaryValues} secondaryLabel={seg.secondaryLabel} logScale={seg.logScale} colors={colors} isDark={isDark} scale={scale} font={font} />
                     )
                   )}
                   {savedSolutions.some((s) => s.id === msg.id) ? (
@@ -803,7 +819,7 @@ function AskScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Studly Pro — current plan */}
+      {/* Studly Pro / Free — current plan */}
       <TouchableOpacity
         activeOpacity={0.85}
         style={{
@@ -816,13 +832,16 @@ function AskScreen() {
           borderBottomWidth: 1,
           borderBottomColor: colors.border,
         }}
-        onPress={() => Alert.alert('Studly Pro — Billing', 'Choose your billing interval.', [
-          { text: 'Monthly', onPress: () => setSubscriptionPlan('monthly') },
-          { text: 'Yearly (save more)', onPress: () => setSubscriptionPlan('yearly') },
+        onPress={() => Alert.alert('Plan', 'Choose your plan.', [
+          { text: PLAN_LABELS.free, onPress: () => setSubscriptionPlan('free') },
+          { text: PLAN_LABELS.monthly, onPress: () => openStudlyProCheckout('monthly') },
+          { text: PLAN_LABELS.yearly + ' (save more)', onPress: () => openStudlyProCheckout('yearly') },
           { text: 'Cancel', style: 'cancel' },
         ])}
       >
-        <Text style={{ fontSize: font(13), color: colors.ink, fontWeight: '500' }}>Studly Pro — {subscriptionPlan === 'yearly' ? 'Yearly' : 'Monthly'}</Text>
+        <Text style={{ fontSize: font(13), color: colors.ink, fontWeight: '500' }}>
+          {getPlanLabel(subscriptionPlan)}
+        </Text>
         <Text style={{ fontSize: font(13), color: colors.primary, fontWeight: '600' }}>Change plan</Text>
       </TouchableOpacity>
 
@@ -991,12 +1010,9 @@ function AskScreen() {
             <View style={[styles.addToChatRow, { paddingVertical: scale(14), paddingHorizontal: scale(16), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: scale(12) }}>
                 <Text style={{ fontSize: font(20) }}>🌐</Text>
-                <Text style={{ fontSize: font(15), color: colors.muted }}>Web search</Text>
+                <Text style={{ fontSize: font(15), color: colors.ink }}>Web search</Text>
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: scale(8) }}>
-                <Text style={{ fontSize: font(11), color: colors.muted, fontWeight: '600' }}>Coming soon</Text>
-                <Switch value={false} disabled trackColor={{ false: colors.border, true: colors.primary }} thumbColor="#fff" />
-              </View>
+              <Switch value={webSearchEnabled} onValueChange={setWebSearchEnabled} trackColor={{ false: colors.border, true: colors.primary }} thumbColor="#fff" />
             </View>
             <View style={{ height: 1, backgroundColor: colors.border, marginHorizontal: scale(16) }} />
             <TouchableOpacity style={[styles.addToChatRow, { paddingVertical: scale(14), paddingHorizontal: scale(16), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]} onPress={showAddToProjectPicker} activeOpacity={0.7}>
@@ -1634,18 +1650,60 @@ function ProfileScreen() {
   const setDefaultOutput = useStudlyStoreImpl((s) => s.setDefaultOutput);
   const notificationsEnabled = useStudlyStoreImpl((s) => s.notificationsEnabled);
   const setNotificationsEnabled = useStudlyStoreImpl((s) => s.setNotificationsEnabled);
-  const recentQuestions = useStudlyStoreImpl((s) => s.recentQuestions);
+  const _recentQuestions = useStudlyStoreImpl((s) => s.recentQuestions);
+  const recentQuestions = useMemo(() => { const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000; return _recentQuestions.filter((r) => r.createdAt >= cutoff); }, [_recentQuestions]);
   const savedSolutions = useStudlyStoreImpl((s) => s.savedSolutions);
-  const setOnboardingCompleted = useStudlyStoreImpl((s) => s.setOnboardingCompleted);
-  const setOnboardingData = useStudlyStoreImpl((s) => s.setOnboardingData);
   const subscriptionPlan = useStudlyStoreImpl((s) => s.subscriptionPlan);
   const setSubscriptionPlan = useStudlyStoreImpl((s) => s.setSubscriptionPlan);
 
-  const [darkModeSwitch, setDarkModeSwitch] = useState(() => appearance === 'dark');
+  const { getToken } = useAuth();
+  const openStudlyProCheckout = useCallback(async (plan) => {
+    try {
+      const token = await getToken();
+      const data = await createCheckoutSession(plan, token);
+      if (data?.url) await WebBrowser.openBrowserAsync(data.url);
+      else Alert.alert('Error', 'Could not open checkout.');
+    } catch (e) {
+      Alert.alert('Error', e?.message || 'Could not start checkout.');
+    }
+  }, [getToken]);
+
+  useFocusEffect(useCallback(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getToken();
+        if (!token || cancelled) return;
+        const profile = await getProfile(token);
+        if (cancelled) return;
+        if (profile?.subscription_plan === 'yearly' || profile?.subscription_plan === 'monthly') {
+          setSubscriptionPlan(profile.subscription_plan);
+        } else {
+          setSubscriptionPlan('free');
+        }
+      } catch (_) {}
+    })();
+    return () => { cancelled = true; };
+  }, [getToken, setSubscriptionPlan]));
+
+  const showPlanPicker = () => {
+    Alert.alert(
+      'Plan',
+      PLAN_PICKER_MESSAGE,
+      [
+        { text: PLAN_LABELS.free, onPress: () => setSubscriptionPlan('free') },
+        { text: PLAN_LABELS.monthly, onPress: () => openStudlyProCheckout('monthly') },
+        { text: PLAN_LABELS.yearly + ' (save more)', onPress: () => openStudlyProCheckout('yearly') },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  const [darkModeSwitch, setDarkModeSwitch] = useState(() => isDark);
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(userName);
 
-  useEffect(() => { setDarkModeSwitch(appearance === 'dark'); }, [appearance]);
+  useEffect(() => { setDarkModeSwitch(isDark); }, [isDark]);
   useEffect(() => { setNameDraft(userName); }, [userName]);
 
   const setDarkModeEnabled = useCallback((value) => {
@@ -1664,22 +1722,10 @@ function ProfileScreen() {
 
   const saveName = () => { setUserName(nameDraft); setEditingName(false); };
 
-  const displayName = userName.trim() || 'Student';
-  const initial = displayName === 'Student' ? 'S' : displayName.slice(0, 1).toUpperCase();
+  const displayName = userName.trim() || '';
+  const initial = displayName ? displayName.slice(0, 1).toUpperCase() : '👤';
 
   const defaultOutputLabel = { ask: 'Ask each time', handwritten: 'Handwritten', flowchart: 'Flowchart' };
-
-  const showPlanPicker = () => {
-    Alert.alert(
-      'Studly Pro — Billing',
-      'Choose your billing interval. You can change this anytime.',
-      [
-        { text: 'Monthly', onPress: () => setSubscriptionPlan('monthly') },
-        { text: 'Yearly (save more)', onPress: () => setSubscriptionPlan('yearly') },
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
-  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
@@ -1745,7 +1791,7 @@ function ProfileScreen() {
         <SettingsSectionHeader title="ACCOUNT" />
         <SettingsGroup>
           <SettingsRow icon="✉️" label="Email" right={<ProfileAccountEmail />} />
-          <SettingsRow icon="💳" label="Studly Pro" right={<Text style={{ fontSize: font(14), color: colors.ink, fontWeight: '600' }}>{subscriptionPlan === 'yearly' ? 'Yearly' : 'Monthly'}</Text>} />
+          <SettingsRow icon="💳" label="Plan" right={<Text style={{ fontSize: font(14), color: colors.ink, fontWeight: '600' }}>{getPlanLabelShort(subscriptionPlan)}</Text>} />
           <SettingsRow icon="🔄" label="Change plan" onPress={showPlanPicker} />
         </SettingsGroup>
 
@@ -1784,27 +1830,6 @@ function ProfileScreen() {
           <SettingsRow icon="📜" label="Terms of Use" onPress={() => Alert.alert('Terms', 'Visit studly.app/terms.')} />
           <SettingsRow icon="🔒" label="Privacy Policy" onPress={() => Alert.alert('Privacy', 'Visit studly.app/privacy.')} />
           <SettingsRow icon="📱" label="Studly for iOS" right={<Text style={{ fontSize: font(12), color: colors.muted }}>v1.0.0</Text>} />
-          <SettingsRow
-            icon="🔄"
-            label="Reset onboarding"
-            onPress={() =>
-              Alert.alert(
-                'Reset onboarding',
-                'You will see the full onboarding flow again. Useful for development.',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  {
-                    text: 'Reset',
-                    onPress: async () => {
-                      try { await clerk.signOut(); } catch (_) {}
-                      setOnboardingData({});
-                      setOnboardingCompleted(false);
-                    },
-                  },
-                ]
-              )
-            }
-          />
         </SettingsGroup>
 
         {/* Log out */}
@@ -1879,7 +1904,8 @@ function TabNavigator() {
 
 function RootNavigator() {
   const { isLoaded, isSignedIn } = useAuth();
-  const onboardingCompleted = useStudlyStoreImpl((s) => s.onboardingCompleted);
+  const tutorialSeen = useStudlyStoreImpl((s) => s.tutorialSeen);
+  const setTutorialSeen = useStudlyStoreImpl((s) => s.setTutorialSeen);
 
   if (!isLoaded) {
     return (
@@ -1889,10 +1915,6 @@ function RootNavigator() {
     );
   }
 
-  if (!onboardingCompleted) {
-    return <OnboardingFlow />;
-  }
-
   if (!isSignedIn) {
     return <AuthStack />;
   }
@@ -1900,9 +1922,11 @@ function RootNavigator() {
   return (
     <>
       <ClerkUserSync />
+      <SubscriptionDeepLinkHandler />
       <SidebarProvider>
         <TabNavigator />
       </SidebarProvider>
+      {!tutorialSeen && <FeatureShowcase onDone={() => setTutorialSeen(true)} />}
     </>
   );
 }

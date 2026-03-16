@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useMemo } from 'react';
+import { useColorScheme } from 'react-native';
 import { useStudlyStoreImpl } from '../store/useStudlyStore';
 
 const lightColors = {
@@ -29,7 +30,8 @@ const ThemeContext = createContext({ colors: lightColors, isDark: false });
 
 export function ThemeProvider({ children }) {
   const appearance = useStudlyStoreImpl((s) => s.appearance);
-  const isDark = appearance === 'dark';
+  const systemScheme = useColorScheme();
+  const isDark = appearance === 'dark' || (appearance === null && systemScheme === 'dark');
   const colors = useMemo(() => (isDark ? darkColors : lightColors), [isDark]);
   const value = useMemo(() => ({ colors, isDark }), [colors, isDark]);
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

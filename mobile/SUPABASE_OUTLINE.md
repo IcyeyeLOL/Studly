@@ -33,6 +33,7 @@ create table if not exists public.profiles (
   onboarding_data jsonb default '{}',
   subscription_plan text default 'free',
   subscription_expires_at timestamptz,
+  stripe_customer_id text,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );

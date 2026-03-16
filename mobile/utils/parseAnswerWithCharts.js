@@ -26,8 +26,13 @@ function parseChartBlock(innerText) {
   let scatterSeriesY = []; // for multi-series scatter: [ [y1,y2,...], [y1,y2,...] ]
   let secondaryValues = [];
   let secondaryLabel = '';
+  let logScale = false;
 
   for (const line of lines) {
+    if (/^logScale\s*:\s*/i.test(line)) {
+      logScale = /^logScale\s*:\s*true/i.test(line);
+      continue;
+    }
     if (/^title\s*:\s*/i.test(line)) {
       title = line.replace(/^title\s*:\s*/i, '').trim();
       continue;
@@ -94,6 +99,7 @@ function parseChartBlock(innerText) {
       yValues: null,
       seriesLabels: seriesLabels.slice(0, ySeries.length),
       seriesValues: ySeries.map((arr) => arr.slice(0, n)),
+      logScale,
     };
   }
 
@@ -113,6 +119,7 @@ function parseChartBlock(innerText) {
       values: null,
       seriesLabels: seriesLabels.slice(0, seriesValues.length),
       seriesValues: seriesValues.map((arr) => arr.slice(0, n)),
+      logScale,
     };
     if (hasSecondary) {
       out.secondaryValues = secondaryValues.slice(0, n);
@@ -134,6 +141,7 @@ function parseChartBlock(innerText) {
     values: values.slice(0, n),
     seriesLabels: [],
     seriesValues: [],
+    logScale,
   };
   if (hasSecondary) {
     out.secondaryValues = secondaryValues.slice(0, n);

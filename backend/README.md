@@ -10,6 +10,8 @@ Express API with Clerk auth and Supabase. Used by the Studly mobile app.
    ```
    Fill in: `CLERK_SECRET_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`. Optional: `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `PORT`, `FREE_DAILY_QUESTION_LIMIT` (default 10 for free tier), `SERPER_API_KEY` (for web search — get at serper.dev). For Studly Pro: `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, and optionally `STRIPE_PRICE_ID_PRO_MONTHLY`, `STRIPE_PRICE_ID_PRO_YEARLY`, `STRIPE_PRODUCT_ID_PRO_DISCOUNT` (or `STRIPE_PRICE_ID_PRO_DISCOUNT`) for the special-offer product; or use product IDs `STRIPE_PRODUCT_ID_PRO_MONTHLY`, `STRIPE_PRODUCT_ID_PRO_YEARLY` to look up prices.
 
+   **Security:** In production, set `ALLOWED_ORIGINS` (comma-separated) to restrict CORS. Rate limiting applies to all endpoints; see `SECURITY.md`.
+
 ## Switching AI models
 
 Add to `backend/.env`:

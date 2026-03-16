@@ -1,6 +1,5 @@
 /**
  * API client for Studly backend.
- * Used when backend is reachable. Falls back to solveDirect.js when not.
  */
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
@@ -21,7 +20,7 @@ export async function healthCheck() {
   return { ...data, _baseUrl: API_URL };
 }
 
-export async function solve({ question, subject, output_preference, attachment_urls, token, baseUrl }) {
+export async function solve({ question, subject, output_preference, attachment_urls, web_search, token, baseUrl }) {
   const url = (baseUrl || API_URL) + '/api/solve';
   const res = await fetch(url, {
     method: 'POST',
@@ -35,6 +34,7 @@ export async function solve({ question, subject, output_preference, attachment_u
       subject: subject || 'Other',
       output_preference: output_preference || 'handwritten',
       attachment_urls: attachment_urls || [],
+      web_search: !!web_search,
     }),
   });
 
@@ -52,11 +52,56 @@ export async function solve({ question, subject, output_preference, attachment_u
 }
 
 /**
+ * Get current user profile from backend (subscription_plan, etc.).
+ */
+export async function getProfile(token, baseUrl) {
+  const url = (baseUrl || API_URL) + '/api/profile';
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: {
+      ...DEFAULT_HEADERS,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+  if (!res.ok) throw new Error(`Profile fetch failed (${res.status})`);
+  return res.json();
+}
+
+/**
+ * Create Stripe Checkout session for Studly Pro. Returns { url, sessionId }.
+ * Open url in WebBrowser; on success Stripe redirects to studly://subscription-success.
+ */
+export async function createCheckoutSession(plan, token, baseUrl) {
+  const url = (baseUrl || API_URL) + '/api/stripe/create-checkout-session';
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...DEFAULT_HEADERS,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({
+      plan: plan === 'discount' || plan === 'yearly_discount' ? 'discount' : plan === 'yearly' ? 'yearly' : 'monthly',
+    }),
+  });
+  if (!res.ok) {
+    const errBody = await res.text();
+    let msg = `Checkout failed (${res.status})`;
+    try {
+      const json = JSON.parse(errBody);
+      if (json.error) msg = json.error;
+    } catch (_) {}
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
+/**
  * Streaming solve via backend: POST to /api/solve/stream, read NDJSON lines incrementally.
  * Uses XMLHttpRequest for React Native compatibility.
  */
 export function solveStream(
-  { question, subject, output_preference, attachment_urls, token, baseUrl },
+  { question, subject, output_preference, attachment_urls, web_search, token, baseUrl },
   { onChunk, onDone, onError }
 ) {
   const url = (baseUrl || API_URL) + '/api/solve/stream';
@@ -118,6 +163,7 @@ export function solveStream(
       subject: subject || 'Other',
       output_preference: output_preference || 'handwritten',
       attachment_urls: attachment_urls || [],
+      web_search: !!web_search,
     }));
   });
 }

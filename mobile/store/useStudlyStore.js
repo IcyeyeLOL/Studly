@@ -42,12 +42,11 @@ export const useStudlyStoreImpl = create(
       activeChatId: null,
       starredChatIds: [], // chat ids that are favorited/starred
       projects: [],
-      appearance: 'light', // 'light' | 'dark'
+      appearance: null, // null = follow system, 'light' | 'dark' = explicit override
       defaultOutput: 'ask', // 'ask' | 'handwritten' | 'flowchart'
-      subscriptionPlan: 'monthly', // 'monthly' | 'yearly' — Studly Pro billing interval
+      subscriptionPlan: 'free', // 'free' | 'monthly' | 'yearly'
       notificationsEnabled: true,
-      onboardingCompleted: false,
-      onboardingData: {},
+      tutorialSeen: false,
       lastNonAskTab: 'Chat',
 
       setUserName: (name) => set({ userName: (name || '').trim() }),
@@ -151,7 +150,8 @@ export const useStudlyStoreImpl = create(
             subject: item.subject || 'Other',
             createdAt: item.createdAt ?? Date.now(),
           };
-          const next = [entry, ...state.recentQuestions.filter((r) => r.id !== entry.id)].slice(0, 20);
+          const oneMonthAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+          const next = [entry, ...state.recentQuestions.filter((r) => r.id !== entry.id && r.createdAt >= oneMonthAgo)].slice(0, 20);
           return { recentQuestions: next };
         }),
 
@@ -191,10 +191,9 @@ export const useStudlyStoreImpl = create(
 
       setAppearance: (value) => set({ appearance: value }),
       setDefaultOutput: (value) => set({ defaultOutput: value }),
-      setSubscriptionPlan: (value) => set({ subscriptionPlan: value === 'yearly' ? 'yearly' : 'monthly' }),
+      setSubscriptionPlan: (value) => set({ subscriptionPlan: value === 'yearly' ? 'yearly' : value === 'monthly' ? 'monthly' : 'free' }),
       setNotificationsEnabled: (value) => set({ notificationsEnabled: value }),
-      setOnboardingCompleted: (val) => set({ onboardingCompleted: val }),
-      setOnboardingData: (data) => set((s) => ({ onboardingData: { ...s.onboardingData, ...data } })),
+      setTutorialSeen: (val) => set({ tutorialSeen: val }),
     }),
     {
       name: 'studly-storage',
@@ -212,8 +211,7 @@ export const useStudlyStoreImpl = create(
         defaultOutput: state.defaultOutput,
         subscriptionPlan: state.subscriptionPlan,
         notificationsEnabled: state.notificationsEnabled,
-        onboardingCompleted: state.onboardingCompleted,
-        onboardingData: state.onboardingData,
+        tutorialSeen: state.tutorialSeen,
       }),
     }
   )
