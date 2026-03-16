@@ -1,6 +1,6 @@
 {
-  "clock": 11876,
-  "documentClock": 11876,
+  "clock": 11955,
+  "documentClock": 11955,
   "tombstones": {
     "shape:fps-QFKMOVlCTzH29Bjn7h3CQ": 11834,
     "shape:password-strength-checker-E0rHZqa3_3pHgf9ZPxoOk": 4798,
@@ -16,6 +16,7 @@
     "shape:bUT5YyGwtUSgCF2d": 11561,
     "shape:financial-command-center-3aDhWUkbq9XfU-iPhfk5E": 11790,
     "shape:j62Khx-AvdbtjWRCQBiUe": 2218,
+    "shape:nCg1Sj3SAxFsb3kp": 11925,
     "shape:community-essay-W2BwQOOCVqpM7Ca8": 11834,
     "shape:RKAAsFsLR2nRcNJh": 2293,
     "shape:financial-command-center-R8Hl9bRTp7wQwtWeyQSmw": 3709,
@@ -23,7 +24,9 @@
     "shape:financial-command-center-89b6ftsfQ0DlmdnM": 8673,
     "shape:css-gradient-generator-eSQmLO5NDxOe1HSGvqskN": 11834,
     "shape:hue-GQICO8EsTvIVYhNIc7xKv": 11834,
+    "shape:SkBRT03Ru33YDCyJ": 11925,
     "shape:splitwise-expense-tracker-copy-mitchell-Rb7qJUDXpNhqbfhlBJCMY": 3545,
+    "shape:Dufv4qlKp5QME2Yi": 11955,
     "shape:financial-command-center-9Z55s5KtZPiBgUibmQN3y": 11834,
     "shape:markdown-table-editor-GMT-hSUL9Mv2FYYxJ1F_5": 3592,
     "shape:financial-command-center-MDHkto4LqjXFkGIw": 7502,
@@ -85,36 +88,49 @@
   "documents": [
     {
       "state": {
-        "gridSize": 10,
-        "name": "DeepSpace",
+        "x": 1130.6434023991276,
+        "y": 540,
+        "rotation": 0,
+        "isLocked": false,
+        "opacity": 1,
         "meta": {
-          "roomId": "room-9d4c1679-c38d-4c4d-aa0f-da084da61985",
-          "canvasMode": "dock",
-          "canvasName": "DeepSpace",
-          "canvasSpace": {
-            "spaceType": "dock",
-            "config": {
-              "type": "dock",
-              "name": "Dock Space",
-              "description": "Dock mode with macOS-style dock bar for widgets (zoom locked at 50% via DOCK_MODE_ZOOM constant)"
-            },
-            "lastUpdated": 1773698084069
-          },
-          "publishedSpaceHandle": "deepspace-lime17451",
-          "__canvas_storage": {
-            "__widget_io_configs": {
-              "shape:deepspace-hello-NnlEhrL1cLnYBKJ1": {
-                "inputs": [],
-                "outputs": []
-              }
-            },
-            "__widget_connections": []
-          }
+          "dockOrder": 11,
+          "showDefaultHandles": false
         },
-        "id": "document:document",
-        "typeName": "document"
+        "id": "shape:2UFxqgIbsiAvkr5xjKSbB",
+        "type": "file",
+        "props": {
+          "w": 200,
+          "h": 120,
+          "assetId": "asset:GuAnpniOVkyi1_cL3eu35"
+        },
+        "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
+        "index": "acfqrGtV",
+        "typeName": "shape"
       },
-      "lastChangedClock": 11876
+      "lastChangedClock": 11929
+    },
+    {
+      "state": {
+        "meta": {
+          "isFileAsset": true,
+          "originalMimeType": "application/pdf",
+          "originalFileName": "DeepSpace_Penetration_Test_Report.docx.pdf"
+        },
+        "id": "asset:GuAnpniOVkyi1_cL3eu35",
+        "type": "image",
+        "typeName": "asset",
+        "props": {
+          "name": "DeepSpace_Penetration_Test_Report.docx.pdf",
+          "src": "https://miyagi-canvas-sync.eudaimonicincorporated.workers.dev/api/uploads/6ea7ad4e-285a-4c0c-b6df-0b07a9650bca",
+          "w": 200,
+          "h": 120,
+          "fileSize": 381629,
+          "mimeType": "application/pdf",
+          "isAnimated": false
+        }
+      },
+      "lastChangedClock": 11925
     },
     {
       "state": {
@@ -124,7 +140,7 @@
         "index": "a1",
         "typeName": "page"
       },
-      "lastChangedClock": 11863
+      "lastChangedClock": 11925
     },
     {
       "state": {
@@ -132,14 +148,17 @@
         "typeName": "shape",
         "type": "miyagi-widget",
         "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
-        "index": "ab",
-        "x": -24684.678298800438,
-        "y": -24970,
+        "index": "adrsvqNV",
+        "x": 696.5866957470012,
+        "y": 179.55288985823336,
         "rotation": 0,
         "isLocked": false,
         "opacity": 1,
         "meta": {
-          "initializationState": "ready"
+          "initializationState": "ready",
+          "buildError": "Command failed: node /app/packages/widget-bundler/esbuild-widget.cjs /tmp/widget-build-collab-todo_1773698184219-1773699697847.html collab-todo_1773698184219 /tmp/widget-build-xgYzPc prod\n(node:11834) ExperimentalWarning: Support for loading ES Module in require() is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n\u001b[3m\u001b[1m\u001b[34m≈\u001b[39m\u001b[22m\u001b[23m tailwindcss \u001b[34mv4.2.1\u001b[39m\n\n(node:11834) ExperimentalWarning: Support for loading ES Module in require() is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\nDone in \u001b[34m165ms\u001b[39m\n(node:11820) ExperimentalWarning: Support for loading ES Module in require() is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n✘ [ERROR] No matching export in \"packages/spaces-sdk/src/auth/index.ts\" for import \"AuthModalProvider\"\n\n    ../tmp/widget-build-xgYzPc/src/main.tsx:22:2:\n      22 │   AuthModalProvider,\n         ╵   ~~~~~~~~~~~~~~~~~\n\n✘ [ERROR] No matching export in \"packages/spaces-sdk/src/auth/index.ts\" for import \"AUTH_CALLBACK_PATH\"\n\n    ../tmp/widget-build-xgYzPc/src/main.tsx:23:2:\n      23 │   AUTH_CALLBACK_PATH,\n         ╵   ~~~~~~~~~~~~~~~~~~\n\n✘ [ERROR] No matching export in \"packages/spaces-sdk/src/auth/index.ts\" for import \"AUTH_SIGN_IN_PATH\"\n\n    ../tmp/widget-build-xgYzPc/src/main.tsx:24:2:\n      24 │   AUTH_SIGN_IN_PATH,\n         ╵   ~~~~~~~~~~~~~~~~~\n\n✘ [ERROR] No matching export in \"packages/spaces-sdk/src/auth/index.ts\" for import \"AUTH_SIGN_UP_PATH\"\n\n    ../tmp/widget-build-xgYzPc/src/main.tsx:25:2:\n      25 │   AUTH_SIGN_UP_PATH,\n         ╵   ~~~~~~~~~~~~~~~~~\n\n✘ [ERROR] No matching export in \"packages/spaces-sdk/src/auth/index.ts\" for import \"DeepSpaceAuthCallback\"\n\n    ../tmp/widget-build-xgYzPc/src/main.tsx:26:2:\n      26 │   DeepSpaceAuthCallback,\n         ╵   ~~~~~~~~~~~~~~~~~~~~~\n\n✘ [ERROR] No matching export in \"packages/spaces-sdk/src/auth/index.ts\" for import \"DeepSpaceAuthPage\"\n\n    ../tmp/widget-build-xgYzPc/src/main.tsx:27:2:\n      27 │   DeepSpaceAuthPage,\n         ╵   ~~~~~~~~~~~~~~~~~\n\nBuild failed: Build failed with 6 errors:\n../tmp/widget-build-xgYzPc/src/main.tsx:22:2: ERROR: No matching export in \"packages/spaces-sdk/src/auth/index.ts\" for import \"AuthModalProvider\"\n../tmp/widget-build-xgYzPc/src/main.tsx:23:2: ERROR: No matching export in \"packages/spaces-sdk/src/auth/index.ts\" for import \"AUTH_CALLBACK_PATH\"\n../tmp/widget-build-xgYzPc/src/main.tsx:24:2: ERROR: No matching export in \"packages/spaces-sdk/src/auth/index.ts\" for import \"AUTH_SIGN_IN_PATH\"\n../tmp/widget-build-xgYzPc/src/main.tsx:25:2: ERROR: No matching export in \"packages/spaces-sdk/src/auth/index.ts\" for import \"AUTH_SIGN_UP_PATH\"\n../tmp/widget-build-xgYzPc/src/main.tsx:26:2: ERROR: No matching export in \"packages/spaces-sdk/src/auth/index.ts\" for import \"DeepSpaceAuthCallback\"\n...\n",
+          "dockOrder": 14,
+          "showDefaultHandles": false
         },
         "props": {
           "w": 700,
@@ -198,7 +217,7 @@
           }
         }
       },
-      "lastChangedClock": 1676
+      "lastChangedClock": 11951
     },
     {
       "state": {
@@ -282,89 +301,57 @@
             "name": "Clean Light"
           },
           "templateDescription": "Easily send personalized greetings and fetch random jokes to lighten your day with a simple interface",
-          "templateCategory": "General"
+          "templateCategory": "General",
+          "siteUrl": "https://deepspacesites.com/deepspace-hello_1773000151102/?v=kry3yj"
         }
       },
-      "lastChangedClock": 11876
+      "lastChangedClock": 11925
     },
     {
       "state": {
-        "id": "shape:Dufv4qlKp5QME2Yi",
-        "typeName": "shape",
-        "type": "canvas-link",
-        "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
-        "index": "aUd6gsMV",
-        "x": -50000,
-        "y": -50000,
-        "rotation": 0,
-        "isLocked": false,
-        "opacity": 1,
+        "gridSize": 10,
+        "name": "DeepSpace",
         "meta": {
-          "justCreated": false,
-          "createdAt": 1770151487221,
-          "dockOrder": 10,
-          "showDefaultHandles": false,
-          "isDockedHidden": true,
-          "hiddenAt": 1770151549883,
-          "originalX": 930.6434023991276,
-          "originalY": 340
+          "roomId": "room-9d4c1679-c38d-4c4d-aa0f-da084da61985",
+          "canvasMode": "dock",
+          "canvasName": "DeepSpace",
+          "canvasSpace": {
+            "spaceType": "dock",
+            "config": {
+              "type": "dock",
+              "name": "Dock Space",
+              "description": "Dock mode with macOS-style dock bar for widgets (zoom locked at 50% via DOCK_MODE_ZOOM constant)"
+            },
+            "lastUpdated": 1773698084069
+          },
+          "publishedSpaceHandle": "deepspace-lime17451",
+          "__canvas_storage": {
+            "__widget_io_configs": {
+              "shape:deepspace-hello-NnlEhrL1cLnYBKJ1": {
+                "inputs": [],
+                "outputs": []
+              },
+              "shape:collab-todo-EibVQzdGjVrMzHQb": {
+                "inputs": [],
+                "outputs": []
+              }
+            },
+            "__widget_connections": []
+          }
         },
-        "props": {
-          "w": 400,
-          "h": 400,
-          "targetCanvasId": "room-1183749c-761f-45a8-aabc-0c336291ca81",
-          "label": "WoW Class Resources",
-          "linkType": "realfile",
-          "targetSpaceType": "freeform"
-        }
+        "id": "document:document",
+        "typeName": "document"
       },
-      "lastChangedClock": 11863
+      "lastChangedClock": 11930
     },
     {
       "state": {
-        "meta": {
-          "isFileAsset": true,
-          "originalMimeType": "application/pdf",
-          "originalFileName": "DeepSpace_Penetration_Test_Report.docx.pdf"
-        },
-        "id": "asset:GuAnpniOVkyi1_cL3eu35",
-        "type": "image",
-        "typeName": "asset",
-        "props": {
-          "name": "DeepSpace_Penetration_Test_Report.docx.pdf",
-          "src": "https://miyagi-canvas-sync.eudaimonicincorporated.workers.dev/api/uploads/6ea7ad4e-285a-4c0c-b6df-0b07a9650bca",
-          "w": 200,
-          "h": 120,
-          "fileSize": 381629,
-          "mimeType": "application/pdf",
-          "isAnimated": false
-        }
+        "widgets": {},
+        "global": {},
+        "id": "canvas_storage:main",
+        "typeName": "canvas_storage"
       },
-      "lastChangedClock": 6
-    },
-    {
-      "state": {
-        "x": 1130.6434023991276,
-        "y": 540,
-        "rotation": 0,
-        "isLocked": false,
-        "opacity": 1,
-        "meta": {
-          "dockOrder": 11,
-          "showDefaultHandles": false
-        },
-        "id": "shape:2UFxqgIbsiAvkr5xjKSbB",
-        "type": "file",
-        "props": {
-          "w": 200,
-          "h": 120,
-          "assetId": "asset:GuAnpniOVkyi1_cL3eu35"
-        },
-        "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
-        "index": "aXTB2QbV",
-        "typeName": "shape"
-      },
-      "lastChangedClock": 7
+      "lastChangedClock": 11926
     }
   ]
 }
