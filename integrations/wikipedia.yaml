@@ -1,0 +1,151 @@
+# wikipedia integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: import { mcapi } from '@spaces/sdk'
+#   mcapi.post('/endpoint', { ...params })
+#   mcapi.get('/endpoint', { ...params })
+
+tools:
+
+  wikipedia_summary:
+    method: POST
+    endpoint: /wikipedia-summary
+    description: "Get Wikipedia page summary"
+    input_schema:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+      required:
+        - title
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            title:
+              type: string
+            description:
+              type: string
+            extract:
+              type: string
+            url:
+              type: string
+          required:
+            - title
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  wikipedia_content:
+    method: POST
+    endpoint: /wikipedia-content
+    description: "Get full page content (HTML)"
+    input_schema:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+      required:
+        - title
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            htmlContent:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  wikipedia_search:
+    method: POST
+    endpoint: /wikipedia-search
+    description: "Search Wikipedia articles"
+    input_schema:
+      type: object
+      properties:
+        query:
+          type: string
+          minLength: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 50
+      required:
+        - query
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            pages:
+              type: array
+              items:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  description:
+                    type: string
+                  extract:
+                    type: string
+                  url:
+                    type: string
+                required:
+                  - title
+                additionalProperties: false
+            total:
+              type: number
+          required:
+            - pages
+            - total
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  wikipedia_random:
+    method: POST
+    endpoint: /wikipedia-random
+    description: "Get a random page"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            title:
+              type: string
+            description:
+              type: string
+            extract:
+              type: string
+            url:
+              type: string
+          required:
+            - title
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

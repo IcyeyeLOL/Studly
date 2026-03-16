@@ -1,0 +1,184 @@
+@import "tailwindcss" source(none);
+
+/* Scan widget source files for Tailwind classes */
+@source "./**/*.{js,ts,jsx,tsx}";
+/* Scan SDK and chat package source for their Tailwind classes */
+@source "../node_modules/@spaces/sdk/src/**/*.{js,ts,jsx,tsx}";
+@source "../node_modules/@miyagi/chat/src/**/*.{js,ts,jsx,tsx}";
+
+/*
+ * Theme configuration — shadcn/ui-compatible token system.
+ * Each widget can customize these values.
+ */
+@theme {
+  /* Clean Light UI — pure white, monochrome, single vibrant accent */
+  --color-background: #ffffff;
+  --color-foreground: #111111;
+  --color-card: #ffffff;
+  --color-card-foreground: #111111;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #111111;
+  --color-primary: #6366f1;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f8f8f8;
+  --color-secondary-foreground: #111111;
+  --color-muted: #f5f5f5;
+  --color-muted-foreground: #888888;
+  --color-accent: #f5f5f5;
+  --color-accent-foreground: #111111;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #f0f0f0;
+  --color-input: #f0f0f0;
+  --color-ring: rgba(99, 102, 241, 0.3);
+  --radius: 0.75rem;
+
+  /* Extended status colors */
+  --color-success: #10b981;
+  --color-success-foreground: #ffffff;
+  --color-warning: #f59e0b;
+  --color-warning-foreground: #ffffff;
+  --color-info: #3b82f6;
+  --color-info-foreground: #ffffff;
+
+  /* Shadows — large, diffuse, very transparent */
+  --shadow-card: 0 8px 40px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 16px 60px rgba(0, 0, 0, 0.09), 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-input: 0 2px 16px rgba(0, 0, 0, 0.04);
+
+  /* SDK backward-compatibility aliases */
+  --color-surface: var(--color-background);
+  --color-surface-elevated: var(--color-card);
+  --color-surface-overlay: var(--color-muted);
+  --color-surface-input: #f8f8f8;
+  --color-content: var(--color-foreground);
+  --color-content-secondary: #555555;
+  --color-content-muted: #aaaaaa;
+  --color-content-inverse: #ffffff;
+  --color-border-strong: #e0e0e0;
+  --color-border-focus: var(--color-ring);
+  --color-primary-hover: #4f46e5;
+  --color-primary-muted: rgba(99, 102, 241, 0.08);
+  --color-primary-border: rgba(99, 102, 241, 0.2);
+  --color-danger: var(--color-destructive);
+  --color-danger-muted: rgba(239, 68, 68, 0.08);
+  --color-danger-border: rgba(239, 68, 68, 0.2);
+  --color-success-muted: rgba(16, 185, 129, 0.08);
+  --color-success-border: rgba(16, 185, 129, 0.2);
+  --color-warning-muted: rgba(245, 158, 11, 0.08);
+  --color-warning-border: rgba(245, 158, 11, 0.2);
+  --color-info-muted: rgba(59, 130, 246, 0.08);
+  --color-info-border: rgba(59, 130, 246, 0.2);
+}
+
+/*
+ * Animation keyframes for shadcn components.
+ * These replace the tailwindcss-animate plugin which is not compatible with Tailwind v4.
+ */
+@keyframes animate-in {
+  from { opacity: var(--tw-enter-opacity, 1); transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0) scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), var(--tw-enter-scale, 1)) rotate(var(--tw-enter-rotate, 0)); }
+}
+
+@keyframes animate-out {
+  to { opacity: var(--tw-exit-opacity, 1); transform: translate3d(var(--tw-exit-translate-x, 0), var(--tw-exit-translate-y, 0), 0) scale3d(var(--tw-exit-scale, 1), var(--tw-exit-scale, 1), var(--tw-exit-scale, 1)) rotate(var(--tw-exit-rotate, 0)); }
+}
+
+@utility animate-in {
+  animation-name: animate-in;
+  animation-duration: 150ms;
+  --tw-enter-opacity: initial;
+  --tw-enter-scale: initial;
+  --tw-enter-translate-x: initial;
+  --tw-enter-translate-y: initial;
+  --tw-enter-rotate: initial;
+}
+
+@utility animate-out {
+  animation-name: animate-out;
+  animation-duration: 150ms;
+  --tw-exit-opacity: initial;
+  --tw-exit-scale: initial;
+  --tw-exit-translate-x: initial;
+  --tw-exit-translate-y: initial;
+  --tw-exit-rotate: initial;
+}
+
+@utility fade-in-0 { --tw-enter-opacity: 0; }
+@utility fade-out-0 { --tw-exit-opacity: 0; }
+@utility zoom-in-95 { --tw-enter-scale: .95; }
+@utility zoom-out-95 { --tw-exit-scale: .95; }
+@utility slide-in-from-top-2 { --tw-enter-translate-y: -0.5rem; }
+@utility slide-in-from-bottom-2 { --tw-enter-translate-y: 0.5rem; }
+@utility slide-in-from-left-2 { --tw-enter-translate-x: -0.5rem; }
+@utility slide-in-from-right-2 { --tw-enter-translate-x: 0.5rem; }
+@utility slide-out-to-top-2 { --tw-exit-translate-y: -0.5rem; }
+@utility slide-out-to-bottom-2 { --tw-exit-translate-y: 0.5rem; }
+@utility slide-out-to-left-2 { --tw-exit-translate-x: -0.5rem; }
+@utility slide-out-to-right-2 { --tw-exit-translate-x: 0.5rem; }
+
+
+/*
+ * Custom base styles — must be in @layer base so utility classes can override.
+ * The * reset from v3 is removed: Tailwind v4 Preflight already handles
+ * box-sizing, margin, and padding resets inside @layer base.
+ */
+@layer base {
+  html, body, #root {
+    min-height: 100vh;
+    background-color: var(--color-background);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-size: 14px;
+    color: var(--color-foreground);
+    background-color: #ffffff;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border-radius: 0.25rem;
+    background-color: var(--color-border);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-muted-foreground);
+  }
+
+  /* Selection styling */
+  ::selection {
+    background-color: var(--color-primary);
+    color: var(--color-primary-foreground);
+  }
+
+  /* Focus states for accessibility */
+  *:focus-visible {
+    outline-style: solid;
+    outline-width: 2px;
+    outline-offset: 2px;
+    outline-color: var(--color-primary);
+  }
+
+  /* Prevent 300ms tap delay on mobile */
+  a, button, [role="button"], input, select, textarea {
+    touch-action: manipulation;
+  }
+
+  /* Form input calendar icons (dark mode invert) */
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.7);
+  }
+}

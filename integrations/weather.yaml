@@ -1,0 +1,188 @@
+# weather integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: import { mcapi } from '@spaces/sdk'
+#   mcapi.post('/endpoint', { ...params })
+#   mcapi.get('/endpoint', { ...params })
+
+tools:
+
+  geocode_city:
+    method: POST
+    endpoint: /geocode-city
+    description: "Geocode a city name"
+    input_schema:
+      type: object
+      properties:
+        query:
+          type: string
+          minLength: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 50
+      required:
+        - query
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            locations:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  lat:
+                    type: number
+                  lon:
+                    type: number
+                  country:
+                    type: string
+                  state:
+                    type: string
+                required:
+                  - name
+                  - lat
+                  - lon
+                additionalProperties: false
+          required:
+            - locations
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  current_weather:
+    method: POST
+    endpoint: /current-weather
+    description: "Get current weather"
+    input_schema:
+      type: object
+      properties:
+        location:
+          type: string
+          minLength: 1
+        units:
+          type: string
+          enum:
+            - metric
+            - imperial
+            - kelvin
+      required:
+        - location
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            weather:
+              type: object
+              properties:
+                dt:
+                  type: number
+                  description: Unix timestamp of data calculation
+                temp:
+                  type: number
+                feels_like:
+                  type: number
+                humidity:
+                  type: number
+                pressure:
+                  type: number
+                  description: Atmospheric pressure in hPa
+                visibility:
+                  type: number
+                  description: Visibility in meters
+                description:
+                  type: string
+                icon:
+                  type: string
+                wind_speed:
+                  type: number
+                wind_deg:
+                  type: number
+                  description: Wind direction in degrees
+                sunrise:
+                  type: number
+                  description: Sunrise time as Unix timestamp
+                sunset:
+                  type: number
+                  description: Sunset time as Unix timestamp
+              required:
+                - dt
+                - temp
+                - sunrise
+                - sunset
+              additionalProperties: false
+          required:
+            - weather
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  weather_forecast:
+    method: POST
+    endpoint: /weather-forecast
+    description: "Get 5-day forecast"
+    input_schema:
+      type: object
+      properties:
+        location:
+          type: string
+          minLength: 1
+        units:
+          type: string
+          enum:
+            - metric
+            - imperial
+            - kelvin
+      required:
+        - location
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            forecast:
+              type: array
+              items:
+                type: object
+                properties:
+                  dt:
+                    type: number
+                  temp:
+                    type: number
+                  feels_like:
+                    type: number
+                  humidity:
+                    type: number
+                  description:
+                    type: string
+                  icon:
+                    type: string
+                required:
+                  - dt
+                  - temp
+                additionalProperties: true
+          required:
+            - forecast
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

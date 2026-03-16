@@ -1,0 +1,121 @@
+# submagic integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: import { mcapi } from '@spaces/sdk'
+#   mcapi.post('/endpoint', { ...params })
+#   mcapi.get('/endpoint', { ...params })
+
+tools:
+
+  submagic_create_video:
+    method: POST
+    endpoint: /submagic-create-video
+    description: "Create SubMagic video (async)"
+    input_schema:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        language:
+          type: string
+          minLength: 1
+        videoUrl:
+          type: string
+          format: uri
+        templateName:
+          type: string
+        userThemeId:
+          type: string
+        dictionary:
+          type: array
+          items:
+            type: string
+        magicZooms:
+          type: boolean
+        magicBrolls:
+          type: boolean
+        magicBrollsPercentage:
+          type: number
+      required:
+        - title
+        - language
+        - videoUrl
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            projectId:
+              type: string
+            status:
+              type: string
+            message:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  submagic_get_project_projectId:
+    method: POST
+    endpoint: /submagic-get-project/{projectId}
+    description: "Get SubMagic project status"
+    input_schema:
+      type: object
+      properties:
+        projectId:
+          type: string
+          minLength: 1
+      required:
+        - projectId
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            project: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  submagic_wait_for_completion_projectId:
+    method: POST
+    endpoint: /submagic-wait-for-completion/{projectId}
+    description: "Poll SubMagic project until completion"
+    input_schema:
+      type: object
+      properties:
+        projectId:
+          type: string
+          minLength: 1
+        maxAttempts:
+          type: integer
+        pollInterval:
+          type: integer
+      required:
+        - projectId
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            data: {}
+            pollingMetadata: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

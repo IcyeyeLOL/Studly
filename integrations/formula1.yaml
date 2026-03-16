@@ -1,0 +1,759 @@
+# formula1 integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: import { mcapi } from '@spaces/sdk'
+#   mcapi.post('/endpoint', { ...params })
+#   mcapi.get('/endpoint', { ...params })
+
+tools:
+
+  f1_season_schedule:
+    method: POST
+    endpoint: /f1-season-schedule
+    description: "Get complete F1 season schedule with all race dates, circuits, and session times for a given year"
+    input_schema:
+      type: object
+      properties:
+        season:
+          type: integer
+          minimum: 1950
+          maximum: 2100
+          description: Year of the F1 season (e.g., 2025, 2024)
+      required:
+        - season
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            schedule:
+              type: array
+              items:
+                type: object
+                properties:
+                  round:
+                    type: string
+                  raceName:
+                    type: string
+                  Circuit:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
+                  date:
+                    type: string
+                  time:
+                    type: string
+                required:
+                  - round
+                  - raceName
+                  - Circuit
+                  - date
+                additionalProperties: true
+          required:
+            - schedule
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  f1_race_weekend:
+    method: POST
+    endpoint: /f1-race-weekend
+    description: "Get complete race weekend data including qualifying, sprint (if applicable), and race results for a specific Grand Prix"
+    input_schema:
+      type: object
+      properties:
+        season:
+          type: integer
+          minimum: 1950
+          maximum: 2100
+          description: Year of the F1 season
+        round:
+          type: integer
+          minimum: 1
+          maximum: 30
+          description: "Round number in the season (1-24 typically)"
+      required:
+        - season
+        - round
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            raceWeekend:
+              type: object
+              properties:
+                season:
+                  type: string
+                round:
+                  type: string
+                raceName:
+                  type: string
+                circuit:
+                  type: object
+                  properties: {}
+                  additionalProperties: true
+                date:
+                  type: string
+                results:
+                  type: array
+                  items:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
+                qualifying:
+                  type: array
+                  items:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
+                sprint:
+                  anyOf:
+                    - 
+                      type: array
+                      items:
+                        type: object
+                        properties: {}
+                        additionalProperties: true
+                    - 
+                      type: null
+              additionalProperties: true
+          required:
+            - raceWeekend
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  f1_latest_race:
+    method: POST
+    endpoint: /f1-latest-race
+    description: "Get the most recent completed F1 race with full results and race information"
+    input_schema:
+      type: object
+      properties:
+        season:
+          type: integer
+          minimum: 1950
+          maximum: 2100
+          description: "Optional: Year to get latest race from (defaults to current year)"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            race:
+              type: object
+              properties:
+                season:
+                  type: string
+                round:
+                  type: string
+                raceName:
+                  type: string
+                Circuit:
+                  type: object
+                  properties: {}
+                  additionalProperties: true
+                date:
+                  type: string
+                Results:
+                  type: array
+                  items:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
+              additionalProperties: true
+          required:
+            - race
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  f1_lap_times:
+    method: POST
+    endpoint: /f1-lap-times
+    description: "Get all lap-by-lap timing data for a race. Returns lap times organized by driver with position tracking throughout the race."
+    input_schema:
+      type: object
+      properties:
+        season:
+          type: integer
+          minimum: 1950
+          maximum: 2100
+          description: Year of the F1 season
+        round:
+          type: integer
+          minimum: 1
+          maximum: 30
+          description: Round number in the season
+        driverId:
+          type: string
+          description: "Optional: Filter lap times for specific driver"
+      required:
+        - season
+        - round
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            lapTimes:
+              type: object
+              properties:
+                laps:
+                  type: array
+                  items:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
+                driverLaps:
+                  type: object
+                  additionalProperties:
+                    type: array
+                    items:
+                      type: object
+                      properties: {}
+                      additionalProperties: true
+                totalTimings:
+                  type: number
+              additionalProperties: true
+          required:
+            - lapTimes
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  f1_pit_stops:
+    method: POST
+    endpoint: /f1-pit-stops
+    description: "Get all pit stop data for a race including stop number, lap, duration, and timestamp for each driver"
+    input_schema:
+      type: object
+      properties:
+        season:
+          type: integer
+          minimum: 1950
+          maximum: 2100
+          description: Year of the F1 season
+        round:
+          type: integer
+          minimum: 1
+          maximum: 30
+          description: Round number in the season
+      required:
+        - season
+        - round
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            pitStops:
+              type: array
+              items:
+                type: object
+                properties:
+                  driverId:
+                    type: string
+                  lap:
+                    type: string
+                  stop:
+                    type: string
+                  time:
+                    type: string
+                  duration:
+                    type: string
+                required:
+                  - driverId
+                  - lap
+                  - stop
+                  - time
+                  - duration
+                additionalProperties: true
+          required:
+            - pitStops
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  f1_driver_standings:
+    method: POST
+    endpoint: /f1-driver-standings
+    description: "Get current driver championship standings with points, wins, and positions"
+    input_schema:
+      type: object
+      properties:
+        season:
+          type: integer
+          minimum: 1950
+          maximum: 2100
+          description: Year of the F1 season
+        round:
+          type: integer
+          minimum: 1
+          maximum: 30
+          description: "Optional: Get standings after specific round"
+      required:
+        - season
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            standings:
+              type: array
+              items:
+                type: object
+                properties:
+                  position:
+                    type: string
+                  points:
+                    type: string
+                  wins:
+                    type: string
+                  Driver:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
+                  Constructors:
+                    type: array
+                    items:
+                      type: object
+                      properties: {}
+                      additionalProperties: true
+                required:
+                  - position
+                  - points
+                  - wins
+                  - Driver
+                additionalProperties: true
+          required:
+            - standings
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  f1_constructor_standings:
+    method: POST
+    endpoint: /f1-constructor-standings
+    description: "Get current constructor (team) championship standings with points and wins"
+    input_schema:
+      type: object
+      properties:
+        season:
+          type: integer
+          minimum: 1950
+          maximum: 2100
+          description: Year of the F1 season
+        round:
+          type: integer
+          minimum: 1
+          maximum: 30
+          description: "Optional: Get standings after specific round"
+      required:
+        - season
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            standings:
+              type: array
+              items:
+                type: object
+                properties:
+                  position:
+                    type: string
+                  points:
+                    type: string
+                  wins:
+                    type: string
+                  Constructor:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
+                required:
+                  - position
+                  - points
+                  - wins
+                  - Constructor
+                additionalProperties: true
+          required:
+            - standings
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  f1_qualifying:
+    method: POST
+    endpoint: /f1-qualifying
+    description: "Get qualifying session results showing Q1, Q2, and Q3 times for all drivers"
+    input_schema:
+      type: object
+      properties:
+        season:
+          type: integer
+          minimum: 1950
+          maximum: 2100
+          description: Year of the F1 season
+        round:
+          type: integer
+          minimum: 1
+          maximum: 30
+          description: Round number in the season
+      required:
+        - season
+        - round
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            qualifying:
+              type: array
+              items:
+                type: object
+                properties:
+                  position:
+                    type: string
+                  Driver:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
+                  Constructor:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
+                  Q1:
+                    type: string
+                  Q2:
+                    type: string
+                  Q3:
+                    type: string
+                required:
+                  - position
+                  - Driver
+                  - Constructor
+                additionalProperties: true
+          required:
+            - qualifying
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  f1_sprint:
+    method: POST
+    endpoint: /f1-sprint
+    description: "Get sprint race results. Returns empty array if the race weekend did not include a sprint race."
+    input_schema:
+      type: object
+      properties:
+        season:
+          type: integer
+          minimum: 1950
+          maximum: 2100
+          description: Year of the F1 season
+        round:
+          type: integer
+          minimum: 1
+          maximum: 30
+          description: Round number in the season
+      required:
+        - season
+        - round
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            sprint:
+              type: array
+              items:
+                type: object
+                properties:
+                  position:
+                    type: string
+                  points:
+                    type: string
+                  Driver:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
+                  Constructor:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
+                required:
+                  - position
+                  - points
+                  - Driver
+                  - Constructor
+                additionalProperties: true
+          required:
+            - sprint
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  f1_race_results:
+    method: POST
+    endpoint: /f1-race-results
+    description: "Get final race classification with finishing positions, points, fastest laps, and status"
+    input_schema:
+      type: object
+      properties:
+        season:
+          type: integer
+          minimum: 1950
+          maximum: 2100
+          description: Year of the F1 season
+        round:
+          type: integer
+          minimum: 1
+          maximum: 30
+          description: Round number in the season
+      required:
+        - season
+        - round
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            results:
+              type: array
+              items:
+                type: object
+                properties:
+                  position:
+                    type: string
+                  points:
+                    type: string
+                  Driver:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
+                  Constructor:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
+                  grid:
+                    type: string
+                  laps:
+                    type: string
+                  status:
+                    type: string
+                required:
+                  - position
+                  - points
+                  - Driver
+                  - Constructor
+                additionalProperties: true
+          required:
+            - results
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  f1_all_drivers:
+    method: POST
+    endpoint: /f1-all-drivers
+    description: "Get complete list of all drivers who competed in a specific F1 season"
+    input_schema:
+      type: object
+      properties:
+        season:
+          type: integer
+          minimum: 1950
+          maximum: 2100
+          description: Year of the F1 season
+      required:
+        - season
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            drivers:
+              type: array
+              items:
+                type: object
+                properties:
+                  driverId:
+                    type: string
+                  code:
+                    type: string
+                  givenName:
+                    type: string
+                  familyName:
+                    type: string
+                  dateOfBirth:
+                    type: string
+                  nationality:
+                    type: string
+                required:
+                  - driverId
+                  - givenName
+                  - familyName
+                additionalProperties: true
+          required:
+            - drivers
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  f1_all_constructors:
+    method: POST
+    endpoint: /f1-all-constructors
+    description: "Get complete list of all constructor teams that competed in a specific F1 season"
+    input_schema:
+      type: object
+      properties:
+        season:
+          type: integer
+          minimum: 1950
+          maximum: 2100
+          description: Year of the F1 season
+      required:
+        - season
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            constructors:
+              type: array
+              items:
+                type: object
+                properties:
+                  constructorId:
+                    type: string
+                  name:
+                    type: string
+                  nationality:
+                    type: string
+                required:
+                  - constructorId
+                  - name
+                additionalProperties: true
+          required:
+            - constructors
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  f1_circuit_info:
+    method: POST
+    endpoint: /f1-circuit-info
+    description: "Get detailed information about a specific F1 circuit including location, coordinates, and full name"
+    input_schema:
+      type: object
+      properties:
+        circuitId:
+          type: string
+          minLength: 1
+          description: Circuit identifier (e.g., "monaco", "monza", "silverstone", "interlagos")
+      required:
+        - circuitId
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            circuit:
+              type: object
+              properties:
+                circuitId:
+                  type: string
+                circuitName:
+                  type: string
+                Location:
+                  type: object
+                  properties:
+                    lat:
+                      type: string
+                    long:
+                      type: string
+                    locality:
+                      type: string
+                    country:
+                      type: string
+                  required:
+                    - lat
+                    - long
+                  additionalProperties: true
+              required:
+                - circuitId
+                - circuitName
+                - Location
+              additionalProperties: true
+          required:
+            - circuit
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

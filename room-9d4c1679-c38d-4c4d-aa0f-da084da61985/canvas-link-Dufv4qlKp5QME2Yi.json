@@ -1,0 +1,31 @@
+{
+  "shapeId": "shape:Dufv4qlKp5QME2Yi",
+  "targetCanvasId": "room-1183749c-761f-45a8-aabc-0c336291ca81",
+  "label": "WoW Class Resources",
+  "linkType": "realfile",
+  "position": {
+    "x": -50000,
+    "y": -50000
+  },
+  "size": {
+    "w": 400,
+    "h": 400
+  },
+  "rotation": 0,
+  "opacity": 1,
+  "isLocked": false,
+  "meta": {
+    "justCreated": false,
+    "createdAt": 1770151487221,
+    "dockOrder": 10,
+    "showDefaultHandles": false,
+    "isDockedHidden": true,
+    "hiddenAt": 1770151549883,
+    "originalX": 930.6434023991276,
+    "originalY": 340
+  },
+  "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
+  "index": "aUd6gsMV",
+  "lastChangedClock": 11863,
+  "generatedAt": "2026-03-16T21:56:12.297Z"
+}

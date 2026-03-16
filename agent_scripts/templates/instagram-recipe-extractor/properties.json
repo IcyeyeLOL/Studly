@@ -1,0 +1,15 @@
+{
+  "id": "instagram-recipe-extractor",
+  "name": "Instagram Recipe Extractor",
+  "icon": {
+    "type": "react-icon",
+    "value": "Bi:BiRestaurant"
+  },
+  "description": "Extract recipes from Instagram posts and reels with AI-powered transcription",
+  "showByDefault": true,
+  "category": "lifestyle",
+  "defaultSize": {
+    "width": 600,
+    "height": 750
+  }
+}

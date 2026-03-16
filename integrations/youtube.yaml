@@ -1,0 +1,210 @@
+# youtube integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: import { mcapi } from '@spaces/sdk'
+#   mcapi.post('/endpoint', { ...params })
+#   mcapi.get('/endpoint', { ...params })
+
+tools:
+
+  youtube_search:
+    method: POST
+    endpoint: /youtube-search
+    description: "Search YouTube videos"
+    input_schema:
+      type: object
+      properties:
+        q:
+          type: string
+          minLength: 1
+        maxResults:
+          type: integer
+          minimum: 1
+          maximum: 50
+        order:
+          type: string
+          enum:
+            - relevance
+            - date
+            - rating
+            - viewCount
+      required:
+        - q
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            videos:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: {}
+                  snippet:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                      description:
+                        type: string
+                      channelTitle:
+                        type: string
+                      publishedAt:
+                        type: string
+                    additionalProperties: true
+                  links:
+                    type: object
+                    properties:
+                      watch:
+                        type: string
+                      embed:
+                        type: string
+                      thumbnail:
+                        type: string
+                    required:
+                      - watch
+                      - embed
+                    additionalProperties: false
+                additionalProperties: true
+            totalResults:
+              type: number
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  youtube_video_details:
+    method: POST
+    endpoint: /youtube-video-details
+    description: "Get details for videos"
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+      required:
+        - id
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            videos:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  snippet:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                      description:
+                        type: string
+                      channelTitle:
+                        type: string
+                    additionalProperties: true
+                  statistics:
+                    type: object
+                    properties:
+                      viewCount:
+                        type: string
+                      likeCount:
+                        type: string
+                    additionalProperties: true
+                  links:
+                    type: object
+                    properties:
+                      watch:
+                        type: string
+                      embed:
+                        type: string
+                    required:
+                      - watch
+                      - embed
+                    additionalProperties: false
+                required:
+                  - id
+                additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  youtube_trending:
+    method: POST
+    endpoint: /youtube-trending
+    description: "Get trending videos"
+    input_schema:
+      type: object
+      properties:
+        regionCode:
+          type: string
+        maxResults:
+          type: integer
+          minimum: 1
+          maximum: 50
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            videos:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  snippet:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                      description:
+                        type: string
+                      channelTitle:
+                        type: string
+                    additionalProperties: true
+                  statistics:
+                    type: object
+                    properties:
+                      viewCount:
+                        type: string
+                      likeCount:
+                        type: string
+                    additionalProperties: true
+                  links:
+                    type: object
+                    properties:
+                      watch:
+                        type: string
+                      embed:
+                        type: string
+                    required:
+                      - watch
+                      - embed
+                    additionalProperties: false
+                required:
+                  - id
+                additionalProperties: true
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

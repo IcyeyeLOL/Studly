@@ -1,0 +1,159 @@
+{
+  "user_scoped_storage": {
+    "user_38p3fn6iTbV25TyWCNcFJ0Dxrx5": {
+      "tiling-view-active": false,
+      "tiling-view-config": {
+        "layout": {
+          "type": "window",
+          "tileId": "tile-1769878791449-1",
+          "widgetId": null,
+          "screenId": 2
+        },
+        "focusedTileId": "tile-1769878791449-1",
+        "screens": {
+          "1": {
+            "type": "window",
+            "tileId": "tile-1769482861656-1",
+            "widgetId": "shape:fps-QFKMOVlCTzH29Bjn7h3CQ",
+            "screenId": 1
+          },
+          "2": {
+            "type": "window",
+            "tileId": "tile-1769878791449-1",
+            "widgetId": null,
+            "screenId": 2
+          },
+          "3": null
+        },
+        "activeScreen": 2,
+        "spacing": 14
+      }
+    },
+    "user_372YbfVWbJ8jQKwzJOtWszZJyy2": {
+      "tiling-view-active": false,
+      "tiling-view-config": {
+        "layout": {
+          "type": "window",
+          "tileId": "tile-1769809310087-1",
+          "widgetId": null,
+          "screenId": 1
+        },
+        "focusedTileId": "tile-1769809310087-1",
+        "screens": {
+          "1": {
+            "type": "window",
+            "tileId": "tile-1769809310087-1",
+            "widgetId": null,
+            "screenId": 1
+          },
+          "2": null,
+          "3": null
+        },
+        "activeScreen": 1,
+        "spacing": 14
+      }
+    },
+    "user_37tKsgveyHVRfYYO5FVrTOYJ9Uj": {
+      "tiling-view-active": false,
+      "tiling-view-config": {
+        "layout": {
+          "type": "window",
+          "tileId": "tile-1769823608128-1",
+          "widgetId": null,
+          "screenId": 1
+        },
+        "focusedTileId": "tile-1769823608128-1",
+        "screens": {
+          "1": {
+            "type": "window",
+            "tileId": "tile-1769823608128-1",
+            "widgetId": null,
+            "screenId": 1
+          },
+          "2": null,
+          "3": null
+        },
+        "activeScreen": 1,
+        "spacing": 14
+      }
+    },
+    "guest_v6i6pmemc": {
+      "tiling-view-config": {
+        "layout": {
+          "type": "window",
+          "tileId": "tile-1769878791449-1",
+          "widgetId": null,
+          "screenId": 2
+        },
+        "focusedTileId": "tile-1769878791449-1",
+        "screens": {
+          "1": {
+            "type": "window",
+            "tileId": "tile-1769482861656-1",
+            "widgetId": "shape:fps-QFKMOVlCTzH29Bjn7h3CQ",
+            "screenId": 1
+          },
+          "2": {
+            "type": "window",
+            "tileId": "tile-1769878791449-1",
+            "widgetId": null,
+            "screenId": 2
+          },
+          "3": null
+        },
+        "activeScreen": 2,
+        "spacing": 14
+      }
+    },
+    "user_37tpg4NdcT8h5G55T4zZaMcyhud": {
+      "tiling-view-active": false,
+      "tiling-view-config": {
+        "layout": {
+          "type": "window",
+          "tileId": "tile-1770402723660-1",
+          "widgetId": null,
+          "screenId": 1
+        },
+        "focusedTileId": "tile-1770402723660-1",
+        "screens": {
+          "1": {
+            "type": "window",
+            "tileId": "tile-1770402723660-1",
+            "widgetId": null,
+            "screenId": 1
+          },
+          "2": null,
+          "3": null
+        },
+        "activeScreen": 1,
+        "spacing": 14
+      }
+    }
+  },
+  "__widget_io_configs": "{\"shape:financial-command-center-1Xhrt5jTAK6Nu03nrvzql\":{\"inputs\":[],\"outputs\":[]},\"shape:fps-QFKMOVlCTzH29Bjn7h3CQ\":{\"inputs\":[],\"outputs\":[]},\"shape:financial-command-center-3aDhWUkbq9XfU-iPhfk5E\":{\"inputs\":[],\"outputs\":[]},\"shape:css-gradient-generator-EJ1gQvsCKLAmoW6Sp0-5v\":{\"inputs\":[],\"outputs\":[]},\"shape:css-gradient-generator-eSQmLO5NDxOe1HSGvqskN\":{\"inputs\":[],\"outputs\":[]},\"shape:wavelength-9bGw90ctWcv34v87sk97T\":{\"inputs\":[],\"outputs\":[]},\"shape:instagram-recipe-extractor-ANZhrZMPAKbHNan5CZ8KG\":{\"inputs\":[],\"outputs\":[]},\"shape:may_the_force_be_with_you-XhfJFRaJohm9ZXaWl8IaC\":{\"inputs\":[],\"outputs\":[]},\"shape:hue-GQICO8EsTvIVYhNIc7xKv\":{\"inputs\":[],\"outputs\":[]},\"shape:financial-command-center-9Z55s5KtZPiBgUibmQN3y\":{\"inputs\":[],\"outputs\":[]}}",
+  "__widget_connections": "[]",
+  "fcc-dark-mode": "true",
+  "fcc-watchlists": "[{\"id\":\"default\",\"name\":\"My Watchlist\",\"tickers\":[]}]",
+  "fcc-followed-accounts": "[]",
+  "fcc-last-check": "2026-01-27T03:40:08.580Z",
+  "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.watchlist": "[]",
+  "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.positions": "{}",
+  "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.lastAlertCheck": "2026-01-28T03:16:35.197Z",
+  "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.followedAccounts": "[]",
+  "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.stockInfo": "{}",
+  "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.widgetTheme": "dark",
+  "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.priceAlertEmailEnabled": "true",
+  "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.priceAlertPollingEnabled": "true",
+  "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.priceAlertRules": "[]",
+  "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.tickerNotes": "{}",
+  "__user:user_38p3fn6iTbV25TyWCNcFJ0Dxrx5:financial.selectedCatalysts": "[]",
+  "__user:user_37tKsgveyHVRfYYO5FVrTOYJ9Uj:financial.widgetTheme": "dark",
+  "__user:user_37tKsgveyHVRfYYO5FVrTOYJ9Uj:financial.selectedCatalysts": "[]",
+  "mobile_icon_order_room-9d4c1679-c38d-4c4d-aa0f-da084da61985": "[\"shape:financial-command-center-1Xhrt5jTAK6Nu03nrvzql\"]",
+  "wavelength.game": "{\"phase\":\"clue\",\"currentPrompt\":{\"left\":\"Pointless\",\"right\":\"Meaningful\"},\"targetPosition\":18,\"clue\":\"\",\"guessPosition\":50,\"score\":0,\"round\":1,\"roundScores\":[]}",
+  "__user:user_37tpg4NdcT8h5G55T4zZaMcyhud:financial.widgetTheme": "dark",
+  "files/slides/config.json": "\"{\\r\\n  \\\"currentDeckId\\\": \\\"welcome-deck\\\",\\r\\n  \\\"deckOrder\\\": [\\r\\n    \\\"welcome-deck\\\"\\r\\n  ]\\r\\n}\"",
+  "files/slides/welcome-deck/deck.json": "\"{\\r\\n  \\\"title\\\": \\\"Welcome Presentation\\\",\\r\\n  \\\"themeId\\\": \\\"modern\\\",\\r\\n  \\\"currentSlideIndex\\\": 1,\\r\\n  \\\"slideOrder\\\": [\\r\\n    \\\"slide-1\\\",\\r\\n    \\\"slide-2\\\"\\r\\n  ],\\r\\n  \\\"createdAt\\\": 1769483252674,\\r\\n  \\\"updatedAt\\\": 1769483252674\\r\\n}\"",
+  "files/slides/welcome-deck/slide-1.html": "\"<div style=\\\"display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 60px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\\\">\\r\\n  <h1 style=\\\"font-size: 56px; font-weight: 700; color: white; margin: 0 0 24px 0; text-shadow: 0 2px 4px rgba(0,0,0,0.2);\\\">Welcome to Slide Deck</h1>\\r\\n  <p style=\\\"font-size: 24px; color: rgba(255,255,255,0.9); max-width: 600px; line-height: 1.6;\\\">Create beautiful presentations with HTML slides</p>\\r\\n</div>\"",
+  "files/slides/welcome-deck/slide-2.html": "\"<div style=\\\"padding: 60px; height: 100%; background: #1e293b;\\\">\\r\\n  <h2 style=\\\"font-size: 42px; font-weight: 700; color: white; margin: 0 0 32px 0;\\\">Getting Started</h2>\\r\\n  <ul style=\\\"font-size: 24px; color: #94a3b8; line-height: 2; list-style: none; padding: 0; margin: 0;\\\">\\r\\n    <li style=\\\"margin-bottom: 16px;\\\">✨ Edit slides using the HTML editor</li>\\r\\n    <li style=\\\"margin-bottom: 16px;\\\">🎨 Create multiple presentations</li>\\r\\n    <li style=\\\"margin-bottom: 16px;\\\">📺 Present in fullscreen mode</li>\\r\\n    <li style=\\\"margin-bottom: 16px;\\\">📄 Export to PDF</li>\\r\\n  </ul>\\r\\n</div>\""
+}

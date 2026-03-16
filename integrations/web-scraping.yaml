@@ -1,0 +1,358 @@
+# web-scraping integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: import { mcapi } from '@spaces/sdk'
+#   mcapi.post('/endpoint', { ...params })
+#   mcapi.get('/endpoint', { ...params })
+
+tools:
+
+  firecrawl_scrape:
+    method: POST
+    endpoint: /firecrawl-scrape
+    description: "Scrape a single URL and extract its content as markdown/HTML. Handles JavaScript rendering and anti-bot measures. 1 credit per page."
+    input_schema:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+          description: URL to scrape
+        formats:
+          type: array
+          items:
+            type: string
+            enum:
+              - markdown
+              - html
+              - rawHtml
+              - links
+              - screenshot
+              - screenshot@fullPage
+          default:
+            - markdown
+          description: Output formats to return
+        onlyMainContent:
+          type: boolean
+          default: true
+          description: Extract only main content, removing nav/footer/ads
+        includeTags:
+          type: array
+          items:
+            type: string
+          description: Only include content from these HTML tags
+        excludeTags:
+          type: array
+          items:
+            type: string
+          description: Exclude content from these HTML tags
+        waitFor:
+          type: integer
+          minimum: 0
+          maximum: 30000
+          description: Wait time in ms for dynamic content
+        timeout:
+          type: integer
+          minimum: 1000
+          maximum: 60000
+          description: Request timeout in ms
+      required:
+        - url
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            data:
+              type: object
+              properties:
+                url:
+                  type: string
+                markdown:
+                  type: string
+                html:
+                  type: string
+                rawHtml:
+                  type: string
+                links:
+                  type: array
+                  items:
+                    type: string
+                screenshot:
+                  type: string
+                metadata:
+                  type: object
+                  properties:
+                    title:
+                      type: string
+                    description:
+                      type: string
+                    language:
+                      type: string
+                    sourceURL:
+                      type: string
+                    statusCode:
+                      type: number
+                  additionalProperties: true
+              additionalProperties: true
+            creditsUsed:
+              type: number
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  firecrawl_crawl:
+    method: POST
+    endpoint: /firecrawl-crawl
+    description: "Crawl a website starting from a URL, following links to discover and scrape multiple pages. 1 credit per page crawled."
+    input_schema:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+          description: Starting URL to crawl from
+        maxDepth:
+          type: integer
+          minimum: 1
+          maximum: 10
+          description: Maximum link depth to crawl
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 10
+          description: Maximum number of pages to crawl
+        allowBackwardLinks:
+          type: boolean
+          description: Allow crawling to parent directories
+        allowExternalLinks:
+          type: boolean
+          description: Allow crawling to external domains
+        includePaths:
+          type: array
+          items:
+            type: string
+          description: Only crawl URLs matching these patterns
+        excludePaths:
+          type: array
+          items:
+            type: string
+          description: Skip URLs matching these patterns
+        formats:
+          type: array
+          items:
+            type: string
+            enum:
+              - markdown
+              - html
+              - rawHtml
+              - links
+              - screenshot
+              - screenshot@fullPage
+          default:
+            - markdown
+          description: Output formats for each page
+        onlyMainContent:
+          type: boolean
+          default: true
+          description: Extract only main content
+      required:
+        - url
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  url:
+                    type: string
+                  markdown:
+                    type: string
+                  html:
+                    type: string
+                  rawHtml:
+                    type: string
+                  links:
+                    type: array
+                    items:
+                      type: string
+                  screenshot:
+                    type: string
+                  metadata:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                      description:
+                        type: string
+                      language:
+                        type: string
+                      sourceURL:
+                        type: string
+                      statusCode:
+                        type: number
+                    additionalProperties: true
+                additionalProperties: true
+            creditsUsed:
+              type: number
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  firecrawl_map:
+    method: POST
+    endpoint: /firecrawl-map
+    description: "Map a website to get a list of all its URLs without scraping content. Fast way to discover site structure. 1 credit per page in results."
+    input_schema:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+          description: Website URL to map
+        search:
+          type: string
+          description: Filter results by search term
+        ignoreSitemap:
+          type: boolean
+          description: Skip sitemap and crawl links directly
+        sitemapOnly:
+          type: boolean
+          description: Only use sitemap, do not crawl
+        includeSubdomains:
+          type: boolean
+          description: Include URLs from subdomains
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 5000
+          description: Maximum URLs to return
+      required:
+        - url
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            links:
+              type: array
+              items:
+                type: string
+              description: List of discovered URLs
+            creditsUsed:
+              type: number
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  firecrawl_search:
+    method: POST
+    endpoint: /firecrawl-search
+    description: "Search the web and get full scraped content from top results. Combines search with scraping. 2 credits per 10 results + scrape costs."
+    input_schema:
+      type: object
+      properties:
+        query:
+          type: string
+          minLength: 1
+          description: Search query
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 20
+          default: 5
+          description: Number of results to return
+        lang:
+          type: string
+          description: Language code (e.g., "en", "es", "de")
+        country:
+          type: string
+          description: Country code for localized results (e.g., "us", "uk", "de")
+        scrapeOptions:
+          type: object
+          properties:
+            formats:
+              type: array
+              items:
+                type: string
+                enum:
+                  - markdown
+                  - html
+                  - rawHtml
+                  - links
+              default:
+                - markdown
+            onlyMainContent:
+              type: boolean
+              default: true
+          additionalProperties: false
+          description: Options for scraping search results
+      required:
+        - query
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  url:
+                    type: string
+                  markdown:
+                    type: string
+                  html:
+                    type: string
+                  rawHtml:
+                    type: string
+                  links:
+                    type: array
+                    items:
+                      type: string
+                  metadata:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                      description:
+                        type: string
+                      language:
+                        type: string
+                      sourceURL:
+                        type: string
+                      statusCode:
+                        type: number
+                    additionalProperties: true
+                additionalProperties: true
+            creditsUsed:
+              type: number
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

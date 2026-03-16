@@ -1,0 +1,499 @@
+# gmail integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: import { mcapi } from '@spaces/sdk'
+#   mcapi.post('/endpoint', { ...params })
+#   mcapi.get('/endpoint', { ...params })
+
+tools:
+
+  gmail_onboarding:
+    method: POST
+    endpoint: /gmail-onboarding
+    description: "Get Gmail onboarding OAuth URL with all permissions"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            authUrl:
+              type: string
+            provider:
+              type: string
+            scopes:
+              type: array
+              items:
+                type: string
+            message:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  gmail_reply:
+    method: POST
+    endpoint: /gmail-reply
+    description: "Reply to Gmail thread"
+    input_schema:
+      type: object
+      properties:
+        threadId:
+          type: string
+          minLength: 1
+        recipient:
+          type: string
+          format: email
+        subject:
+          type: string
+          minLength: 1
+        content:
+          type: string
+          minLength: 1
+        html:
+          type: string
+      required:
+        - threadId
+        - recipient
+        - subject
+        - content
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            requiresOAuth:
+              type: boolean
+            authUrl:
+              type: string
+            provider:
+              type: string
+            scopes:
+              type: array
+              items:
+                type: string
+            messageId:
+              type: string
+            threadId:
+              type: string
+            recipient:
+              type: string
+            subject:
+              type: string
+            sentAt:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  send_email:
+    method: POST
+    endpoint: /send-email
+    description: "Send email via Gmail"
+    input_schema:
+      type: object
+      properties:
+        recipient:
+          type: string
+          format: email
+        subject:
+          type: string
+          minLength: 1
+        content:
+          type: string
+          minLength: 1
+        html:
+          type: string
+      required:
+        - recipient
+        - subject
+        - content
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            requiresOAuth:
+              type: boolean
+            authUrl:
+              type: string
+            provider:
+              type: string
+            scopes:
+              type: array
+              items:
+                type: string
+            messageId:
+              type: string
+            threadId:
+              type: string
+            recipient:
+              type: string
+            subject:
+              type: string
+            sentAt:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  status:
+    method: GET
+    endpoint: /status
+    description: "Check connection status"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            google:
+              type: object
+              properties:
+                connected:
+                  type: boolean
+                gmail:
+                  type: boolean
+                calendar:
+                  type: boolean
+                drive:
+                  type: boolean
+              required:
+                - connected
+                - gmail
+                - calendar
+                - drive
+              additionalProperties: false
+          required:
+            - google
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  google_auth_url:
+    method: GET
+    endpoint: /google-auth-url
+    description: "Get OAuth URL for Google with optional return URL for redirect after auth"
+    input_schema:
+      type: object
+      properties:
+        service:
+          type: string
+          enum:
+            - gmail
+            - calendar
+            - drive
+            - contacts
+        returnUrl:
+          type: string
+          format: uri
+      required:
+        - service
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            authUrl:
+              type: string
+          required:
+            - authUrl
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  google_disconnect:
+    method: DELETE
+    endpoint: /google-disconnect
+    description: "Disconnect Google integration"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+          required:
+            - message
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  google_contacts:
+    method: GET
+    endpoint: /google-contacts
+    description: "Fetch Google contacts"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            requiresOAuth:
+              type: boolean
+            authUrl:
+              type: string
+            contacts:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  email:
+                    type: string
+                  phone:
+                    type: string
+                  company:
+                    type: string
+                  position:
+                    type: string
+                  notes:
+                    type: string
+                  status:
+                    type: string
+                required:
+                  - name
+                  - email
+                  - phone
+                  - company
+                  - position
+                  - notes
+                  - status
+                additionalProperties: false
+            count:
+              type: number
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  drive_upload:
+    method: POST
+    endpoint: /drive-upload
+    description: "Upload file to Google Drive"
+    input_schema:
+      type: object
+      properties:
+        filename:
+          type: string
+          minLength: 1
+        mimeType:
+          type: string
+          minLength: 1
+        fileData:
+          type: string
+          minLength: 1
+      required:
+        - filename
+        - mimeType
+        - fileData
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            requiresOAuth:
+              type: boolean
+            authUrl:
+              type: string
+            scopes:
+              type: array
+              items:
+                type: string
+            provider:
+              type: string
+            id:
+              type: string
+            name:
+              type: string
+            mimeType:
+              type: string
+            size:
+              type: string
+            createdTime:
+              type: string
+            modifiedTime:
+              type: string
+            webViewLink:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  drive_list:
+    method: GET
+    endpoint: /drive-list
+    description: "List files in Google Drive"
+    input_schema:
+      type: object
+      properties:
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+        pageToken:
+          type: string
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            requiresOAuth:
+              type: boolean
+            authUrl:
+              type: string
+            scopes:
+              type: array
+              items:
+                type: string
+            provider:
+              type: string
+            files:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  mimeType:
+                    type: string
+                  size:
+                    type: string
+                  createdTime:
+                    type: string
+                  modifiedTime:
+                    type: string
+                  webViewLink:
+                    type: string
+                required:
+                  - id
+                  - name
+                  - mimeType
+                additionalProperties: false
+            nextPageToken:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  drive_download:
+    method: GET
+    endpoint: /drive-download
+    description: "Download file from Google Drive"
+    input_schema:
+      type: object
+      properties:
+        fileId:
+          type: string
+          minLength: 1
+      required:
+        - fileId
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            requiresOAuth:
+              type: boolean
+            authUrl:
+              type: string
+            scopes:
+              type: array
+              items:
+                type: string
+            provider:
+              type: string
+            fileData:
+              type: string
+            mimeType:
+              type: string
+            filename:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  drive_delete:
+    method: DELETE
+    endpoint: /drive-delete
+    description: "Delete file from Google Drive"
+    input_schema:
+      type: object
+      properties:
+        fileId:
+          type: string
+          minLength: 1
+      required:
+        - fileId
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            requiresOAuth:
+              type: boolean
+            authUrl:
+              type: string
+            scopes:
+              type: array
+              items:
+                type: string
+            provider:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

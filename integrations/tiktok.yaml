@@ -1,0 +1,123 @@
+# tiktok integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: import { mcapi } from '@spaces/sdk'
+#   mcapi.post('/endpoint', { ...params })
+#   mcapi.get('/endpoint', { ...params })
+
+tools:
+
+  tiktok_post_video:
+    method: POST
+    endpoint: /tiktok-post-video
+    description: "Post a video to TikTok (sandbox)"
+    input_schema:
+      type: object
+      properties:
+        videoUrl:
+          type: string
+          format: uri
+        caption:
+          type: string
+          minLength: 1
+        hashtags:
+          type: string
+        scheduleTime:
+          type: string
+        privacyLevel:
+          type: string
+          enum:
+            - PUBLIC_TO_EVERYONE
+            - MUTUAL_FOLLOW_FRIEND
+            - SELF_ONLY
+      required:
+        - videoUrl
+        - caption
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            postId:
+              type: string
+            scheduled:
+              type: boolean
+            scheduledTime:
+              type: string
+            message:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  tiktok_user_info:
+    method: GET
+    endpoint: /tiktok-user-info
+    description: "Get TikTok user profile"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            user: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  tiktok_scheduled_posts:
+    method: GET
+    endpoint: /tiktok-scheduled-posts
+    description: "List scheduled TikTok posts"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            posts:
+              type: array
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  tiktok_cancel_scheduled_postId:
+    method: POST
+    endpoint: /tiktok-cancel-scheduled/{postId}
+    description: "Cancel a scheduled TikTok post"
+    input_schema:
+      type: object
+      properties:
+        postId:
+          type: string
+          minLength: 1
+      required:
+        - postId
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

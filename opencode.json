@@ -1,0 +1,21 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    ".cursor/rules/*/RULE.md",
+    "AGENTS.md",
+    "McAPI.yaml",
+    "McAPI.md",
+    "AllowedCommands.md",
+    "RoomStructure.md",
+    "DO_DONT.md",
+    "Storage.md",
+    "Cron.md",
+    "FileEditing.md",
+    "ImageAssets.md",
+    "Hooks.md",
+    "SkeletonGuide.md",
+    "Styling.md",
+    "AppGuide.md",
+    "AgentContextFiles.md"
+  ]
+}

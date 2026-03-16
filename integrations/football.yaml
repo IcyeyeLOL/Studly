@@ -1,0 +1,1955 @@
+# football integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: import { mcapi } from '@spaces/sdk'
+#   mcapi.post('/endpoint', { ...params })
+#   mcapi.get('/endpoint', { ...params })
+
+tools:
+
+  football_countries:
+    method: GET
+    endpoint: /football/countries
+    description: "Get all countries available in the API-Football database"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            countries:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  code:
+                    type:
+                      - string
+                      - null
+                  flag:
+                    type:
+                      - string
+                      - null
+                required:
+                  - name
+                  - code
+                  - flag
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  football_leagues:
+    method: GET
+    endpoint: /football/leagues
+    description: "Get all football leagues and competitions. Use to find league IDs for other endpoints."
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            leagues:
+              type: array
+              items:
+                type: object
+                properties:
+                  league:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                      name:
+                        type: string
+                      type:
+                        type: string
+                      logo:
+                        type:
+                          - string
+                          - null
+                    required:
+                      - id
+                      - name
+                      - type
+                      - logo
+                    additionalProperties: false
+                  country:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      code:
+                        type:
+                          - string
+                          - null
+                      flag:
+                        type:
+                          - string
+                          - null
+                    required:
+                      - name
+                      - code
+                      - flag
+                    additionalProperties: false
+                  seasons:
+                    type: array
+                required:
+                  - league
+                  - country
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  football_teams:
+    method: GET
+    endpoint: /football/teams
+    description: "Get football team information including name, logo, venue, and country"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            teams:
+              type: array
+              items:
+                type: object
+                properties:
+                  team:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                      name:
+                        type: string
+                      code:
+                        type:
+                          - string
+                          - null
+                      country:
+                        type: string
+                      founded:
+                        type:
+                          - number
+                          - null
+                      national:
+                        type: boolean
+                      logo:
+                        type:
+                          - string
+                          - null
+                    required:
+                      - id
+                      - name
+                      - code
+                      - country
+                      - founded
+                      - national
+                      - logo
+                    additionalProperties: false
+                  venue:
+                    anyOf:
+                      - 
+                        type: object
+                        properties:
+                          id:
+                            type:
+                              - number
+                              - null
+                          name:
+                            type:
+                              - string
+                              - null
+                          address:
+                            type:
+                              - string
+                              - null
+                          city:
+                            type:
+                              - string
+                              - null
+                          capacity:
+                            type:
+                              - number
+                              - null
+                          surface:
+                            type:
+                              - string
+                              - null
+                          image:
+                            type:
+                              - string
+                              - null
+                        required:
+                          - id
+                          - name
+                          - address
+                          - city
+                          - capacity
+                          - surface
+                          - image
+                        additionalProperties: false
+                      - 
+                        type: null
+                required:
+                  - team
+                  - venue
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  football_teams_statistics:
+    method: GET
+    endpoint: /football/teams/statistics
+    description: "Get detailed team statistics for a specific league and season"
+    input_schema:
+      type: object
+      properties:
+        league:
+          type: number
+          description: League ID (required)
+        season:
+          type: number
+          description: Season year (required)
+        team:
+          type: number
+          description: Team ID (required)
+      required:
+        - league
+        - season
+        - team
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            statistics: {}
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  football_fixtures:
+    method: GET
+    endpoint: /football/fixtures
+    description: "Get football fixtures (matches) by date, league, team, or live status. Returns match details, scores, and status."
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            fixtures:
+              type: array
+              items:
+                type: object
+                properties:
+                  fixture:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                      referee:
+                        type:
+                          - string
+                          - null
+                      timezone:
+                        type: string
+                      date:
+                        type: string
+                      timestamp:
+                        type: number
+                      status:
+                        type: object
+                        properties:
+                          long:
+                            type: string
+                          short:
+                            type: string
+                          elapsed:
+                            type:
+                              - number
+                              - null
+                        required:
+                          - long
+                          - short
+                          - elapsed
+                        additionalProperties: false
+                    required:
+                      - id
+                      - referee
+                      - timezone
+                      - date
+                      - timestamp
+                      - status
+                    additionalProperties: false
+                  league:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                      name:
+                        type: string
+                      country:
+                        type: string
+                      logo:
+                        type:
+                          - string
+                          - null
+                      flag:
+                        type:
+                          - string
+                          - null
+                      season:
+                        type: number
+                      round:
+                        type: string
+                    required:
+                      - id
+                      - name
+                      - country
+                      - logo
+                      - flag
+                      - season
+                      - round
+                    additionalProperties: false
+                  teams:
+                    type: object
+                    properties:
+                      home:
+                        type: object
+                        properties:
+                          id:
+                            type: number
+                          name:
+                            type: string
+                          logo:
+                            type:
+                              - string
+                              - null
+                          winner:
+                            type:
+                              - boolean
+                              - null
+                        required:
+                          - id
+                          - name
+                          - logo
+                          - winner
+                        additionalProperties: false
+                      away:
+                        type: object
+                        properties:
+                          id:
+                            type: number
+                          name:
+                            type: string
+                          logo:
+                            type:
+                              - string
+                              - null
+                          winner:
+                            type:
+                              - boolean
+                              - null
+                        required:
+                          - id
+                          - name
+                          - logo
+                          - winner
+                        additionalProperties: false
+                    required:
+                      - home
+                      - away
+                    additionalProperties: false
+                  goals:
+                    type: object
+                    properties:
+                      home:
+                        type:
+                          - number
+                          - null
+                      away:
+                        type:
+                          - number
+                          - null
+                    required:
+                      - home
+                      - away
+                    additionalProperties: false
+                  score: {}
+                required:
+                  - fixture
+                  - league
+                  - teams
+                  - goals
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  football_fixtures_headtohead:
+    method: GET
+    endpoint: /football/fixtures/headtohead
+    description: "Get head-to-head match history between two teams"
+    input_schema:
+      type: object
+      properties:
+        h2h:
+          type: string
+          description: "Team IDs in format \"team1Id-team2Id\" (required)"
+        date:
+          type: string
+          description: "Filter by date (YYYY-MM-DD)"
+        league:
+          type: number
+          description: Filter by league ID
+        season:
+          type: number
+          description: Filter by season year
+      required:
+        - h2h
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            matches:
+              type: array
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  football_fixtures_statistics:
+    method: GET
+    endpoint: /football/fixtures/statistics
+    description: "Get detailed match statistics (shots, possession, passes, etc.)"
+    input_schema:
+      type: object
+      properties:
+        fixture:
+          type: number
+          description: Fixture ID (required)
+        team:
+          type: number
+          description: Filter by team ID
+      required:
+        - fixture
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            statistics:
+              type: array
+              items:
+                type: object
+                properties:
+                  team:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                      name:
+                        type: string
+                      logo:
+                        type:
+                          - string
+                          - null
+                    required:
+                      - id
+                      - name
+                      - logo
+                    additionalProperties: false
+                  statistics:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                        value:
+                          anyOf:
+                            - 
+                              type:
+                                - string
+                                - number
+                            - 
+                              type: null
+                      required:
+                        - type
+                        - value
+                      additionalProperties: false
+                required:
+                  - team
+                  - statistics
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  football_fixtures_events:
+    method: GET
+    endpoint: /football/fixtures/events
+    description: "Get match events (goals, cards, substitutions, VAR decisions)"
+    input_schema:
+      type: object
+      properties:
+        fixture:
+          type: number
+          description: Fixture ID (required)
+        team:
+          type: number
+          description: Filter by team ID
+        player:
+          type: number
+          description: Filter by player ID
+        type:
+          type: string
+          description: "Event type: \"Goal\", \"Card\", \"subst\", \"Var\""
+      required:
+        - fixture
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            events:
+              type: array
+              items:
+                type: object
+                properties:
+                  time:
+                    type: object
+                    properties:
+                      elapsed:
+                        type: number
+                      extra:
+                        type:
+                          - number
+                          - null
+                    required:
+                      - elapsed
+                      - extra
+                    additionalProperties: false
+                  team:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                      name:
+                        type: string
+                      logo:
+                        type:
+                          - string
+                          - null
+                    required:
+                      - id
+                      - name
+                      - logo
+                    additionalProperties: false
+                  player:
+                    type: object
+                    properties:
+                      id:
+                        type:
+                          - number
+                          - null
+                      name:
+                        type:
+                          - string
+                          - null
+                    required:
+                      - id
+                      - name
+                    additionalProperties: false
+                  assist:
+                    anyOf:
+                      - 
+                        type: object
+                        properties:
+                          id:
+                            type:
+                              - number
+                              - null
+                          name:
+                            type:
+                              - string
+                              - null
+                        required:
+                          - id
+                          - name
+                        additionalProperties: false
+                      - 
+                        type: null
+                  type:
+                    type: string
+                  detail:
+                    type: string
+                  comments:
+                    type:
+                      - string
+                      - null
+                required:
+                  - time
+                  - team
+                  - player
+                  - assist
+                  - type
+                  - detail
+                  - comments
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  football_fixtures_lineups:
+    method: GET
+    endpoint: /football/fixtures/lineups
+    description: "Get match lineups including starting XI, formation, and substitutes"
+    input_schema:
+      type: object
+      properties:
+        fixture:
+          type: number
+          description: Fixture ID (required)
+        team:
+          type: number
+          description: Filter by team ID
+        player:
+          type: number
+          description: Filter by player ID
+      required:
+        - fixture
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            lineups:
+              type: array
+              items:
+                type: object
+                properties:
+                  team:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                      name:
+                        type: string
+                      logo:
+                        type:
+                          - string
+                          - null
+                      colors:
+                        anyOf:
+                          - 
+
+                          - 
+                            type: null
+                    required:
+                      - id
+                      - name
+                      - logo
+                    additionalProperties: false
+                  formation:
+                    type:
+                      - string
+                      - null
+                  startXI:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        player:
+                          type: object
+                          properties:
+                            id:
+                              type: number
+                            name:
+                              type: string
+                            number:
+                              type: number
+                            pos:
+                              type:
+                                - string
+                                - null
+                            grid:
+                              type:
+                                - string
+                                - null
+                          required:
+                            - id
+                            - name
+                            - number
+                            - pos
+                            - grid
+                          additionalProperties: false
+                      required:
+                        - player
+                      additionalProperties: false
+                  substitutes:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        player:
+                          type: object
+                          properties:
+                            id:
+                              type: number
+                            name:
+                              type: string
+                            number:
+                              type: number
+                            pos:
+                              type:
+                                - string
+                                - null
+                          required:
+                            - id
+                            - name
+                            - number
+                            - pos
+                          additionalProperties: false
+                      required:
+                        - player
+                      additionalProperties: false
+                  coach:
+                    anyOf:
+                      - 
+                        type: object
+                        properties:
+                          id:
+                            type:
+                              - number
+                              - null
+                          name:
+                            type:
+                              - string
+                              - null
+                          photo:
+                            type:
+                              - string
+                              - null
+                        required:
+                          - id
+                          - name
+                          - photo
+                        additionalProperties: false
+                      - 
+                        type: null
+                required:
+                  - team
+                  - formation
+                  - startXI
+                  - substitutes
+                  - coach
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  football_standings:
+    method: GET
+    endpoint: /football/standings
+    description: "Get league standings table with points, wins, draws, losses, goals"
+    input_schema:
+      type: object
+      properties:
+        league:
+          type: number
+          description: League ID (required)
+        season:
+          type: number
+          description: Season year (required)
+        team:
+          type: number
+          description: Filter by team ID
+      required:
+        - league
+        - season
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            standings:
+              type: array
+              items:
+                type: object
+                properties:
+                  league:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                      name:
+                        type: string
+                      country:
+                        type: string
+                      logo:
+                        type:
+                          - string
+                          - null
+                      flag:
+                        type:
+                          - string
+                          - null
+                      season:
+                        type: number
+                      standings:
+                        type: array
+                        items:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              rank:
+                                type: number
+                              team:
+                                type: object
+                                properties:
+                                  id:
+                                    type: number
+                                  name:
+                                    type: string
+                                  logo:
+                                    type:
+                                      - string
+                                      - null
+                                required:
+                                  - id
+                                  - name
+                                  - logo
+                                additionalProperties: false
+                              points:
+                                type: number
+                              goalsDiff:
+                                type: number
+                              group:
+                                type: string
+                              form:
+                                type:
+                                  - string
+                                  - null
+                              status:
+                                type:
+                                  - string
+                                  - null
+                              description:
+                                type:
+                                  - string
+                                  - null
+                              all:
+                                type: object
+                                properties:
+                                  played:
+                                    type: number
+                                  win:
+                                    type: number
+                                  draw:
+                                    type: number
+                                  lose:
+                                    type: number
+                                  goals:
+                                    type: object
+                                    properties:
+                                      for:
+                                        type: number
+                                      against:
+                                        type: number
+                                    required:
+                                      - for
+                                      - against
+                                    additionalProperties: false
+                                required:
+                                  - played
+                                  - win
+                                  - draw
+                                  - lose
+                                  - goals
+                                additionalProperties: false
+                            required:
+                              - rank
+                              - team
+                              - points
+                              - goalsDiff
+                              - form
+                              - status
+                              - description
+                              - all
+                            additionalProperties: false
+                    required:
+                      - id
+                      - name
+                      - country
+                      - logo
+                      - flag
+                      - season
+                      - standings
+                    additionalProperties: false
+                required:
+                  - league
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  football_players_topscorers:
+    method: GET
+    endpoint: /football/players/topscorers
+    description: "Get top goal scorers for a league and season"
+    input_schema:
+      type: object
+      properties:
+        league:
+          type: number
+          description: League ID (required)
+        season:
+          type: number
+          description: Season year (required)
+      required:
+        - league
+        - season
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            scorers:
+              type: array
+              items:
+                type: object
+                properties:
+                  player:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                      name:
+                        type: string
+                      firstname:
+                        type:
+                          - string
+                          - null
+                      lastname:
+                        type:
+                          - string
+                          - null
+                      age:
+                        type:
+                          - number
+                          - null
+                      nationality:
+                        type:
+                          - string
+                          - null
+                      photo:
+                        type:
+                          - string
+                          - null
+                    required:
+                      - id
+                      - name
+                      - firstname
+                      - lastname
+                      - age
+                      - nationality
+                      - photo
+                    additionalProperties: false
+                  statistics:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        team:
+                          type: object
+                          properties:
+                            id:
+                              type: number
+                            name:
+                              type: string
+                            logo:
+                              type:
+                                - string
+                                - null
+                          required:
+                            - id
+                            - name
+                            - logo
+                          additionalProperties: false
+                        league:
+                          type: object
+                          properties:
+                            id:
+                              type: number
+                            name:
+                              type: string
+                          required:
+                            - id
+                            - name
+                          additionalProperties: false
+                        games:
+                          type: object
+                          properties:
+                            appearences:
+                              type:
+                                - number
+                                - null
+                            minutes:
+                              type:
+                                - number
+                                - null
+                          required:
+                            - appearences
+                            - minutes
+                          additionalProperties: false
+                        goals:
+                          type: object
+                          properties:
+                            total:
+                              type:
+                                - number
+                                - null
+                            assists:
+                              type:
+                                - number
+                                - null
+                          required:
+                            - total
+                            - assists
+                          additionalProperties: false
+                      required:
+                        - team
+                        - league
+                        - games
+                        - goals
+                      additionalProperties: false
+                required:
+                  - player
+                  - statistics
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  football_players_topassists:
+    method: GET
+    endpoint: /football/players/topassists
+    description: "Get top assist providers for a league and season"
+    input_schema:
+      type: object
+      properties:
+        league:
+          type: number
+          description: League ID (required)
+        season:
+          type: number
+          description: Season year (required)
+      required:
+        - league
+        - season
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            assists:
+              type: array
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  football_players:
+    method: GET
+    endpoint: /football/players
+    description: "Get player information and statistics"
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: number
+          description: Player ID
+        team:
+          type: number
+          description: Team ID
+        league:
+          type: number
+          description: League ID
+        season:
+          type: number
+          description: Season year (required)
+        search:
+          type: string
+          minLength: 3
+          description: Search by name (min 3 chars)
+        page:
+          type: number
+          description: Page number for pagination
+      required:
+        - season
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            players:
+              type: array
+              items:
+                type: object
+                properties:
+                  player:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                      name:
+                        type: string
+                      firstname:
+                        type:
+                          - string
+                          - null
+                      lastname:
+                        type:
+                          - string
+                          - null
+                      age:
+                        type:
+                          - number
+                          - null
+                      birth:
+                        anyOf:
+                          - 
+                            type: object
+                            properties:
+                              date:
+                                type:
+                                  - string
+                                  - null
+                              place:
+                                type:
+                                  - string
+                                  - null
+                              country:
+                                type:
+                                  - string
+                                  - null
+                            required:
+                              - date
+                              - place
+                              - country
+                            additionalProperties: false
+                          - 
+                            type: null
+                      nationality:
+                        type:
+                          - string
+                          - null
+                      height:
+                        type:
+                          - string
+                          - null
+                      weight:
+                        type:
+                          - string
+                          - null
+                      photo:
+                        type:
+                          - string
+                          - null
+                    required:
+                      - id
+                      - name
+                      - firstname
+                      - lastname
+                      - age
+                      - birth
+                      - nationality
+                      - height
+                      - weight
+                      - photo
+                    additionalProperties: false
+                  statistics:
+                    type: array
+                required:
+                  - player
+                  - statistics
+                additionalProperties: false
+            paging:
+              type: object
+              properties:
+                current:
+                  type: number
+                total:
+                  type: number
+              required:
+                - current
+                - total
+              additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  football_players_squads:
+    method: GET
+    endpoint: /football/players/squads
+    description: "Get current team squad/roster with player details"
+    input_schema:
+      type: object
+      properties:
+        team:
+          type: number
+          description: Team ID (required)
+      required:
+        - team
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            squad:
+              type: object
+              properties:
+                team:
+                  type: object
+                  properties:
+                    id:
+                      type: number
+                    name:
+                      type: string
+                    logo:
+                      type:
+                        - string
+                        - null
+                  required:
+                    - id
+                    - name
+                    - logo
+                  additionalProperties: false
+                players:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                      name:
+                        type: string
+                      age:
+                        type:
+                          - number
+                          - null
+                      number:
+                        type:
+                          - number
+                          - null
+                      position:
+                        type:
+                          - string
+                          - null
+                      photo:
+                        type:
+                          - string
+                          - null
+                    required:
+                      - id
+                      - name
+                      - age
+                      - number
+                      - position
+                      - photo
+                    additionalProperties: false
+              required:
+                - team
+                - players
+              additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  football_transfers:
+    method: GET
+    endpoint: /football/transfers
+    description: "Get player transfer history"
+    input_schema:
+      type: object
+      properties:
+        player:
+          type: number
+          description: Player ID
+        team:
+          type: number
+          description: Team ID
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            transfers:
+              type: array
+              items:
+                type: object
+                properties:
+                  player:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                      name:
+                        type: string
+                    required:
+                      - id
+                      - name
+                    additionalProperties: false
+                  update:
+                    type: string
+                  transfers:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                        type:
+                          type:
+                            - string
+                            - null
+                        teams:
+                          type: object
+                          properties:
+                            in:
+                              type: object
+                              properties:
+                                id:
+                                  type:
+                                    - number
+                                    - null
+                                name:
+                                  type:
+                                    - string
+                                    - null
+                                logo:
+                                  type:
+                                    - string
+                                    - null
+                              required:
+                                - id
+                                - name
+                                - logo
+                              additionalProperties: false
+                            out:
+                              type: object
+                              properties:
+                                id:
+                                  type:
+                                    - number
+                                    - null
+                                name:
+                                  type:
+                                    - string
+                                    - null
+                                logo:
+                                  type:
+                                    - string
+                                    - null
+                              required:
+                                - id
+                                - name
+                                - logo
+                              additionalProperties: false
+                          required:
+                            - in
+                            - out
+                          additionalProperties: false
+                      required:
+                        - date
+                        - type
+                        - teams
+                      additionalProperties: false
+                required:
+                  - player
+                  - update
+                  - transfers
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  football_injuries:
+    method: GET
+    endpoint: /football/injuries
+    description: "Get current player injuries"
+    input_schema:
+      type: object
+      properties:
+        league:
+          type: number
+          description: League ID
+        season:
+          type: number
+          description: Season year
+        fixture:
+          type: number
+          description: Fixture ID
+        team:
+          type: number
+          description: Team ID
+        player:
+          type: number
+          description: Player ID
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            injuries:
+              type: array
+              items:
+                type: object
+                properties:
+                  player:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                      name:
+                        type: string
+                      photo:
+                        type:
+                          - string
+                          - null
+                      type:
+                        type:
+                          - string
+                          - null
+                      reason:
+                        type:
+                          - string
+                          - null
+                    required:
+                      - id
+                      - name
+                      - photo
+                      - type
+                      - reason
+                    additionalProperties: false
+                  team:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                      name:
+                        type: string
+                      logo:
+                        type:
+                          - string
+                          - null
+                    required:
+                      - id
+                      - name
+                      - logo
+                    additionalProperties: false
+                  fixture:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                      timezone:
+                        type: string
+                      date:
+                        type: string
+                      timestamp:
+                        type: number
+                    required:
+                      - id
+                      - timezone
+                      - date
+                      - timestamp
+                    additionalProperties: false
+                  league:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                      name:
+                        type: string
+                      country:
+                        type: string
+                      logo:
+                        type:
+                          - string
+                          - null
+                      flag:
+                        type:
+                          - string
+                          - null
+                      season:
+                        type: number
+                    required:
+                      - id
+                      - name
+                      - country
+                      - logo
+                      - flag
+                      - season
+                    additionalProperties: false
+                required:
+                  - player
+                  - team
+                  - fixture
+                  - league
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  football_predictions:
+    method: GET
+    endpoint: /football/predictions
+    description: "Get AI-powered match predictions including win probability and advice"
+    input_schema:
+      type: object
+      properties:
+        fixture:
+          type: number
+          description: Fixture ID (required)
+      required:
+        - fixture
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            predictions:
+              type: object
+              properties:
+                predictions:
+                  type: object
+                  properties:
+                    winner:
+                      anyOf:
+                        - 
+                          type: object
+                          properties:
+                            id:
+                              type:
+                                - number
+                                - null
+                            name:
+                              type:
+                                - string
+                                - null
+                            comment:
+                              type:
+                                - string
+                                - null
+                          required:
+                            - id
+                            - name
+                            - comment
+                          additionalProperties: false
+                        - 
+                          type: null
+                    win_or_draw:
+                      type:
+                        - boolean
+                        - null
+                    under_over:
+                      type:
+                        - string
+                        - null
+                    goals:
+                      anyOf:
+                        - 
+                          type: object
+                          properties:
+                            home:
+                              type:
+                                - string
+                                - null
+                            away:
+                              type:
+                                - string
+                                - null
+                          required:
+                            - home
+                            - away
+                          additionalProperties: false
+                        - 
+                          type: null
+                    advice:
+                      type:
+                        - string
+                        - null
+                    percent:
+                      anyOf:
+                        - 
+                          type: object
+                          properties:
+                            home:
+                              type:
+                                - string
+                                - null
+                            draw:
+                              type:
+                                - string
+                                - null
+                            away:
+                              type:
+                                - string
+                                - null
+                          required:
+                            - home
+                            - draw
+                            - away
+                          additionalProperties: false
+                        - 
+                          type: null
+                  required:
+                    - winner
+                    - win_or_draw
+                    - under_over
+                    - goals
+                    - advice
+                    - percent
+                  additionalProperties: false
+                league: {}
+                teams: {}
+                comparison: {}
+                h2h:
+                  type: array
+              required:
+                - predictions
+              additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  football_coachs:
+    method: GET
+    endpoint: /football/coachs
+    description: "Get coach/manager information and career history"
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: number
+          description: Coach ID
+        team:
+          type: number
+          description: Team ID
+        search:
+          type: string
+          minLength: 3
+          description: Search by name (min 3 chars)
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            coaches:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  name:
+                    type: string
+                  firstname:
+                    type:
+                      - string
+                      - null
+                  lastname:
+                    type:
+                      - string
+                      - null
+                  age:
+                    type:
+                      - number
+                      - null
+                  birth:
+                    anyOf:
+                      - 
+                        type: object
+                        properties:
+                          date:
+                            type:
+                              - string
+                              - null
+                          place:
+                            type:
+                              - string
+                              - null
+                          country:
+                            type:
+                              - string
+                              - null
+                        required:
+                          - date
+                          - place
+                          - country
+                        additionalProperties: false
+                      - 
+                        type: null
+                  nationality:
+                    type:
+                      - string
+                      - null
+                  height:
+                    type:
+                      - string
+                      - null
+                  weight:
+                    type:
+                      - string
+                      - null
+                  photo:
+                    type:
+                      - string
+                      - null
+                  team:
+                    anyOf:
+                      - 
+                        type: object
+                        properties:
+                          id:
+                            type: number
+                          name:
+                            type: string
+                          logo:
+                            type:
+                              - string
+                              - null
+                        required:
+                          - id
+                          - name
+                          - logo
+                        additionalProperties: false
+                      - 
+                        type: null
+                  career:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        team:
+                          type: object
+                          properties:
+                            id:
+                              type:
+                                - number
+                                - null
+                            name:
+                              type:
+                                - string
+                                - null
+                            logo:
+                              type:
+                                - string
+                                - null
+                          required:
+                            - id
+                            - name
+                            - logo
+                          additionalProperties: false
+                        start:
+                          type:
+                            - string
+                            - null
+                        end:
+                          type:
+                            - string
+                            - null
+                      required:
+                        - team
+                        - start
+                        - end
+                      additionalProperties: false
+                required:
+                  - id
+                  - name
+                  - firstname
+                  - lastname
+                  - age
+                  - birth
+                  - nationality
+                  - height
+                  - weight
+                  - photo
+                  - team
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  football_venues:
+    method: GET
+    endpoint: /football/venues
+    description: "Get stadium/venue information including capacity and location"
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: number
+          description: Venue ID
+        name:
+          type: string
+          description: Venue name
+        city:
+          type: string
+          description: City name
+        country:
+          type: string
+          description: Country name
+        search:
+          type: string
+          minLength: 3
+          description: Search term (min 3 chars)
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            venues:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  name:
+                    type: string
+                  address:
+                    type:
+                      - string
+                      - null
+                  city:
+                    type:
+                      - string
+                      - null
+                  country:
+                    type:
+                      - string
+                      - null
+                  capacity:
+                    type:
+                      - number
+                      - null
+                  surface:
+                    type:
+                      - string
+                      - null
+                  image:
+                    type:
+                      - string
+                      - null
+                required:
+                  - id
+                  - name
+                  - address
+                  - city
+                  - country
+                  - capacity
+                  - surface
+                  - image
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

@@ -1,0 +1,178 @@
+# internal integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: import { mcapi } from '@spaces/sdk'
+#   mcapi.post('/endpoint', { ...params })
+#   mcapi.get('/endpoint', { ...params })
+
+tools:
+
+  usage:
+    method: GET
+    endpoint: /usage
+    description: "Get user integration spending summary"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            totalSpent:
+              type: number
+            currency:
+              type: string
+            usageCount:
+              type: number
+          required:
+            - totalSpent
+            - currency
+            - usageCount
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  lookup_user:
+    method: POST
+    endpoint: /lookup-user
+    description: "Look up a DeepSpace user by email or username. Returns userId if found."
+    input_schema:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email address to look up
+        username:
+          type: string
+          description: Public username to look up
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            data:
+              type: object
+              properties:
+                found:
+                  type: boolean
+                userId:
+                  type: string
+                name:
+                  type: string
+                email:
+                  type: string
+                publicUsername:
+                  type: string
+              required:
+                - found
+              additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  get_canvas_users:
+    method: POST
+    endpoint: /get-canvas-users
+    description: "List users for a canvas room"
+    input_schema:
+      type: object
+      properties:
+        roomId:
+          type: string
+          minLength: 1
+      required:
+        - roomId
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            data:
+              type: object
+              properties:
+                users:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      publicUsername:
+                        type: string
+                      email:
+                        type: string
+                      isOwner:
+                        type: boolean
+                    required:
+                      - id
+                      - name
+                      - publicUsername
+                      - email
+                      - isOwner
+                    additionalProperties: false
+              required:
+                - users
+              additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  get_current_user:
+    method: POST
+    endpoint: /get-current-user
+    description: "Get current authenticated user"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            data:
+              type: object
+              properties:
+                user:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    publicUsername:
+                      type: string
+                    email:
+                      type: string
+                    isCurrentUser:
+                      type: boolean
+                  required:
+                    - id
+                    - name
+                    - publicUsername
+                    - email
+                    - isCurrentUser
+                  additionalProperties: false
+              required:
+                - user
+              additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

@@ -1,0 +1,587 @@
+# travel integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: import { mcapi } from '@spaces/sdk'
+#   mcapi.post('/endpoint', { ...params })
+#   mcapi.get('/endpoint', { ...params })
+
+tools:
+
+  flights:
+    method: GET
+    endpoint: /flights
+    description: "Search flights via SerpAPI Google Flights. Supports round-trip and one-way searches."
+    input_schema:
+      type: object
+      properties:
+        from:
+          type: string
+          minLength: 1
+          description: Origin city or airport code
+        to:
+          type: string
+          minLength: 1
+          description: Destination city or airport code
+        date:
+          type: string
+          minLength: 1
+          description: "Outbound date in YYYY-MM-DD format"
+        returnDate:
+          type: string
+          description: "Return date in YYYY-MM-DD format (omit for one-way)"
+        adults:
+          type: integer
+          minimum: 1
+          maximum: 9
+          description: "Number of adult passengers (1-9)"
+        currency:
+          type: string
+          description: Currency code (e.g., USD, EUR)
+        locale:
+          type: string
+          description: Locale for results (e.g., en, es)
+      required:
+        - from
+        - to
+        - date
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  airline:
+                    type:
+                      - string
+                      - null
+                  flightNumber:
+                    type:
+                      - string
+                      - null
+                  depart:
+                    type: object
+                    properties:
+                      time:
+                        type:
+                          - string
+                          - null
+                      airport:
+                        type:
+                          - string
+                          - null
+                    required:
+                      - time
+                      - airport
+                    additionalProperties: false
+                  arrive:
+                    type: object
+                    properties:
+                      time:
+                        type:
+                          - string
+                          - null
+                      airport:
+                        type:
+                          - string
+                          - null
+                    required:
+                      - time
+                      - airport
+                    additionalProperties: false
+                  duration:
+                    type:
+                      - number
+                      - null
+                  stops:
+                    type: number
+                  price:
+                    anyOf:
+                      - 
+                        type:
+                          - string
+                          - number
+                      - 
+                        type: null
+                  url:
+                    type: string
+                  source:
+                    type: string
+                    const: serpapi
+                  segments:
+                    type: object
+                    properties:
+                      outbound:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            airline:
+                              type:
+                                - string
+                                - null
+                            flightNumber:
+                              type:
+                                - string
+                                - null
+                            depart:
+                              type: object
+                              properties:
+                                time:
+                                  type:
+                                    - string
+                                    - null
+                                airport:
+                                  type:
+                                    - string
+                                    - null
+                              required:
+                                - time
+                                - airport
+                              additionalProperties: false
+                            arrive:
+                              type: object
+                              properties:
+                                time:
+                                  type:
+                                    - string
+                                    - null
+                                airport:
+                                  type:
+                                    - string
+                                    - null
+                              required:
+                                - time
+                                - airport
+                              additionalProperties: false
+                          required:
+                            - airline
+                            - flightNumber
+                            - depart
+                            - arrive
+                          additionalProperties: false
+                      return:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            airline:
+                              type:
+                                - string
+                                - null
+                            flightNumber:
+                              type:
+                                - string
+                                - null
+                            depart:
+                              type: object
+                              properties:
+                                time:
+                                  type:
+                                    - string
+                                    - null
+                                airport:
+                                  type:
+                                    - string
+                                    - null
+                              required:
+                                - time
+                                - airport
+                              additionalProperties: false
+                            arrive:
+                              type: object
+                              properties:
+                                time:
+                                  type:
+                                    - string
+                                    - null
+                                airport:
+                                  type:
+                                    - string
+                                    - null
+                              required:
+                                - time
+                                - airport
+                              additionalProperties: false
+                          required:
+                            - airline
+                            - flightNumber
+                            - depart
+                            - arrive
+                          additionalProperties: false
+                    required:
+                      - outbound
+                      - return
+                    additionalProperties: false
+                required:
+                  - id
+                  - airline
+                  - flightNumber
+                  - depart
+                  - arrive
+                  - duration
+                  - stops
+                  - price
+                  - source
+                  - segments
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  serp_places:
+    method: GET
+    endpoint: /serp-places
+    description: "Search places via SerpAPI Google Maps (attractions, restaurants, etc.)"
+    input_schema:
+      type: object
+      properties:
+        city:
+          type: string
+          minLength: 1
+          description: City name to search in
+        q:
+          type: string
+          description: Search query (e.g., "museums", "restaurants")
+        size:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: "Max number of results (1-100)"
+        locale:
+          type: string
+          description: Locale for results (e.g., en, es)
+      required:
+        - city
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  title:
+                    type: string
+                  rating:
+                    type:
+                      - number
+                      - null
+                  reviews:
+                    type:
+                      - number
+                      - null
+                  priceLevel:
+                    type:
+                      - string
+                      - null
+                  address:
+                    type:
+                      - string
+                      - null
+                  category:
+                    type:
+                      - string
+                      - null
+                  phone:
+                    type:
+                      - string
+                      - null
+                  url:
+                    type: string
+                  thumbnail:
+                    type: string
+                  reviewsLink:
+                    type: string
+                  dataId:
+                    type: string
+                  source:
+                    type: string
+                    const: serpapi
+                required:
+                  - id
+                  - title
+                  - rating
+                  - reviews
+                  - priceLevel
+                  - address
+                  - category
+                  - phone
+                  - source
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  serp_places_reviews:
+    method: GET
+    endpoint: /serp-places-reviews
+    description: "Get reviews for a place via SerpAPI Google Maps"
+    input_schema:
+      type: object
+      properties:
+        data_id:
+          type: string
+          minLength: 1
+          description: SerpAPI data_id for the place
+        locale:
+          type: string
+          description: Locale for results (e.g., en, es)
+      required:
+        - data_id
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            reviews:
+              type: array
+              items:
+                type: object
+                properties: {}
+                additionalProperties: true
+            embedUrl:
+              type:
+                - string
+                - null
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  serp_hotels:
+    method: GET
+    endpoint: /serp-hotels
+    description: "Search hotels via SerpAPI Google Hotels"
+    input_schema:
+      type: object
+      properties:
+        city:
+          type: string
+          minLength: 1
+          description: City name to search hotels
+        check_in_date:
+          type: string
+          minLength: 1
+          description: "Check-in date in YYYY-MM-DD format"
+        check_out_date:
+          type: string
+          minLength: 1
+          description: "Check-out date in YYYY-MM-DD format"
+        adults:
+          type: integer
+          minimum: 1
+          maximum: 9
+          description: "Number of adult guests (1-9)"
+        locale:
+          type: string
+          description: Locale for results (e.g., en, es)
+        size:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: "Max number of results (1-100)"
+      required:
+        - city
+        - check_in_date
+        - check_out_date
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  title:
+                    type: string
+                  rating:
+                    type:
+                      - number
+                      - null
+                  reviews:
+                    type:
+                      - number
+                      - null
+                  address:
+                    type:
+                      - string
+                      - null
+                  price:
+                    type:
+                      - number
+                      - null
+                  currency:
+                    type: string
+                  thumbnail:
+                    type: string
+                  url:
+                    type: string
+                  place_id:
+                    type: string
+                  source:
+                    type: string
+                    const: serpapi
+                  amenities:
+                    type: array
+                    items:
+                      type: string
+                  hotel_class:
+                    type: number
+                  price_text:
+                    type: string
+                required:
+                  - id
+                  - title
+                  - rating
+                  - reviews
+                  - address
+                  - price
+                  - currency
+                  - source
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  serp_events:
+    method: GET
+    endpoint: /serp-events
+    description: "Search events via SerpAPI Google Events"
+    input_schema:
+      type: object
+      properties:
+        city:
+          type: string
+          minLength: 1
+          description: City name to search events
+        from:
+          type: string
+          minLength: 1
+          description: "Start date in YYYY-MM-DD format"
+        to:
+          type: string
+          minLength: 1
+          description: "End date in YYYY-MM-DD format"
+        q:
+          type: string
+          description: Optional search query
+        size:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: "Max number of results (1-100)"
+        locale:
+          type: string
+          description: Locale for results (e.g., en, es)
+      required:
+        - city
+        - from
+        - to
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  title:
+                    type: string
+                  startTime:
+                    type: string
+                  endTime:
+                    type: string
+                  when:
+                    type: string
+                  venue:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      address:
+                        type: string
+                      lat:
+                        type: number
+                      lng:
+                        type: number
+                      rating:
+                        type: number
+                      reviews:
+                        type: number
+                      link:
+                        type: string
+                    additionalProperties: false
+                  url:
+                    type: string
+                  price:
+                    type:
+                      - string
+                      - null
+                  category:
+                    type:
+                      - string
+                      - null
+                  thumbnail:
+                    type: string
+                  tickets:
+                    type: array
+                    items:
+                      type: object
+                      properties: {}
+                      additionalProperties: true
+                  source:
+                    type: string
+                    const: serpapi
+                required:
+                  - id
+                  - title
+                  - price
+                  - category
+                  - tickets
+                  - source
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

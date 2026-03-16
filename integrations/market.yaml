@@ -1,0 +1,165 @@
+# market integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: import { mcapi } from '@spaces/sdk'
+#   mcapi.post('/endpoint', { ...params })
+#   mcapi.get('/endpoint', { ...params })
+
+tools:
+
+  search_market_symbols:
+    method: POST
+    endpoint: /search-market-symbols
+    description: "Search stock market symbols"
+    input_schema:
+      type: object
+      properties:
+        term:
+          type: string
+          minLength: 1
+      required:
+        - term
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            symbols:
+              type: array
+              items:
+                type: object
+                properties:
+                  symbol:
+                    type: string
+                  name:
+                    type: string
+                  type:
+                    type: string
+                  region:
+                    type: string
+                  currency:
+                    type: string
+                  matchScore:
+                    type: number
+                required:
+                  - symbol
+                  - name
+                  - type
+                  - region
+                  - currency
+                  - matchScore
+                additionalProperties: false
+          required:
+            - symbols
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  search_stocks:
+    method: POST
+    endpoint: /search-stocks
+    description: "Search stocks (alias of market symbols)"
+    input_schema:
+      type: object
+      properties:
+        term:
+          type: string
+          minLength: 1
+      required:
+        - term
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            symbols:
+              type: array
+              items:
+                type: object
+                properties:
+                  symbol:
+                    type: string
+                  name:
+                    type: string
+                  type:
+                    type: string
+                  region:
+                    type: string
+                  currency:
+                    type: string
+                  matchScore:
+                    type: number
+                required:
+                  - symbol
+                  - name
+                  - type
+                  - region
+                  - currency
+                  - matchScore
+                additionalProperties: false
+          required:
+            - symbols
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  search_crypto:
+    method: POST
+    endpoint: /search-crypto
+    description: "Search cryptocurrencies"
+    input_schema:
+      type: object
+      properties:
+        term:
+          type: string
+          minLength: 1
+      required:
+        - term
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            symbols:
+              type: array
+              items:
+                type: object
+                properties:
+                  symbol:
+                    type: string
+                  name:
+                    type: string
+                  type:
+                    type: string
+                  region:
+                    type: string
+                  currency:
+                    type: string
+                  matchScore:
+                    type: number
+                required:
+                  - symbol
+                  - name
+                  - type
+                  - region
+                  - currency
+                  - matchScore
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success

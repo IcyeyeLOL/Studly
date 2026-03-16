@@ -1,0 +1,659 @@
+# baseball integration endpoints
+# Auto-generated from route-owned Zod schemas
+
+# USAGE: import { mcapi } from '@spaces/sdk'
+#   mcapi.post('/endpoint', { ...params })
+#   mcapi.get('/endpoint', { ...params })
+
+tools:
+
+  baseball_countries:
+    method: GET
+    endpoint: /baseball/countries
+    description: "Get all available countries for baseball leagues"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            countries:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  name:
+                    type: string
+                  code:
+                    type:
+                      - string
+                      - null
+                  flag:
+                    type:
+                      - string
+                      - null
+                required:
+                  - id
+                  - name
+                  - code
+                  - flag
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  baseball_leagues:
+    method: GET
+    endpoint: /baseball/leagues
+    description: "Get baseball leagues including MLB, minor leagues (AAA, AA), and international leagues"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            leagues:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  name:
+                    type: string
+                  type:
+                    type:
+                      - string
+                      - null
+                  logo:
+                    type:
+                      - string
+                      - null
+                  country:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  seasons:
+                    type: array
+                required:
+                  - id
+                  - name
+                  - type
+                  - logo
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  baseball_teams:
+    method: GET
+    endpoint: /baseball/teams
+    description: "Get baseball team information"
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: number
+          description: Team ID
+        name:
+          type: string
+          description: Team name
+        country_id:
+          type: number
+          description: Country ID
+        country:
+          type: string
+          description: Country name
+        league:
+          type: number
+          description: League ID
+        season:
+          type: number
+          description: Season year
+        search:
+          type: string
+          minLength: 3
+          description: Search term (min 3 chars)
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            teams:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  name:
+                    type: string
+                  logo:
+                    type:
+                      - string
+                      - null
+                  national:
+                    type: boolean
+                  country:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                required:
+                  - id
+                  - name
+                  - logo
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  baseball_teams_statistics:
+    method: GET
+    endpoint: /baseball/teams/statistics
+    description: "Get season statistics for a baseball team (wins, losses, games played)"
+    input_schema:
+      type: object
+      properties:
+        league:
+          type: number
+          description: League ID (required)
+        season:
+          type: number
+          description: Season year (required)
+        team:
+          type: number
+          description: Team ID (required)
+        date:
+          type: string
+          description: "Limit date (YYYY-MM-DD)"
+      required:
+        - league
+        - season
+        - team
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            statistics:
+              type: object
+              properties:
+                league: {}
+                country: {}
+                team: {}
+                games: {}
+                points: {}
+              additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  baseball_standings:
+    method: GET
+    endpoint: /baseball/standings
+    description: "Get baseball league standings. For MLB includes AL/NL divisions."
+    input_schema:
+      type: object
+      properties:
+        league:
+          type: number
+          description: League ID (required)
+        season:
+          type: number
+          description: Season year (required)
+        team:
+          type: number
+          description: Team ID
+        stage:
+          type: string
+          description: Stage name
+        group:
+          type: string
+          description: Group name (e.g., "AL East")
+      required:
+        - league
+        - season
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            standings:
+              type: array
+              items:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    position:
+                      type:
+                        - number
+                        - null
+                    stage:
+                      type:
+                        - string
+                        - null
+                    group:
+                      anyOf:
+                        - 
+
+                        - 
+                          type: null
+                    team:
+                      anyOf:
+                        - 
+
+                        - 
+                          type: null
+                    league:
+                      anyOf:
+                        - 
+
+                        - 
+                          type: null
+                    country:
+                      anyOf:
+                        - 
+
+                        - 
+                          type: null
+                    games:
+                      anyOf:
+                        - 
+
+                        - 
+                          type: null
+                    points:
+                      anyOf:
+                        - 
+
+                        - 
+                          type: null
+                    form:
+                      type:
+                        - string
+                        - null
+                    description:
+                      type:
+                        - string
+                        - null
+                  required:
+                    - position
+                    - stage
+                    - form
+                    - description
+                  additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  baseball_standings_stages:
+    method: GET
+    endpoint: /baseball/standings/stages
+    description: "Get available stages for baseball standings"
+    input_schema:
+      type: object
+      properties:
+        league:
+          type: number
+          description: League ID (required)
+        season:
+          type: number
+          description: Season year (required)
+      required:
+        - league
+        - season
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            stages:
+              type: array
+              items:
+                type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  baseball_standings_groups:
+    method: GET
+    endpoint: /baseball/standings/groups
+    description: "Get available groups for baseball standings (e.g., AL East, NL West)"
+    input_schema:
+      type: object
+      properties:
+        league:
+          type: number
+          description: League ID (required)
+        season:
+          type: number
+          description: Season year (required)
+      required:
+        - league
+        - season
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            groups:
+              type: array
+              items:
+                type: string
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  baseball_games:
+    method: GET
+    endpoint: /baseball/games
+    description: "Get baseball games with live scores. Includes inning-by-inning scores."
+    input_schema:
+      type: object
+      properties:
+        id:
+          type: number
+          description: Game ID
+        date:
+          type: string
+          description: "Date (YYYY-MM-DD)"
+        league:
+          type: number
+          description: League ID
+        season:
+          type: number
+          description: Season year
+        team:
+          type: number
+          description: Team ID
+        timezone:
+          type: string
+          description: Timezone
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            games:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  date:
+                    type:
+                      - string
+                      - null
+                  time:
+                    type:
+                      - string
+                      - null
+                  timestamp:
+                    type:
+                      - number
+                      - null
+                  timezone:
+                    type:
+                      - string
+                      - null
+                  week:
+                    type:
+                      - string
+                      - null
+                  status:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  country:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  league:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  teams:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  scores:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                required:
+                  - id
+                  - date
+                  - time
+                  - timestamp
+                  - timezone
+                  - week
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  baseball_games_h2h:
+    method: GET
+    endpoint: /baseball/games/h2h
+    description: "Get head-to-head history between two baseball teams"
+    input_schema:
+      type: object
+      properties:
+        h2h:
+          type: string
+          description: "Team IDs separated by dash (e.g., \"3-4\", required)"
+        date:
+          type: string
+          description: "Filter by date (YYYY-MM-DD)"
+        league:
+          type: number
+          description: Filter by league ID
+        season:
+          type: number
+          description: Filter by season
+        timezone:
+          type: string
+          description: Timezone
+      required:
+        - h2h
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            games:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  date:
+                    type:
+                      - string
+                      - null
+                  status:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  league:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  teams:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  scores:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                required:
+                  - id
+                  - date
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  baseball_odds:
+    method: GET
+    endpoint: /baseball/odds
+    description: "Get betting odds for baseball games"
+    input_schema:
+      type: object
+      properties:
+        league:
+          type: number
+          description: League ID
+        season:
+          type: number
+          description: Season year
+        game:
+          type: number
+          description: Game ID
+        bookmaker:
+          type: number
+          description: Bookmaker ID
+        bet:
+          type: number
+          description: Bet type ID
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            odds:
+              type: array
+              items:
+                type: object
+                properties:
+                  country:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  league:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  game:
+                    anyOf:
+                      - 
+
+                      - 
+                        type: null
+                  bookmakers:
+                    type: array
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
+
+  baseball_bookmakers:
+    method: GET
+    endpoint: /baseball/bookmakers
+    description: "Get available bookmakers for baseball betting odds"
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            bookmakers:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  name:
+                    type: string
+                required:
+                  - id
+                  - name
+                additionalProperties: false
+          additionalProperties: false
+        error:
+          type: string
+      required:
+        - success
