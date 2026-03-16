@@ -1,109 +1,107 @@
-# Studly
+# Miyagi Canvas Repository
 
-**Homework → solutions.** Studly is an AI-powered study assistant that helps high school and college students get clear, step-by-step explanations and solutions—in normal text, handwritten-style, or flowchart form.
-
----
-
-## What it does
-
-- **Ask questions** — Paste or type a question, pick a subject (Math, English, Science, History, etc.), and get a teaching-style answer tailored to how you learn.
-- **Multiple output styles** — Choose how solutions are shown: normal text, handwritten-style steps, or flowchart-style steps.
-- **Attach context** — Add photos or files (e.g. problem sets, diagrams) so the AI can use them in the answer.
-- **Chat threads** — Keep related Q&amp;As in chats, star important ones, and revisit them from the sidebar.
-- **Save solutions** — Save any answer to your Saved list for quick access later.
-- **Projects** — Organize work by project (e.g. by class or assignment).
-- **Onboarding** — Short onboarding captures your struggles and goals so answers can be more relevant.
-- **Studly Pro** — In-app billing concept (monthly/yearly) for future premium features.
-
-The app tries the backend first for solving; if the backend isn’t reachable (e.g. no tunnel), it can fall back to direct AI calls when configured for development.
+This is your personal Miyagi canvas repository, where all your canvases and widgets live.
 
 ---
 
-## Who it’s for
+## Quick Start
 
-- High school and college students who want to **understand** answers, not just copy them.
-- Anyone who prefers structured, step-by-step explanations with optional handwritten or flowchart layouts.
+### 1. Setup (Run Once After Cloning)
 
----
-
-## Skills
-
-- **Full-stack development** — React Native (Expo) mobile app and Node.js/Express REST API.
-- **Auth & identity** — Clerk integration (sign-in, sign-up, session tokens, profile sync).
-- **Backend & data** — Supabase (Postgres, RLS-friendly queries, Storage for avatars and attachments).
-- **AI integration** — Anthropic Claude API; subject-specific and format-specific prompts; optional client fallback when backend is unreachable.
-- **State & persistence** — Zustand with AsyncStorage; chat threads, saved solutions, projects, and user preferences.
-- **UX** — Onboarding flow, theme (light/dark), sidebar navigation, modals, and responsive layout.
-- **API design** — RESTful routes, auth middleware, health check, and clear request/response contracts.
-
----
-
-## Deliverables
-
-| Deliverable | Description |
-|-------------|-------------|
-| **Mobile app** | Cross-platform (iOS/Android) Expo app: auth, onboarding, chat, solve flow, projects, saved solutions, profile/settings. |
-| **Backend API** | Express server: profile, solve, upload (avatar/attachment), projects, saved solutions, recent questions; Clerk auth on all protected routes. |
-| **Database & storage** | Supabase project: `profiles`, `saved_solutions`, `projects`, `recent_questions`; Storage buckets for avatars and attachments. |
-| **Documentation** | Root README (project description, skills, deliverables); backend README (setup, env, API table). |
-| **Deployable artifacts** | Backend runnable via `npm run dev`; mobile runnable via `expo start`; env-based configuration for both. |
-
----
-
-## Tech stack
-
-| Part    | Stack |
-|--------|--------|
-| **Mobile** | Expo (React Native), Clerk (auth), Zustand (state + persist), NativeWind (Tailwind-style styling) |
-| **Backend** | Node.js, Express, Clerk, Supabase (Postgres + Storage), Anthropic (Claude) |
-| **Auth** | Clerk; mobile sends Bearer token; backend resolves to a Supabase profile per user |
-
----
-
-## Repo structure
-
+```bash
+npm run setup
 ```
-Studly/
-├── backend/          # Express API (auth, profile, solve, upload, projects, saved solutions)
-│   ├── src/
-│   │   ├── index.js
-│   │   ├── lib/supabase.js
-│   │   ├── middleware/requireAuth.js
-│   │   └── routes/
-│   └── README.md     # Setup, env, API table
-├── mobile/           # Expo app (screens, solve flow, sidebar, settings)
-│   ├── App.js
-│   ├── services/    # api.js, solveDirect.js
-│   ├── store/        # Zustand (chats, saved, projects, profile)
-│   ├── screens/      # Auth, onboarding, Chat, Projects, Saved, Profile
-│   └── components/
-└── README.md         # This project description
+
+This installs dependencies and configures git hooks for automatic synchronization.
+
+---
+
+### 2. Pull Changes from the App
+
+```bash
+npm run pull ALL
+```
+
+**Before running this:** Click the **History** button in the top-right panel of the Miyagi app to save your canvas changes.
+
+This downloads the latest canvas state from the app to your local repository.
+
+```bash
+npm run pull room-abc123   # Pull a specific room only
+npm run pull ALL           # Pull all rooms
 ```
 
 ---
 
-## Getting started
+### 3. Push Changes to the App
 
-1. **Backend**  
-   See [backend/README.md](backend/README.md). You need Clerk keys, Supabase URL + service key, and optionally an Anthropic API key. Run SQL for tables and create Storage buckets (`avatars`, `attachments`).
+```bash
+npm run push ALL
+```
 
-2. **Mobile**  
-   From `mobile/`: `npm install`, then `npx expo start`. Set `EXPO_PUBLIC_API_URL` (and optionally `EXPO_PUBLIC_ANTHROPIC_API_KEY` for direct AI when the backend is unreachable). Use `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` (or app config) for Clerk.
+This uploads your local changes (widget edits, new widgets, etc.) back to the Miyagi app.
 
-3. **Run**  
-   Start the backend (e.g. `npm run dev` in `backend/`), then run the app on a device or simulator. Sign in with Clerk and complete onboarding to reach the main Chat screen.
-
-### QR code: "No usable data found"
-
-That message usually appears when you scan the Expo QR code with your **phone’s Camera app** instead of **Expo Go**. The QR encodes an `exp://` URL that only Expo Go knows how to open.
-
-- **Fix:** Open the **Expo Go** app on your phone, then use **Expo Go’s built-in “Scan QR code”** (e.g. from the home screen or “Enter URL manually” and type the URL from the terminal).
-- **Same Wi‑Fi:** Phone and computer must be on the same Wi‑Fi for the default (LAN) URL to work. If they’re not, run `npx expo start --tunnel` in `mobile/` and scan the new QR code **inside Expo Go**.
-- **Android:** In Expo Go, tap “Scan QR code” and point at the terminal QR.
-- **iOS:** You can sometimes scan from the Camera app and get “Open in Expo Go”—if you see “no usable data,” use Expo Go’s scanner instead.
+```bash
+npm run push room-abc123   # Push a specific room only
+npm run push ALL           # Push all rooms
+```
 
 ---
 
-## License
+## Typical Workflow
 
-Private / unlicensed unless otherwise specified.
+1. **Save in app:** Click the **History** button in the top-right panel
+2. **Pull:** `npm run pull ALL`
+3. **Edit:** Make changes to widget files locally
+4. **Push:** `npm run push ALL`
+5. **Refresh:** Your changes appear in the Miyagi app
+
+---
+
+<details>
+<summary><strong>What's in this repository?</strong></summary>
+
+- **agent_scripts/** - Helper scripts for widget compilation and canvas management
+  - Template bundling (JSX → HTML)
+  - Canvas state synchronization
+  - Widget generation and management
+- **Your widget directories** - Each widget you create will have its own directory
+- **canvas-state.json** - Serialized state of all your canvases (auto-generated)
+- See `RoomStructure.md` for a schematic of how rooms are structured
+
+</details>
+
+<details>
+<summary><strong>Git Hooks</strong></summary>
+
+- **git commit**: Automatically compiles JSX templates, tracks all existing shapes, and generates canvas-state.json
+- **git pull**: Automatically unpacks canvas-state.json into widget directories, shape directories, storage and metadata
+
+</details>
+
+<details>
+<summary><strong>Manual Commands</strong></summary>
+
+If you need to run the build steps manually:
+
+```bash
+# Generate canvas-state.json from all widget directories
+node agent_scripts/generate-canvas.js
+
+# Unpack canvas-state.json into widget directories
+node agent_scripts/unpack-canvas-state.js
+
+# Create a widget (handles widget naming and creates skeleton)
+node agent_scripts/generate-widget.js $WIDGET_ID $ROOM_ID
+```
+
+</details>
+
+<details>
+<summary><strong>Important Notes</strong></summary>
+
+- Don't manually edit `canvas-state.json` - it's auto-generated
+- Don't manually edit `canvas-metadata.json` - it's auto-generated
+- Avoid simultaneous interaction with both the repo and the app as this **WILL** lead to merge conflicts. This is handled for you when using the chat feature of the app, but there is no conflict resolution logic here.
+
+</details>
