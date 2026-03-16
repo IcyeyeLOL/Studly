@@ -2,9 +2,14 @@
   "shapeId": "shape:deepspace-hello-NnlEhrL1cLnYBKJ1",
   "widgetId": "deepspace-hello_1773000151102",
   "templateHandle": "deepspace-hello",
+  "templateName": "Deepspace Hello",
+  "icon": {
+    "type": "react-icon",
+    "value": "Fi:FiPackage"
+  },
   "position": {
-    "x": 665.8560523446021,
-    "y": 280.42529989094874
+    "x": -50000,
+    "y": -50000
   },
   "size": {
     "w": 700,
@@ -15,15 +20,21 @@
   "isLocked": false,
   "color": "black",
   "zoomScale": 1,
-  "savedContentHash": "initial",
+  "savedContentHash": "kry3yj",
+  "templateDescription": "Easily send personalized greetings and fetch random jokes to lighten your day with a simple interface",
+  "templateCategory": "General",
   "meta": {
     "initializationState": "ready",
     "justCreated": false,
     "createdAt": 1773000252764,
     "dockOrder": 13,
-    "showDefaultHandles": false
+    "showDefaultHandles": false,
+    "isDockedHidden": true,
+    "hiddenAt": 1773698102087,
+    "originalX": 665.8560523446021,
+    "originalY": 280.42529989094874
   },
   "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
-  "index": "aYz9jQfl",
-  "lastChangedClock": 11861
+  "index": "aai6i2KV",
+  "lastChangedClock": 11876
 }

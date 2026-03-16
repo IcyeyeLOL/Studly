@@ -1,0 +1,25 @@
+{
+  "shapeId": "shape:collab-todo-EibVQzdGjVrMzHQb",
+  "widgetId": "collab-todo_1773698184219",
+  "templateHandle": "collab-todo",
+  "position": {
+    "x": -24684.678298800438,
+    "y": -24970
+  },
+  "size": {
+    "w": 700,
+    "h": 600
+  },
+  "rotation": 0,
+  "opacity": 1,
+  "isLocked": false,
+  "color": "black",
+  "zoomScale": 1,
+  "savedContentHash": "initial",
+  "meta": {
+    "initializationState": "ready"
+  },
+  "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
+  "index": "ab",
+  "lastChangedClock": 1676
+}
