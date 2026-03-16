@@ -52,3 +52,12 @@ export const stripePublicLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+/** Demo solve (no auth): tight limit — 8 requests per 15 min per IP */
+export const demoSolveLimiter = rateLimit({
+  windowMs: WINDOW_MS_15,
+  max: 8,
+  message: { error: 'Demo limit reached (8 questions per 15 min). Sign in at studly-eosin.vercel.app for unlimited access.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});

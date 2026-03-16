@@ -773,3 +773,69 @@ router.post('/stream', requireAuth, async (req, res) => {
 });
 
 export const solveRouter = router;
+
+// ──────────────────────────────────────────────
+// Demo solve router — no auth, for the DeepSpace widget
+// Mounted at /api/solve/demo in app.js (before clerkMiddleware)
+// Rate-limited to 8 requests per 15 min per IP by demoSolveLimiter
+// ──────────────────────────────────────────────
+const demoRouter = Router();
+
+demoRouter.post('/stream', async (req, res) => {
+  const { question, subject, output_preference } = req.body;
+  if (!question || !String(question).trim()) {
+    return res.status(400).json({ error: 'question required' });
+  }
+  if (String(question).length > 2000) {
+    return res.status(400).json({ error: 'question too long (max 2 000 characters for demo)' });
+  }
+
+  const subj = subject || 'Other';
+  const outputPref = output_preference || 'ask';
+
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  res.setHeader('Content-Type', 'application/x-ndjson');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  if (typeof res.flushHeaders === 'function') res.flushHeaders();
+
+  const send = (obj) => {
+    res.write(JSON.stringify(obj) + '\n');
+    if (typeof res.flush === 'function') res.flush();
+  };
+
+  if (!apiKey) {
+    send({ error: 'Demo not available — ANTHROPIC_API_KEY not configured.' });
+    res.end();
+    return;
+  }
+
+  try {
+    const Anthropic = (await import('@anthropic-ai/sdk')).default;
+    const client = new Anthropic({ apiKey });
+    const userContent = await buildUserContent(question.trim(), subj, outputPref, []);
+    const model = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
+
+    const stream = client.messages.stream({
+      model,
+      max_tokens: 2048,
+      temperature: 0.2,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: userContent }],
+    }).on('text', (text) => {
+      send({ t: text });
+    });
+
+    const finalMessage = await stream.finalMessage();
+    const textBlock = finalMessage.content?.find((b) => b.type === 'text');
+    const raw = textBlock?.text ?? '';
+    send({ done: true, answerText: postProcessAnswer(raw), question: String(question).trim(), subject: subj, outputPreference: outputPref });
+  } catch (err) {
+    console.error('Demo stream error:', err);
+    send({ error: 'Something went wrong. Please try again.' });
+  }
+  res.end();
+});
+
+export const demoSolveRouter = demoRouter;

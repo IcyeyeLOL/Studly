@@ -9,13 +9,14 @@ import {
   healthLimiter,
   solveLimiter,
   stripeWebhookLimiter,
+  demoSolveLimiter,
 } from './middleware/rateLimit.js';
 import { profileRouter } from './routes/profile.js';
 import { savedSolutionsRouter } from './routes/saved-solutions.js';
 import { projectsRouter } from './routes/projects.js';
 import { recentQuestionsRouter } from './routes/recent-questions.js';
 import { uploadRouter } from './routes/upload.js';
-import { solveRouter } from './routes/solve.js';
+import { solveRouter, demoSolveRouter } from './routes/solve.js';
 import { checkoutRouter, stripeWebhookHandler } from './routes/stripe.js';
 
 const app = express();
@@ -55,6 +56,9 @@ app.use(globalLimiter);
 app.get('/api/health', healthLimiter, (req, res) => {
   res.json({ ok: true, ts: new Date().toISOString() });
 });
+
+// Demo solve: no auth, strict rate limit — for the DeepSpace widget
+app.use('/api/solve/demo', demoSolveLimiter, demoSolveRouter);
 
 app.use(clerkMiddleware());
 

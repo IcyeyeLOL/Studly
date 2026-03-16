@@ -1,11 +1,9 @@
 /**
  * Studly Homework Helper — Main widget page.
- * Calls the Studly backend at https://studly-eosin.vercel.app
- * Subject selector → question input → streaming AI answer.
+ * Calls the Studly public demo endpoint (no auth required).
  */
 
 import { useState, useRef, useCallback } from 'react'
-import { getWidgetAuthToken } from '@spaces/sdk/auth'
 
 const API_BASE = 'https://studly-eosin.vercel.app'
 
@@ -52,25 +50,17 @@ export default function StudlyPage() {
     setLoading(false)
   }, [])
 
-  const askStudly = useCallback(async () => {
+  const askStudly = useCallback(() => {
     if (!question.trim() || loading) return
     setLoading(true)
     setError('')
     setAnswer('')
 
-    let token: string | null = null
-    try {
-      token = await getWidgetAuthToken()
-    } catch {
-      // no token — will get 401
-    }
-
-    const url = `${API_BASE}/api/solve/stream`
+    const url = `${API_BASE}/api/solve/demo/stream`
     const xhr = new XMLHttpRequest()
     xhrRef.current = xhr
     xhr.open('POST', url)
     xhr.setRequestHeader('Content-Type', 'application/json')
-    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
 
     let lastIndex = 0
     let fullText = ''
@@ -103,13 +93,7 @@ export default function StudlyPage() {
         }
       }
       if (xhr.readyState === 4) {
-        if (xhr.status === 401 || xhr.status === 403) {
-          setError(
-            xhr.status === 403
-              ? 'Daily question limit reached. Open the Studly app to upgrade to Pro.'
-              : 'Sign in to Studly to use the homework helper. Open the app at studly-eosin.vercel.app'
-          )
-        } else if (xhr.status !== 200 && xhr.status !== 0) {
+        if (xhr.status !== 200 && xhr.status !== 0) {
           try {
             const json = JSON.parse(xhr.responseText)
             setError(json.error ?? `Request failed (${xhr.status})`)
@@ -244,16 +228,6 @@ export default function StudlyPage() {
         {error && (
           <div className="rounded-xl border border-red-500/25 bg-red-500/8 p-4">
             <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-            {error.includes('Sign in') && (
-              <a
-                href="https://studly-eosin.vercel.app"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 inline-block text-xs font-medium text-primary hover:underline"
-              >
-                Open Studly →
-              </a>
-            )}
           </div>
         )}
 
