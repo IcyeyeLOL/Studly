@@ -3,8 +3,8 @@
   "widgetId": "collab-todo_1773698184219",
   "templateHandle": "collab-todo",
   "position": {
-    "x": -24684.678298800438,
-    "y": -24970
+    "x": 696.5866957470012,
+    "y": 179.55288985823336
   },
   "size": {
     "w": 700,
@@ -17,9 +17,12 @@
   "zoomScale": 1,
   "savedContentHash": "initial",
   "meta": {
-    "initializationState": "ready"
+    "initializationState": "ready",
+    "buildError": "Command failed: node /app/packages/widget-bundler/esbuild-widget.cjs /tmp/widget-build-collab-todo_1773698184219-1773699697847.html collab-todo_1773698184219 /tmp/widget-build-xgYzPc prod\n(node:11834) ExperimentalWarning: Support for loading ES Module in require() is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n\u001b[3m\u001b[1m\u001b[34m≈\u001b[39m\u001b[22m\u001b[23m tailwindcss \u001b[34mv4.2.1\u001b[39m\n\n(node:11834) ExperimentalWarning: Support for loading ES Module in require() is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\nDone in \u001b[34m165ms\u001b[39m\n(node:11820) ExperimentalWarning: Support for loading ES Module in require() is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n✘ [ERROR] No matching export in \"packages/spaces-sdk/src/auth/index.ts\" for import \"AuthModalProvider\"\n\n    ../tmp/widget-build-xgYzPc/src/main.tsx:22:2:\n      22 │   AuthModalProvider,\n         ╵   ~~~~~~~~~~~~~~~~~\n\n✘ [ERROR] No matching export in \"packages/spaces-sdk/src/auth/index.ts\" for import \"AUTH_CALLBACK_PATH\"\n\n    ../tmp/widget-build-xgYzPc/src/main.tsx:23:2:\n      23 │   AUTH_CALLBACK_PATH,\n         ╵   ~~~~~~~~~~~~~~~~~~\n\n✘ [ERROR] No matching export in \"packages/spaces-sdk/src/auth/index.ts\" for import \"AUTH_SIGN_IN_PATH\"\n\n    ../tmp/widget-build-xgYzPc/src/main.tsx:24:2:\n      24 │   AUTH_SIGN_IN_PATH,\n         ╵   ~~~~~~~~~~~~~~~~~\n\n✘ [ERROR] No matching export in \"packages/spaces-sdk/src/auth/index.ts\" for import \"AUTH_SIGN_UP_PATH\"\n\n    ../tmp/widget-build-xgYzPc/src/main.tsx:25:2:\n      25 │   AUTH_SIGN_UP_PATH,\n         ╵   ~~~~~~~~~~~~~~~~~\n\n✘ [ERROR] No matching export in \"packages/spaces-sdk/src/auth/index.ts\" for import \"DeepSpaceAuthCallback\"\n\n    ../tmp/widget-build-xgYzPc/src/main.tsx:26:2:\n      26 │   DeepSpaceAuthCallback,\n         ╵   ~~~~~~~~~~~~~~~~~~~~~\n\n✘ [ERROR] No matching export in \"packages/spaces-sdk/src/auth/index.ts\" for import \"DeepSpaceAuthPage\"\n\n    ../tmp/widget-build-xgYzPc/src/main.tsx:27:2:\n      27 │   DeepSpaceAuthPage,\n         ╵   ~~~~~~~~~~~~~~~~~\n\nBuild failed: Build failed with 6 errors:\n../tmp/widget-build-xgYzPc/src/main.tsx:22:2: ERROR: No matching export in \"packages/spaces-sdk/src/auth/index.ts\" for import \"AuthModalProvider\"\n../tmp/widget-build-xgYzPc/src/main.tsx:23:2: ERROR: No matching export in \"packages/spaces-sdk/src/auth/index.ts\" for import \"AUTH_CALLBACK_PATH\"\n../tmp/widget-build-xgYzPc/src/main.tsx:24:2: ERROR: No matching export in \"packages/spaces-sdk/src/auth/index.ts\" for import \"AUTH_SIGN_IN_PATH\"\n../tmp/widget-build-xgYzPc/src/main.tsx:25:2: ERROR: No matching export in \"packages/spaces-sdk/src/auth/index.ts\" for import \"AUTH_SIGN_UP_PATH\"\n../tmp/widget-build-xgYzPc/src/main.tsx:26:2: ERROR: No matching export in \"packages/spaces-sdk/src/auth/index.ts\" for import \"DeepSpaceAuthCallback\"\n...\n",
+    "dockOrder": 14,
+    "showDefaultHandles": false
   },
   "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
-  "index": "ab",
-  "lastChangedClock": 1676
+  "index": "adrsvqNV",
+  "lastChangedClock": 11951
 }

@@ -88,49 +88,40 @@
   "documents": [
     {
       "state": {
-        "x": 1130.6434023991276,
-        "y": 540,
-        "rotation": 0,
-        "isLocked": false,
-        "opacity": 1,
+        "gridSize": 10,
+        "name": "DeepSpace",
         "meta": {
-          "dockOrder": 11,
-          "showDefaultHandles": false
+          "roomId": "room-9d4c1679-c38d-4c4d-aa0f-da084da61985",
+          "canvasMode": "dock",
+          "canvasName": "DeepSpace",
+          "canvasSpace": {
+            "spaceType": "dock",
+            "config": {
+              "type": "dock",
+              "name": "Dock Space",
+              "description": "Dock mode with macOS-style dock bar for widgets (zoom locked at 50% via DOCK_MODE_ZOOM constant)"
+            },
+            "lastUpdated": 1773698084069
+          },
+          "publishedSpaceHandle": "deepspace-lime17451",
+          "__canvas_storage": {
+            "__widget_io_configs": {
+              "shape:deepspace-hello-NnlEhrL1cLnYBKJ1": {
+                "inputs": [],
+                "outputs": []
+              },
+              "shape:collab-todo-EibVQzdGjVrMzHQb": {
+                "inputs": [],
+                "outputs": []
+              }
+            },
+            "__widget_connections": []
+          }
         },
-        "id": "shape:2UFxqgIbsiAvkr5xjKSbB",
-        "type": "file",
-        "props": {
-          "w": 200,
-          "h": 120,
-          "assetId": "asset:GuAnpniOVkyi1_cL3eu35"
-        },
-        "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
-        "index": "acfqrGtV",
-        "typeName": "shape"
+        "id": "document:document",
+        "typeName": "document"
       },
-      "lastChangedClock": 11929
-    },
-    {
-      "state": {
-        "meta": {
-          "isFileAsset": true,
-          "originalMimeType": "application/pdf",
-          "originalFileName": "DeepSpace_Penetration_Test_Report.docx.pdf"
-        },
-        "id": "asset:GuAnpniOVkyi1_cL3eu35",
-        "type": "image",
-        "typeName": "asset",
-        "props": {
-          "name": "DeepSpace_Penetration_Test_Report.docx.pdf",
-          "src": "https://miyagi-canvas-sync.eudaimonicincorporated.workers.dev/api/uploads/6ea7ad4e-285a-4c0c-b6df-0b07a9650bca",
-          "w": 200,
-          "h": 120,
-          "fileSize": 381629,
-          "mimeType": "application/pdf",
-          "isAnimated": false
-        }
-      },
-      "lastChangedClock": 11925
+      "lastChangedClock": 11955
     },
     {
       "state": {
@@ -301,57 +292,56 @@
             "name": "Clean Light"
           },
           "templateDescription": "Easily send personalized greetings and fetch random jokes to lighten your day with a simple interface",
-          "templateCategory": "General",
-          "siteUrl": "https://deepspacesites.com/deepspace-hello_1773000151102/?v=kry3yj"
+          "templateCategory": "General"
         }
       },
       "lastChangedClock": 11925
     },
     {
       "state": {
-        "gridSize": 10,
-        "name": "DeepSpace",
         "meta": {
-          "roomId": "room-9d4c1679-c38d-4c4d-aa0f-da084da61985",
-          "canvasMode": "dock",
-          "canvasName": "DeepSpace",
-          "canvasSpace": {
-            "spaceType": "dock",
-            "config": {
-              "type": "dock",
-              "name": "Dock Space",
-              "description": "Dock mode with macOS-style dock bar for widgets (zoom locked at 50% via DOCK_MODE_ZOOM constant)"
-            },
-            "lastUpdated": 1773698084069
-          },
-          "publishedSpaceHandle": "deepspace-lime17451",
-          "__canvas_storage": {
-            "__widget_io_configs": {
-              "shape:deepspace-hello-NnlEhrL1cLnYBKJ1": {
-                "inputs": [],
-                "outputs": []
-              },
-              "shape:collab-todo-EibVQzdGjVrMzHQb": {
-                "inputs": [],
-                "outputs": []
-              }
-            },
-            "__widget_connections": []
-          }
+          "isFileAsset": true,
+          "originalMimeType": "application/pdf",
+          "originalFileName": "DeepSpace_Penetration_Test_Report.docx.pdf"
         },
-        "id": "document:document",
-        "typeName": "document"
+        "id": "asset:GuAnpniOVkyi1_cL3eu35",
+        "type": "image",
+        "typeName": "asset",
+        "props": {
+          "name": "DeepSpace_Penetration_Test_Report.docx.pdf",
+          "src": "https://miyagi-canvas-sync.eudaimonicincorporated.workers.dev/api/uploads/6ea7ad4e-285a-4c0c-b6df-0b07a9650bca",
+          "w": 200,
+          "h": 120,
+          "fileSize": 381629,
+          "mimeType": "application/pdf",
+          "isAnimated": false
+        }
       },
-      "lastChangedClock": 11930
+      "lastChangedClock": 5
     },
     {
       "state": {
-        "widgets": {},
-        "global": {},
-        "id": "canvas_storage:main",
-        "typeName": "canvas_storage"
+        "x": 1130.6434023991276,
+        "y": 540,
+        "rotation": 0,
+        "isLocked": false,
+        "opacity": 1,
+        "meta": {
+          "dockOrder": 11,
+          "showDefaultHandles": false
+        },
+        "id": "shape:2UFxqgIbsiAvkr5xjKSbB",
+        "type": "file",
+        "props": {
+          "w": 200,
+          "h": 120,
+          "assetId": "asset:GuAnpniOVkyi1_cL3eu35"
+        },
+        "parentId": "page:ryfD_vTjBIH4xjvQ2a2vu",
+        "index": "acfqrGtV",
+        "typeName": "shape"
       },
-      "lastChangedClock": 11926
+      "lastChangedClock": 6
     }
   ]
 }
